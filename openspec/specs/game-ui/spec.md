@@ -73,6 +73,17 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 - **WHEN** 在關卡模式中
 - **THEN** MUST 顯示線材成本與關卡預算
 
+#### Scenario: 顯示剩餘時間倒數
+
+- **WHEN** 模擬運行中且關卡有 survivalTime
+- **THEN** MUST 顯示剩餘時間（survivalTime - elapsed），精確到小數點一位
+- **AND** 剩餘時間 MUST 從 survivalTime 遞減至 0.0
+
+#### Scenario: 未送電時顯示完整存活時間
+
+- **WHEN** 模擬尚未開始（elapsed 為 0）
+- **THEN** 剩餘時間 MUST 顯示完整的 survivalTime 值
+
 ### Requirement: Failure result display
 
 模擬結束於失敗狀態時，MUST 顯示失敗原因與關鍵數字。

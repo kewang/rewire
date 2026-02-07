@@ -155,6 +155,7 @@ export default function GameBoard() {
           breakerRated={DEFAULT_BREAKER.ratedCurrent}
           cost={cost}
           budget={currentLevel.budget}
+          survivalTime={currentLevel.survivalTime}
         />
       </header>
 
