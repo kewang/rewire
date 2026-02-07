@@ -11,6 +11,7 @@
 - SVG 視覺化（CircuitDiagram 元件）
 - Web Audio API 音效（無外部音檔）
 - 無狀態管理庫（useState + useRef + rAF loop）
+- Google Fonts: Orbitron (display) + JetBrains Mono (mono)
 
 ## Project Structure
 
@@ -53,7 +54,10 @@
 - 燒毀特效：電線斷裂缺口 14px + 銅芯 #d97706 + 絕緣皮翻開三角形 + 火焰粒子動畫
 - 過載預警：buzzing 持續音（sawtooth 120Hz）+ 淡煙粒子（wireHeat ≥ 0.3）
 - 電器運轉音：每種電器各有不同 Oscillator 音色，音量壓低 0.03-0.06
-- 深色主題：背景 #111/#1a1a1a，label 文字 #aaa、value 文字 #f0f0f0（WCAG AA 對比度）
+- 工業深色主題：CSS variable 系統（`:root` 定義 30+ variables），背景 #0a0c0f/#0f1318
+- 響應式 layout：mobile ≤640px 單欄+水平滾動線材、tablet 641-1024px 兩欄、desktop ≥1025px 三欄 grid
+- ResultPanel 自動 scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+- 電路圖 SVG 響應式：width="100%" maxWidth=260
 
 ## Known Issues / Notes
 
