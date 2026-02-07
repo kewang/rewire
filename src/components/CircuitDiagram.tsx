@@ -92,6 +92,28 @@ export default function CircuitDiagram({ state, isPowered, breakerRated }: Circu
         <rect x="85" y="215" width="8" height="20" rx="2" fill="#444" />
         <rect x="107" y="215" width="8" height="20" rx="2" fill="#444" />
 
+        {/* Warning smoke particles (wireHeat ≥ 0.3, lighter/smaller/slower than burned) */}
+        {isWarning && state.wireHeat >= 0.3 && (
+          <>
+            {(() => {
+              const opacity = state.wireHeat >= 0.7 ? 0.6 : 0.2 + (state.wireHeat - 0.3) * 1.0;
+              const r = state.wireHeat >= 0.7 ? 5 : 4;
+              return (
+                <>
+                  <circle className="smoke-particle warning-smoke-1" cx="94" cy="116" r={r}
+                    fill={`rgba(180,180,180,${opacity})`} />
+                  <circle className="smoke-particle warning-smoke-2" cx="106" cy="110" r={r}
+                    fill={`rgba(180,180,180,${opacity * 0.8})`} />
+                  {state.wireHeat >= 0.7 && (
+                    <circle className="smoke-particle warning-smoke-3" cx="100" cy="104" r={r}
+                      fill={`rgba(180,180,180,${opacity * 0.7})`} />
+                  )}
+                </>
+              );
+            })()}
+          </>
+        )}
+
         {/* Smoke particles when burned */}
         {isBurned && (
           <>

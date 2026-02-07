@@ -330,6 +330,11 @@ h3, h4 {
 .smoke-2 { animation-delay: 0.5s; }
 .smoke-3 { animation-delay: 1s; }
 
+/* Warning smoke (slower, subtler) */
+.warning-smoke-1 { animation: smoke-rise 2s ease-out infinite; animation-delay: 0s; }
+.warning-smoke-2 { animation: smoke-rise 2s ease-out infinite; animation-delay: 0.7s; }
+.warning-smoke-3 { animation: smoke-rise 2s ease-out infinite; animation-delay: 1.3s; }
+
 @keyframes smoke-rise {
   0% {
     opacity: 0.6;

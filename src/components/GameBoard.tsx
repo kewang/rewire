@@ -3,7 +3,7 @@ import type { Wire, Appliance, Level, SimulationState } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_BREAKER, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialState, step } from '../engine/simulation';
-import { playPowerOn, playTripped, playBurned, playWin } from '../engine/audio';
+import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing } from '../engine/audio';
 import WireSelector from './WireSelector';
 import AppliancePanel from './AppliancePanel';
 import StatusDisplay from './StatusDisplay';
@@ -24,6 +24,7 @@ export default function GameBoard() {
   const rafRef = useRef<number>(0);
   const prevTimeRef = useRef<number>(0);
   const simStateRef = useRef<SimulationState>(simState);
+  const buzzingRef = useRef(false);
 
   useEffect(() => {
     simStateRef.current = simState;
@@ -56,6 +57,18 @@ export default function GameBoard() {
     const newState = step(circuitRef.current, simStateRef.current, dt);
     setSimState(newState);
 
+    // Buzzing management
+    if (newState.status === 'warning') {
+      if (!buzzingRef.current) {
+        startBuzzing();
+        buzzingRef.current = true;
+      }
+      updateBuzzingVolume(newState.wireHeat);
+    } else if (buzzingRef.current) {
+      stopBuzzing();
+      buzzingRef.current = false;
+    }
+
     // Terminal state: tripped or burned
     if (newState.status === 'tripped' || newState.status === 'burned') {
       setIsPowered(false);
@@ -83,6 +96,8 @@ export default function GameBoard() {
     if (isPowered) {
       cancelAnimationFrame(rafRef.current);
       prevTimeRef.current = 0;
+      stopBuzzing();
+      buzzingRef.current = false;
       setIsPowered(false);
       setSimState(createInitialState());
       setResult('none');
@@ -104,6 +119,8 @@ export default function GameBoard() {
   const handleRetry = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
     prevTimeRef.current = 0;
+    stopBuzzing();
+    buzzingRef.current = false;
     setIsPowered(false);
     setSimState(createInitialState());
     setResult('none');
@@ -112,6 +129,8 @@ export default function GameBoard() {
   const handleBackToLevels = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
     prevTimeRef.current = 0;
+    stopBuzzing();
+    buzzingRef.current = false;
     setIsPowered(false);
     setSimState(createInitialState());
     setResult('none');

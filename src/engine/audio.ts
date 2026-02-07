@@ -41,6 +41,54 @@ export function playBurned() {
   playTone(150, 0.6, 'sawtooth', 0.08);
 }
 
+// --- Buzzing (持續性過載預警音) ---
+
+let buzzOsc: OscillatorNode | null = null;
+let buzzGain: GainNode | null = null;
+
+/** 開始播放持續性 buzzing 音效（sawtooth ~120Hz），初始音量 0 */
+export function startBuzzing() {
+  if (buzzOsc) return; // already playing
+  try {
+    const ctx = getCtx();
+    buzzOsc = ctx.createOscillator();
+    buzzGain = ctx.createGain();
+    buzzOsc.type = 'sawtooth';
+    buzzOsc.frequency.value = 120;
+    buzzGain.gain.setValueAtTime(0, ctx.currentTime);
+    buzzOsc.connect(buzzGain);
+    buzzGain.connect(ctx.destination);
+    buzzOsc.start();
+  } catch {
+    // Audio not available
+  }
+}
+
+/** 根據 wireHeat 更新 buzzing 音量（0→0, 1→0.12） */
+export function updateBuzzingVolume(wireHeat: number) {
+  if (!buzzGain) return;
+  try {
+    const ctx = getCtx();
+    const vol = Math.max(0, Math.min(1, wireHeat)) * 0.12;
+    buzzGain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.05);
+  } catch {
+    // Audio not available
+  }
+}
+
+/** 停止 buzzing 音效 */
+export function stopBuzzing() {
+  try {
+    buzzOsc?.stop();
+  } catch {
+    // already stopped
+  }
+  buzzOsc?.disconnect();
+  buzzGain?.disconnect();
+  buzzOsc = null;
+  buzzGain = null;
+}
+
 /** 過關音 */
 export function playWin() {
   playTone(523, 0.15, 'sine');
