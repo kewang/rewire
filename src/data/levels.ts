@@ -1,9 +1,9 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES } from './constants';
 
-const [hairDryer, kettle] = DEFAULT_APPLIANCES;
+const [hairDryer, kettle, , underSinkHeater, dryer] = DEFAULT_APPLIANCES;
 
-/** PRD v0.1 第 5 節關卡定義 */
+/** PRD v0.2 關卡定義 */
 export const LEVELS: readonly Level[] = [
   {
     name: 'L01 基礎教學',
@@ -25,5 +25,19 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer, kettle],
     budget: 55,
     survivalTime: 5,
+  },
+  {
+    name: 'L04 低功率陷阱',
+    description: '廚下加熱器才 800W，看起來很無害？加上快煮壺撐 8 秒試試。',
+    requiredAppliances: [underSinkHeater, kettle],
+    budget: 85,
+    survivalTime: 8,
+  },
+  {
+    name: 'L05 長時間耐久',
+    description: '烘衣機 + 快煮壺，合計 23.6A。2.0mm² 撐得過 15 秒嗎？',
+    requiredAppliances: [dryer, kettle],
+    budget: 85,
+    survivalTime: 15,
   },
 ] as const;
