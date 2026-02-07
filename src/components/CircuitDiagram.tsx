@@ -71,17 +71,19 @@ export default function CircuitDiagram({ state, isPowered, breakerRated }: Circu
           NFB {breakerRated}A
         </text>
 
-        {/* Wire from NFB to junction */}
-        <line x1="100" y1="50" x2="100" y2="120"
+        {/* Wire from NFB to junction (burned: shortened to create gap) */}
+        <line x1="100" y1="50" x2="100" y2={isBurned ? 113 : 120}
           stroke={wireColor} strokeWidth="4" strokeLinecap="round"
           filter={glowFilter(state)} />
 
-        {/* Junction point */}
-        <circle cx="100" cy="120" r="5" fill={wireColor}
-          filter={glowFilter(state)} />
+        {/* Junction point (hidden when burned) */}
+        {!isBurned && (
+          <circle cx="100" cy="120" r="5" fill={wireColor}
+            filter={glowFilter(state)} />
+        )}
 
-        {/* Wire to outlet */}
-        <line x1="100" y1="120" x2="100" y2="200"
+        {/* Wire to outlet (burned: starts lower to create gap) */}
+        <line x1="100" y1={isBurned ? 127 : 120} x2="100" y2="200"
           stroke={wireColor} strokeWidth="4" strokeLinecap="round"
           filter={glowFilter(state)} />
 
@@ -91,6 +93,20 @@ export default function CircuitDiagram({ state, isPowered, breakerRated }: Circu
         {/* Outlet slots */}
         <rect x="85" y="215" width="8" height="20" rx="2" fill="#444" />
         <rect x="107" y="215" width="8" height="20" rx="2" fill="#444" />
+
+        {/* Burned: exposed copper core + peeled insulation */}
+        {isBurned && (
+          <>
+            {/* Copper core */}
+            <line x1="100" y1="115" x2="100" y2="125" stroke="#d97706" strokeWidth="3" strokeLinecap="round" />
+            {/* Peeled insulation - upper flap */}
+            <polygon points="98,113 94,108 100,113" fill="#1a1a1a" />
+            <polygon points="102,113 106,108 100,113" fill="#1a1a1a" />
+            {/* Peeled insulation - lower flap */}
+            <polygon points="98,127 94,132 100,127" fill="#1a1a1a" />
+            <polygon points="102,127 106,132 100,127" fill="#1a1a1a" />
+          </>
+        )}
 
         {/* Warning smoke particles (wireHeat ≥ 0.3, lighter/smaller/slower than burned) */}
         {isWarning && state.wireHeat >= 0.3 && (
@@ -114,12 +130,18 @@ export default function CircuitDiagram({ state, isPowered, breakerRated }: Circu
           </>
         )}
 
-        {/* Smoke particles when burned */}
+        {/* Fire + smoke particles when burned */}
         {isBurned && (
           <>
-            <circle className="smoke-particle smoke-1" cx="95" cy="115" r="3" fill="rgba(100,100,100,0.6)" />
-            <circle className="smoke-particle smoke-2" cx="105" cy="110" r="4" fill="rgba(80,80,80,0.5)" />
-            <circle className="smoke-particle smoke-3" cx="100" cy="105" r="3" fill="rgba(60,60,60,0.4)" />
+            {/* Fire particles */}
+            <circle className="fire-particle fire-1" cx="96" cy="118" r="4" fill="rgba(255,120,20,0.8)" />
+            <circle className="fire-particle fire-2" cx="104" cy="116" r="3" fill="rgba(255,80,10,0.7)" />
+            <circle className="fire-particle fire-3" cx="100" cy="114" r="5" fill="rgba(255,160,40,0.9)" />
+            <circle className="fire-particle fire-4" cx="98" cy="120" r="3" fill="rgba(255,60,0,0.6)" />
+            {/* Smoke particles */}
+            <circle className="smoke-particle smoke-1" cx="95" cy="108" r="3" fill="rgba(100,100,100,0.6)" />
+            <circle className="smoke-particle smoke-2" cx="105" cy="104" r="4" fill="rgba(80,80,80,0.5)" />
+            <circle className="smoke-particle smoke-3" cx="100" cy="100" r="3" fill="rgba(60,60,60,0.4)" />
           </>
         )}
 

@@ -17,12 +17,11 @@ export default function ResultPanel({ result, state, wire, breaker, cost, budget
   if (result === 'none') return null;
 
   return (
-    <div className="result-overlay">
-      <div
-        className="result-panel"
-        style={{ '--result-border-color': result === 'won' ? '#22c55e' : result === 'over-budget' ? '#eab308' : '#ef4444' } as React.CSSProperties}
-      >
-        {result === 'won' && (
+    <div
+      className="result-panel"
+      style={{ '--result-border-color': result === 'won' ? '#22c55e' : result === 'over-budget' ? '#eab308' : '#ef4444' } as React.CSSProperties}
+    >
+      {result === 'won' && (
           <>
             <h2 className="result-title" style={{ color: '#22c55e' }}>過關！</h2>
             <div className="result-details">
@@ -79,10 +78,9 @@ export default function ResultPanel({ result, state, wire, breaker, cost, budget
           </>
         )}
 
-        <div className="result-actions">
-          <button className="retry-button" onClick={onRetry}>重新嘗試</button>
-          <button className="back-button" onClick={onBackToLevels}>返回關卡選擇</button>
-        </div>
+      <div className="result-actions">
+        <button className="retry-button" onClick={onRetry}>重新嘗試</button>
+        <button className="back-button" onClick={onBackToLevels}>返回關卡選擇</button>
       </div>
     </div>
   );

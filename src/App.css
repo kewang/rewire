@@ -164,22 +164,12 @@ h3, h4 {
 }
 
 /* Result Panel */
-.result-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
 .result-panel {
   background: #1a1a1a;
   border: 2px solid var(--result-border-color, #ef4444);
   border-radius: 12px;
-  padding: 2rem;
-  max-width: 400px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
   text-align: center;
 }
 
@@ -334,6 +324,31 @@ h3, h4 {
 .warning-smoke-1 { animation: smoke-rise 2s ease-out infinite; animation-delay: 0s; }
 .warning-smoke-2 { animation: smoke-rise 2s ease-out infinite; animation-delay: 0.7s; }
 .warning-smoke-3 { animation: smoke-rise 2s ease-out infinite; animation-delay: 1.3s; }
+
+/* Fire particles (faster, orange-to-red fade) */
+.fire-particle {
+  animation: fire-rise 1s ease-out infinite;
+}
+
+.fire-1 { animation-delay: 0s; }
+.fire-2 { animation-delay: 0.25s; }
+.fire-3 { animation-delay: 0.5s; }
+.fire-4 { animation-delay: 0.75s; }
+
+@keyframes fire-rise {
+  0% {
+    opacity: 0.9;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-12px) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-25px) scale(0.3);
+  }
+}
 
 @keyframes smoke-rise {
   0% {
