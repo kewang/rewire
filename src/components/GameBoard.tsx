@@ -3,7 +3,7 @@ import type { Wire, Appliance, Level, SimulationState } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_BREAKER, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialState, step } from '../engine/simulation';
-import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing } from '../engine/audio';
+import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing, startApplianceSounds, stopApplianceSounds } from '../engine/audio';
 import WireSelector from './WireSelector';
 import AppliancePanel from './AppliancePanel';
 import StatusDisplay from './StatusDisplay';
@@ -72,6 +72,7 @@ export default function GameBoard() {
     // Terminal state: tripped or burned
     if (newState.status === 'tripped' || newState.status === 'burned') {
       setIsPowered(false);
+      stopApplianceSounds();
       setResult(newState.status);
       if (newState.status === 'tripped') playTripped();
       else playBurned();
@@ -82,6 +83,7 @@ export default function GameBoard() {
     const level = currentLevelRef.current;
     if (level && newState.elapsed >= level.survivalTime) {
       setIsPowered(false);
+      stopApplianceSounds();
       const wireCost = selectedWireRef.current.costPerMeter * DEFAULT_WIRE_LENGTH;
       const gameResult = wireCost > level.budget ? 'over-budget' : 'won';
       setResult(gameResult);
@@ -97,6 +99,7 @@ export default function GameBoard() {
       cancelAnimationFrame(rafRef.current);
       prevTimeRef.current = 0;
       stopBuzzing();
+      stopApplianceSounds();
       buzzingRef.current = false;
       setIsPowered(false);
       setSimState(createInitialState());
@@ -108,9 +111,10 @@ export default function GameBoard() {
       prevTimeRef.current = 0;
       setIsPowered(true);
       playPowerOn();
+      startApplianceSounds(pluggedAppliances);
       rafRef.current = requestAnimationFrame(tick);
     }
-  }, [isPowered, pluggedAppliances.length, tick]);
+  }, [isPowered, pluggedAppliances, tick]);
 
   useEffect(() => {
     return () => cancelAnimationFrame(rafRef.current);
@@ -120,6 +124,7 @@ export default function GameBoard() {
     cancelAnimationFrame(rafRef.current);
     prevTimeRef.current = 0;
     stopBuzzing();
+    stopApplianceSounds();
     buzzingRef.current = false;
     setIsPowered(false);
     setSimState(createInitialState());
@@ -130,6 +135,7 @@ export default function GameBoard() {
     cancelAnimationFrame(rafRef.current);
     prevTimeRef.current = 0;
     stopBuzzing();
+    stopApplianceSounds();
     buzzingRef.current = false;
     setIsPowered(false);
     setSimState(createInitialState());
@@ -210,6 +216,7 @@ export default function GameBoard() {
             onAdd={handleAddAppliance}
             onRemove={handleRemoveAppliance}
             disabled={isPowered}
+            isPowered={isPowered}
           />
         </section>
       </main>

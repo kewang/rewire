@@ -64,6 +64,19 @@
   background: #2e2a1a;
 }
 
+.card.plugged.operating {
+  animation: appliance-operating 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes appliance-operating {
+  from {
+    box-shadow: 0 0 4px rgba(234, 179, 8, 0.3);
+  }
+  to {
+    box-shadow: 0 0 12px rgba(234, 179, 8, 0.6);
+  }
+}
+
 .card:disabled {
   opacity: 0.5;
   cursor: not-allowed;

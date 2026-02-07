@@ -6,9 +6,10 @@ interface AppliancePanelProps {
   onAdd: (appliance: Appliance) => void;
   onRemove: (index: number) => void;
   disabled: boolean;
+  isPowered: boolean;
 }
 
-export default function AppliancePanel({ available, plugged, onAdd, onRemove, disabled }: AppliancePanelProps) {
+export default function AppliancePanel({ available, plugged, onAdd, onRemove, disabled, isPowered }: AppliancePanelProps) {
   return (
     <div className="appliance-panel">
       <h3>電器</h3>
@@ -34,7 +35,7 @@ export default function AppliancePanel({ available, plugged, onAdd, onRemove, di
             {plugged.map((a, i) => (
               <button
                 key={i}
-                className="card plugged"
+                className={`card plugged${isPowered ? ' operating' : ''}`}
                 onClick={() => onRemove(i)}
                 disabled={disabled}
               >

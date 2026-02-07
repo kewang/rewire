@@ -89,6 +89,129 @@ export function stopBuzzing() {
   buzzGain = null;
 }
 
+// --- Appliance sounds (電器運作環境音) ---
+
+interface ApplianceAudioNode {
+  osc: OscillatorNode;
+  gain: GainNode;
+  filter?: BiquadFilterNode;
+  lfo?: OscillatorNode;
+  lfoGain?: GainNode;
+}
+
+let applianceNodes: ApplianceAudioNode[] = [];
+
+function createApplianceSound(ctx: AudioContext, name: string): ApplianceAudioNode | null {
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+
+  if (name === '吹風機') {
+    // Bandpass-filtered sawtooth to approximate wind noise
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 800;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 0.5;
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    osc.connect(filter);
+    filter.connect(gain);
+    osc.start();
+    return { osc, gain, filter };
+  }
+
+  if (name === '快煮壺') {
+    // Low-frequency sine with LFO amplitude modulation (bubbling)
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 100;
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 3;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.02;
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    osc.connect(gain);
+    lfo.start();
+    osc.start();
+    return { osc, gain, lfo, lfoGain };
+  }
+
+  if (name === '微波爐') {
+    // Steady 60Hz hum
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 60;
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    return { osc, gain };
+  }
+
+  if (name === '廚下加熱器') {
+    // Very quiet 50Hz
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 50;
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    return { osc, gain };
+  }
+
+  if (name === '烘衣機') {
+    // Low-frequency triangle with slight LFO (tumbling vibration)
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = 80;
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 1.5;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.015;
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    osc.connect(gain);
+    lfo.start();
+    osc.start();
+    return { osc, gain, lfo, lfoGain };
+  }
+
+  return null;
+}
+
+/** 開始播放所有已插入電器的運作音效 */
+export function startApplianceSounds(appliances: readonly { readonly name: string }[]) {
+  stopApplianceSounds();
+  try {
+    const ctx = getCtx();
+    for (const a of appliances) {
+      const node = createApplianceSound(ctx, a.name);
+      if (node) applianceNodes.push(node);
+    }
+  } catch {
+    // Audio not available
+  }
+}
+
+/** 停止所有電器運作音效 */
+export function stopApplianceSounds() {
+  for (const n of applianceNodes) {
+    try { n.osc.stop(); } catch { /* already stopped */ }
+    n.osc.disconnect();
+    n.gain.disconnect();
+    n.filter?.disconnect();
+    try { n.lfo?.stop(); } catch { /* already stopped */ }
+    n.lfo?.disconnect();
+    n.lfoGain?.disconnect();
+  }
+  applianceNodes = [];
+}
+
 /** 過關音 */
 export function playWin() {
   playTone(523, 0.15, 'sine');
