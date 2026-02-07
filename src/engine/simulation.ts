@@ -46,9 +46,10 @@ export function step(
   const totalCurrent = calcTotalCurrent(circuit.appliances);
   const elapsed = state.elapsed + dt;
 
-  // 斷路器跳脫判定
+  // 斷路器跳脫判定（實際 NFB 在 1.25 倍額定以上才會快速跳脫）
+  const tripThreshold = circuit.breaker.ratedCurrent * 1.25;
   let breakerTripTimer = state.breakerTripTimer;
-  if (totalCurrent > circuit.breaker.ratedCurrent) {
+  if (totalCurrent > tripThreshold) {
     breakerTripTimer += dt;
     if (breakerTripTimer >= circuit.breaker.tripDelay) {
       return {
