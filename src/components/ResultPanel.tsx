@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import type { SimulationState, Wire, Breaker } from '../types/game';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
@@ -14,10 +15,19 @@ interface ResultPanelProps {
 }
 
 export default function ResultPanel({ result, state, wire, breaker, cost, budget, onRetry, onBackToLevels }: ResultPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (result !== 'none' && panelRef.current) {
+      panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [result]);
+
   if (result === 'none') return null;
 
   return (
     <div
+      ref={panelRef}
       className="result-panel"
       style={{ '--result-border-color': result === 'won' ? '#22c55e' : result === 'over-budget' ? '#eab308' : '#ef4444' } as React.CSSProperties}
     >

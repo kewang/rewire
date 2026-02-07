@@ -1,8 +1,5 @@
-# game-ui Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change game-ui. Update Purpose after archive.
-## Requirements
 ### Requirement: Wire selection
 
 玩家 MUST 能從材料庫中選擇線材，選擇後迴路即時更新。
@@ -23,37 +20,6 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 - **WHEN** viewport 寬度 ≤ 640px
 - **THEN** 線材選擇區 MUST 改為水平滾動列表
 - **AND** 每張線材卡片 MUST 維持足夠寬度以顯示完整文字
-
-### Requirement: Appliance management
-
-玩家 MUST 能將電器加入或移除插座。
-
-#### Scenario: 加入電器
-
-- **WHEN** 玩家點選一個電器
-- **THEN** 該電器 MUST 加入迴路的電器清單
-- **AND** 面板 MUST 即時更新顯示已插入的電器
-
-#### Scenario: 移除電器
-
-- **WHEN** 玩家點選已插入的電器
-- **THEN** 該電器 MUST 從迴路中移除
-
-### Requirement: Power control
-
-玩家 MUST 能透過 NFB 開關控制送電與斷電。
-
-#### Scenario: 送電
-
-- **WHEN** 玩家點擊 NFB 開關且迴路有電器
-- **THEN** 模擬引擎 MUST 開始以 requestAnimationFrame 驅動 step 函式
-- **AND** NFB 開關 MUST 顯示為「ON」狀態
-
-#### Scenario: 斷電
-
-- **WHEN** 玩家點擊已開啟的 NFB 開關
-- **THEN** 模擬迴圈 MUST 停止
-- **AND** 模擬狀態 MUST 重置為初始狀態
 
 ### Requirement: Real-time status display
 
@@ -126,18 +92,3 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 
 - **WHEN** 結果面板渲染完成
 - **THEN** 頁面 MUST 自動平滑捲動使結果面板進入 viewport
-
-### Requirement: Status display text contrast
-
-狀態面板中的所有文字 MUST 在深色背景上具有足夠的對比度（WCAG AA 標準，至少 4.5:1）。
-
-#### Scenario: Label 文字可讀
-
-- **WHEN** 狀態面板顯示時
-- **THEN** label 文字（如「狀態」、「總電流」）MUST 在深色背景上清晰可讀
-
-#### Scenario: Value 文字可讀
-
-- **WHEN** 狀態面板顯示數值時
-- **THEN** 數值文字（如電流值、時間值）MUST 在深色背景上清晰可讀，使用明確設定的亮色前景色
-

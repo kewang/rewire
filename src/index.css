@@ -1,0 +1,89 @@
+:root {
+  /* Color Palette — Industrial Electrical */
+  --color-bg-deep: #0a0c0f;
+  --color-bg-primary: #0f1318;
+  --color-bg-panel: #151b23;
+  --color-bg-card: #1a222d;
+  --color-bg-card-hover: #212b38;
+  --color-bg-card-selected: #132a1e;
+  --color-bg-card-plugged: #2a2412;
+
+  --color-border: #2a3444;
+  --color-border-hover: #4a5a6a;
+  --color-border-selected: #22c55e;
+  --color-border-plugged: #eab308;
+
+  --color-accent-green: #22c55e;
+  --color-accent-amber: #eab308;
+  --color-accent-red: #ef4444;
+  --color-accent-blue: #38bdf8;
+  --color-accent-copper: #d97706;
+
+  --color-text-primary: #e8ecf0;
+  --color-text-secondary: #8a96a6;
+  --color-text-muted: #5a6878;
+
+  /* Typography */
+  --font-display: 'Orbitron', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: system-ui, -apple-system, sans-serif;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 0.75rem;
+  --space-lg: 1rem;
+  --space-xl: 1.5rem;
+  --space-2xl: 2rem;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  --shadow-glow-green: 0 0 20px rgba(34, 197, 94, 0.3);
+  --shadow-glow-amber: 0 0 20px rgba(234, 179, 8, 0.3);
+  --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg-deep);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+
+  /* Subtle industrial texture */
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(56, 189, 248, 0.03) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(234, 179, 8, 0.02) 0%, transparent 50%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 100px,
+      rgba(255, 255, 255, 0.01) 100px,
+      rgba(255, 255, 255, 0.01) 101px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 100px,
+      rgba(255, 255, 255, 0.01) 100px,
+      rgba(255, 255, 255, 0.01) 101px
+    );
+}
+
+#root {
+  min-height: 100vh;
+}

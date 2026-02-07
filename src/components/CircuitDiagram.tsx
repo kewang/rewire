@@ -44,7 +44,7 @@ export default function CircuitDiagram({ state, isPowered, breakerRated }: Circu
 
   return (
     <div className={`circuit-diagram ${isWarning ? 'warning-pulse' : ''} ${isBurned ? 'burned-smoke' : ''}`}>
-      <svg viewBox="0 0 200 280" width="200" height="280">
+      <svg viewBox="0 0 200 280" width="100%" style={{ maxWidth: 260 }}>
         <defs>
           <filter id="glow-warning">
             <feGaussianBlur stdDeviation="3" result="blur" />
