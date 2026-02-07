@@ -3,11 +3,13 @@ import type { Wire, Appliance, Level, SimulationState } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_BREAKER, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialState, step } from '../engine/simulation';
+import { playPowerOn, playTripped, playBurned, playWin } from '../engine/audio';
 import WireSelector from './WireSelector';
 import AppliancePanel from './AppliancePanel';
 import StatusDisplay from './StatusDisplay';
 import ResultPanel from './ResultPanel';
 import LevelSelect from './LevelSelect';
+import CircuitDiagram from './CircuitDiagram';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
 
@@ -58,6 +60,8 @@ export default function GameBoard() {
     if (newState.status === 'tripped' || newState.status === 'burned') {
       setIsPowered(false);
       setResult(newState.status);
+      if (newState.status === 'tripped') playTripped();
+      else playBurned();
       return;
     }
 
@@ -66,7 +70,9 @@ export default function GameBoard() {
     if (level && newState.elapsed >= level.survivalTime) {
       setIsPowered(false);
       const wireCost = selectedWireRef.current.costPerMeter * DEFAULT_WIRE_LENGTH;
-      setResult(wireCost > level.budget ? 'over-budget' : 'won');
+      const gameResult = wireCost > level.budget ? 'over-budget' : 'won';
+      setResult(gameResult);
+      if (gameResult === 'won') playWin();
       return;
     }
 
@@ -86,6 +92,7 @@ export default function GameBoard() {
       setResult('none');
       prevTimeRef.current = 0;
       setIsPowered(true);
+      playPowerOn();
       rafRef.current = requestAnimationFrame(tick);
     }
   }, [isPowered, pluggedAppliances.length, tick]);
@@ -162,16 +169,18 @@ export default function GameBoard() {
         </section>
 
         <section className="panel-center">
-          <div className="nfb-control">
-            <h3>NFB 斷路器（{DEFAULT_BREAKER.ratedCurrent}A）</h3>
-            <button
-              className={`nfb-switch ${isPowered ? 'on' : 'off'}`}
-              onClick={handlePowerToggle}
-              disabled={pluggedAppliances.length === 0 && !isPowered}
-            >
-              {isPowered ? 'ON — 送電中' : 'OFF — 斷電'}
-            </button>
-          </div>
+          <CircuitDiagram
+            state={simState}
+            isPowered={isPowered}
+            breakerRated={DEFAULT_BREAKER.ratedCurrent}
+          />
+          <button
+            className={`nfb-switch ${isPowered ? 'on' : 'off'}`}
+            onClick={handlePowerToggle}
+            disabled={pluggedAppliances.length === 0 && !isPowered}
+          >
+            {isPowered ? 'ON — 送電中' : 'OFF — 斷電'}
+          </button>
         </section>
 
         <section className="panel-right">
