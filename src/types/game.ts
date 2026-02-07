@@ -36,6 +36,28 @@ export interface Circuit {
 /** 模擬狀態 */
 export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned';
 
+/** 模擬動態狀態 */
+export interface SimulationState {
+  /** 當前狀態 */
+  readonly status: SimulationStatus;
+  /** 當前總電流 (A) */
+  readonly totalCurrent: number;
+  /** 線材熱度 (0.0 ~ 1.0，1.0 = 燒毀) */
+  readonly wireHeat: number;
+  /** 已通電時間 (秒) */
+  readonly elapsed: number;
+  /** 斷路器跳脫計時器 (秒，電流超過額定時累計) */
+  readonly breakerTripTimer: number;
+}
+
+/** 模擬可調參數 */
+export interface SimulationConfig {
+  /** 過載時每秒熱度上升係數 */
+  readonly heatRate: number;
+  /** 正常時每秒熱度冷卻係數 */
+  readonly coolRate: number;
+}
+
 /** 關卡定義 */
 export interface Level {
   /** 關卡名稱 */
