@@ -1,0 +1,218 @@
+/* Game Board Layout */
+.game-board {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.game-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.game-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.game-main {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.panel-left,
+.panel-right {
+  flex: 1;
+}
+
+.panel-center {
+  flex: 0 0 200px;
+  text-align: center;
+}
+
+/* Cards */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card {
+  padding: 0.75rem;
+  border: 2px solid #444;
+  border-radius: 8px;
+  background: #1a1a1a;
+  color: #eee;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.card:hover:not(:disabled) {
+  border-color: #888;
+}
+
+.card.selected {
+  border-color: #22c55e;
+  background: #1a2e1a;
+}
+
+.card.plugged {
+  border-color: #eab308;
+  background: #2e2a1a;
+}
+
+.card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card-title {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.card-detail {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.card-hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+h3, h4 {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+/* NFB Switch */
+.nfb-control h3 {
+  margin-bottom: 0.75rem;
+}
+
+.nfb-switch {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #444;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.nfb-switch.off {
+  background: #333;
+  color: #aaa;
+}
+
+.nfb-switch.on {
+  background: #22c55e;
+  color: #000;
+  border-color: #22c55e;
+}
+
+.nfb-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Status Display */
+.status-display {
+  display: inline-block;
+  text-align: left;
+  background: #111;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+}
+
+.status-label {
+  color: #888;
+  min-width: 5rem;
+}
+
+.status-value {
+  font-weight: bold;
+}
+
+.heat-bar {
+  width: 100px;
+  height: 10px;
+  background: #333;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.heat-fill {
+  height: 100%;
+  transition: width 0.1s;
+  border-radius: 5px;
+}
+
+/* Result Panel */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.result-panel {
+  background: #1a1a1a;
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  text-align: center;
+}
+
+.result-title {
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.result-details {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.result-details p {
+  margin: 0.5rem 0;
+}
+
+.result-hint {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 0.75rem;
+}
+
+.retry-button {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: #000;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.retry-button:hover {
+  background: #16a34a;
+}

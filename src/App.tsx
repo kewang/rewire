@@ -1,10 +1,8 @@
+import './App.css'
+import GameBoard from './components/GameBoard'
+
 function App() {
-  return (
-    <div>
-      <h1>Project Rewire</h1>
-      <p>配電盤燒線模擬器</p>
-    </div>
-  )
+  return <GameBoard />
 }
 
 export default App
