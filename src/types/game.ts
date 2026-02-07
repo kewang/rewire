@@ -62,6 +62,8 @@ export interface SimulationConfig {
 export interface Level {
   /** 關卡名稱 */
   readonly name: string;
+  /** 關卡描述 */
+  readonly description: string;
   /** 必須正常運作的電器 */
   readonly requiredAppliances: readonly Appliance[];
   /** 預算 */

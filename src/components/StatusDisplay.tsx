@@ -4,6 +4,8 @@ interface StatusDisplayProps {
   state: SimulationState;
   wireMaxCurrent: number;
   breakerRated: number;
+  cost: number;
+  budget: number;
 }
 
 const STATUS_LABELS: Record<SimulationState['status'], string> = {
@@ -20,7 +22,9 @@ const STATUS_COLORS: Record<SimulationState['status'], string> = {
   burned: '#ef4444',
 };
 
-export default function StatusDisplay({ state, wireMaxCurrent, breakerRated }: StatusDisplayProps) {
+export default function StatusDisplay({ state, wireMaxCurrent, breakerRated, cost, budget }: StatusDisplayProps) {
+  const overBudget = cost > budget;
+
   return (
     <div className="status-display">
       <div className="status-row">
@@ -53,6 +57,12 @@ export default function StatusDisplay({ state, wireMaxCurrent, breakerRated }: S
       <div className="status-row">
         <span className="status-label">通電時間</span>
         <span className="status-value">{state.elapsed.toFixed(1)}s</span>
+      </div>
+      <div className="status-row">
+        <span className="status-label">成本/預算</span>
+        <span className="status-value" style={{ color: overBudget ? '#ef4444' : '#22c55e' }}>
+          ${cost} / ${budget}{overBudget ? ' (超預算！)' : ''}
+        </span>
       </div>
     </div>
   );

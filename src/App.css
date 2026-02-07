@@ -216,3 +216,87 @@ h3, h4 {
 .retry-button:hover {
   background: #16a34a;
 }
+
+.result-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #666;
+  border-radius: 8px;
+  background: transparent;
+  color: #ccc;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  border-color: #aaa;
+  color: #fff;
+}
+
+/* Header */
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.header-top h1 {
+  margin: 0;
+}
+
+.level-goal {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+/* Level Select */
+.level-select {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+.level-select h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.level-select .subtitle {
+  color: #888;
+  margin: 0.25rem 0 2rem;
+}
+
+.level-select h2 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.level-card {
+  padding: 1rem;
+  border: 2px solid #444;
+  border-radius: 8px;
+  background: #1a1a1a;
+  color: #eee;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.level-card:hover {
+  border-color: #22c55e;
+}

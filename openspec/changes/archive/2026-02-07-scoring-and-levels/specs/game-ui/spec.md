@@ -1,53 +1,4 @@
-# game-ui Specification
-
-## Purpose
-TBD - created by archiving change game-ui. Update Purpose after archive.
-## Requirements
-### Requirement: Wire selection
-
-玩家 MUST 能從材料庫中選擇線材，選擇後迴路即時更新。
-
-#### Scenario: 顯示可選線材
-
-- **WHEN** 遊戲畫面載入
-- **THEN** MUST 顯示所有可用線材卡片，包含線徑、安全電流、每米成本
-
-#### Scenario: 切換線材
-
-- **WHEN** 玩家點選不同的線材卡片
-- **THEN** 當前迴路的線材 MUST 更新為選擇的線材
-- **AND** 已選線材 MUST 有視覺標示
-
-### Requirement: Appliance management
-
-玩家 MUST 能將電器加入或移除插座。
-
-#### Scenario: 加入電器
-
-- **WHEN** 玩家點選一個電器
-- **THEN** 該電器 MUST 加入迴路的電器清單
-- **AND** 面板 MUST 即時更新顯示已插入的電器
-
-#### Scenario: 移除電器
-
-- **WHEN** 玩家點選已插入的電器
-- **THEN** 該電器 MUST 從迴路中移除
-
-### Requirement: Power control
-
-玩家 MUST 能透過 NFB 開關控制送電與斷電。
-
-#### Scenario: 送電
-
-- **WHEN** 玩家點擊 NFB 開關且迴路有電器
-- **THEN** 模擬引擎 MUST 開始以 requestAnimationFrame 驅動 step 函式
-- **AND** NFB 開關 MUST 顯示為「ON」狀態
-
-#### Scenario: 斷電
-
-- **WHEN** 玩家點擊已開啟的 NFB 開關
-- **THEN** 模擬迴圈 MUST 停止
-- **AND** 模擬狀態 MUST 重置為初始狀態
+## MODIFIED Requirements
 
 ### Requirement: Real-time status display
 
@@ -99,4 +50,3 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 
 - **WHEN** 過關判定成功但超預算
 - **THEN** MUST 顯示失敗面板，說明超預算原因與金額差異
-
