@@ -76,6 +76,8 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
   }
 
   // Multi circuit: overall + per-circuit summaries
+  const hasMixedVoltage = new Set(circuits.map(c => c.voltage)).size > 1;
+
   return (
     <div className="status-display">
       <div className="status-row">
@@ -89,7 +91,10 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
         if (!cs) return null;
         return (
           <div key={circuit.id} className="status-row">
-            <span className="status-label">{circuit.label}</span>
+            <span className="status-label">
+              {circuit.label}
+              {hasMixedVoltage && <span style={{ color: circuit.voltage === 220 ? '#f87171' : '#4ade80', fontSize: '0.75em', marginLeft: '4px' }}>{circuit.voltage}V</span>}
+            </span>
             <span className="status-value" style={{ color: STATUS_COLORS[cs.status] }}>
               {STATUS_LABELS[cs.status]} {cs.totalCurrent.toFixed(1)}A
             </span>

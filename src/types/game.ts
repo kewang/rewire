@@ -35,6 +35,8 @@ export interface Circuit {
   readonly id: CircuitId;
   /** 迴路顯示名稱 */
   readonly label: string;
+  /** 迴路電壓 (V) */
+  readonly voltage: 110 | 220;
   readonly breaker: Breaker;
   readonly wire: Wire;
   readonly appliances: readonly Appliance[];
@@ -119,6 +121,8 @@ export interface CircuitConfig {
   readonly id: CircuitId;
   /** 迴路顯示名稱 */
   readonly label: string;
+  /** 迴路電壓 (V) */
+  readonly voltage: 110 | 220;
   /** NFB 配置 */
   readonly breaker: Breaker;
   /** 可分配到此迴路的電器清單 */

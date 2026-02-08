@@ -65,6 +65,7 @@ export default function GameBoard() {
     circuitConfigs.map(config => ({
       id: config.id,
       label: config.label,
+      voltage: config.voltage,
       breaker: config.breaker,
       wire: circuitWires[config.id] ?? DEFAULT_WIRES[0],
       appliances: circuitAppliances[config.id] ?? [],

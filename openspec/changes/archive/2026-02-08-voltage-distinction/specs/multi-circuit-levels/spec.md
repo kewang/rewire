@@ -1,67 +1,4 @@
-# multi-circuit-levels Specification
-
-## Purpose
-定義多迴路關卡 L06-L09 的配置規格，包含迴路數量、電壓設定、電器分配、預算與通關條件。
-
-## Requirements
-### Requirement: L06 dual-circuit introductory level
-
-系統 MUST 提供 L06 關卡「雙迴路入門」，包含廚房和客廳兩條迴路，讓玩家首次體驗多迴路策略。
-
-#### Scenario: L06 關卡配置
-
-- **WHEN** 載入 L06
-- **THEN** 關卡 MUST 包含 2 條迴路：
-  - c1「廚房」: 20A NFB，可用電器 = [快煮壺, 微波爐]
-  - c2「客廳」: 20A NFB，可用電器 = [吹風機]
-- **AND** requiredAppliances MUST 為 [快煮壺, 微波爐, 吹風機]
-- **AND** 預算 MUST 為 $120
-- **AND** survivalTime MUST 為 8 秒
-
-#### Scenario: L06 正確策略可通關
-
-- **WHEN** 玩家為 c1 選擇 3.5mm² 線材、c2 選擇 1.6mm² 線材
-- **AND** 將快煮壺和微波爐分配到 c1，吹風機分配到 c2
-- **THEN** 總成本 MUST 為 $110（$80 + $30）
-- **AND** 兩條迴路 MUST 在 8 秒內維持 normal 狀態
-- **AND** MUST 判定為過關
-
-#### Scenario: L06 錯誤策略會失敗
-
-- **WHEN** 玩家為 c1 選擇 2.0mm² 線材
-- **AND** 將快煮壺和微波爐分配到 c1（合計 23.6A，超過 20A 線材上限）
-- **THEN** c1 MUST 進入 warning 狀態
-- **AND** c1 線材 MUST 在 8 秒內因過載燒毀
-
-### Requirement: L07 triple-circuit budget pressure level
-
-系統 MUST 提供 L07 關卡「三迴路預算壓力」，三條迴路搭配緊縮預算，迫使玩家精準選擇線徑。
-
-#### Scenario: L07 關卡配置
-
-- **WHEN** 載入 L07
-- **THEN** 關卡 MUST 包含 3 條迴路：
-  - c1「廚房」: 20A NFB，可用電器 = [快煮壺, 廚下加熱器]
-  - c2「臥室」: 20A NFB，可用電器 = [吹風機]
-  - c3「洗衣間」: 20A NFB，可用電器 = [烘衣機]
-- **AND** requiredAppliances MUST 為 [快煮壺, 廚下加熱器, 吹風機, 烘衣機]
-- **AND** 預算 MUST 為 $130
-- **AND** survivalTime MUST 為 10 秒
-
-#### Scenario: L07 預算內通關策略
-
-- **WHEN** 玩家為 c1 選擇 2.0mm²、c2 和 c3 各選 1.6mm² 線材
-- **THEN** 總成本 MUST 為 $110（$50 + $30 + $30）
-- **AND** c1 MUST 進入 warning 狀態（20.9A > 20A maxCurrent）但不燒毀
-- **AND** c2 和 c3 MUST 維持 normal 狀態
-- **AND** MUST 判定為過關
-
-#### Scenario: L07 使用最安全線材會超預算
-
-- **WHEN** 玩家為 c1 選擇 3.5mm²（$80）、c2 和 c3 各選 1.6mm²（$30）
-- **THEN** 總成本 MUST 為 $140
-- **AND** 超過預算 $130
-- **AND** MUST 判定為超預算失敗
+## MODIFIED Requirements
 
 ### Requirement: L08 triple-circuit high-load endurance level
 
@@ -106,6 +43,8 @@
 - **WHEN** 玩家選擇 c3（220V）迴路
 - **THEN** 只有烘衣機（220V）MUST 可被分配
 - **AND** 110V 電器（快煮壺、微波爐、廚下加熱器）MUST 顯示為 disabled
+
+## ADDED Requirements
 
 ### Requirement: L09 voltage-trap level
 

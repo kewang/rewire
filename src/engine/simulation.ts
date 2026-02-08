@@ -16,9 +16,12 @@ const DEFAULT_CONFIG: SimulationConfig = {
   coolRate: 0.15,
 };
 
-/** 計算電器的總電流 I_total = Σ(P / V) */
-export function calcTotalCurrent(appliances: readonly Appliance[]): number {
-  return appliances.reduce((sum, a) => sum + a.power / a.voltage, 0);
+/** 計算電器的總電流 I_total = Σ(P / V)，可選過濾特定電壓 */
+export function calcTotalCurrent(appliances: readonly Appliance[], circuitVoltage?: 110 | 220): number {
+  return appliances.reduce((sum, a) => {
+    if (circuitVoltage !== undefined && a.voltage !== circuitVoltage) return sum;
+    return sum + a.power / a.voltage;
+  }, 0);
 }
 
 /** 建立初始模擬狀態（單迴路，向後相容） */
@@ -71,7 +74,8 @@ export function step(
     return state;
   }
 
-  const totalCurrent = calcTotalCurrent(circuit.appliances);
+  // Defensive: only count appliances matching circuit voltage
+  const totalCurrent = calcTotalCurrent(circuit.appliances, circuit.voltage);
 
   // 斷路器跳脫判定（實際 NFB 在 1.25 倍額定以上才會快速跳脫）
   const tripThreshold = circuit.breaker.ratedCurrent * 1.25;

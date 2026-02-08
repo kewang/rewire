@@ -15,8 +15,13 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
   const [selectedCircuitId, setSelectedCircuitId] = useState<CircuitId>(circuitConfigs[0]?.id ?? '');
 
   const selectedConfig = circuitConfigs.find(c => c.id === selectedCircuitId) ?? circuitConfigs[0];
+  const circuitVoltage = selectedConfig?.voltage ?? 110;
   const available = selectedConfig?.availableAppliances ?? [];
   const plugged = circuitAppliances[selectedCircuitId] ?? [];
+
+  // Check if level has mixed voltages (to decide whether to show voltage badges)
+  const hasMixedVoltage = circuitConfigs.length > 1 &&
+    new Set(circuitConfigs.map(c => c.voltage)).size > 1;
 
   return (
     <div className="appliance-panel">
@@ -32,24 +37,35 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
               onClick={() => setSelectedCircuitId(config.id)}
             >
               {config.label}
+              {hasMixedVoltage && <span className="voltage-tab-badge">{config.voltage}V</span>}
             </button>
           ))}
         </div>
       )}
 
       <div className="card-list">
-        {available.map((a) => (
-          <button
-            key={a.name}
-            className="card"
-            onClick={() => onAdd(selectedCircuitId, a)}
-            disabled={disabled}
-          >
-            <div className="card-title">{a.name}</div>
-            <div className="card-detail">{a.power}W / {a.voltage}V</div>
-            <div className="card-detail">≈ {(a.power / a.voltage).toFixed(1)}A</div>
-          </button>
-        ))}
+        {available.map((a) => {
+          const voltageIncompat = a.voltage !== circuitVoltage;
+          return (
+            <button
+              key={a.name}
+              className={`card${voltageIncompat ? ' voltage-disabled' : ''}`}
+              onClick={() => !voltageIncompat && onAdd(selectedCircuitId, a)}
+              disabled={disabled || voltageIncompat}
+              title={voltageIncompat ? `需要 ${a.voltage}V 迴路` : undefined}
+            >
+              <div className="card-title">
+                {a.name}
+                {hasMixedVoltage && <span className={`voltage-badge v${a.voltage}`}>{a.voltage}V</span>}
+              </div>
+              <div className="card-detail">{a.power}W / {a.voltage}V</div>
+              <div className="card-detail">≈ {(a.power / a.voltage).toFixed(1)}A</div>
+              {voltageIncompat && (
+                <div className="card-hint voltage-hint">需要 {a.voltage}V 迴路</div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Plugged appliances - show per circuit for multi, flat for single */}

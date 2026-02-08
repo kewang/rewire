@@ -82,6 +82,7 @@ function SingleCircuitSVG({
   flashActive,
   xOffset,
   showLabel,
+  showVoltageLabel,
 }: {
   circuit: Circuit;
   circuitState: CircuitState;
@@ -96,11 +97,16 @@ function SingleCircuitSVG({
   flashActive: boolean;
   xOffset: number;
   showLabel: boolean;
+  showVoltageLabel: boolean;
 }) {
   const cx = xOffset + 100; // center x of this circuit
   const wireColor = heatToColor(circuitState.wireHeat);
   const isWarning = circuitState.status === 'warning';
   const isBurned = circuitState.status === 'burned';
+  const is220V = circuit.voltage === 220;
+
+  // Dual-line offset for 220V (lines at cx±2)
+  const DUAL_OFFSET = 3;
 
   const showWire = isWired && !isDragging;
   const showPlaceholder = !isWired && !(isDragging && isOverDropZone);
@@ -117,26 +123,40 @@ function SingleCircuitSVG({
   const leverHandleY = isPowered ? leverOnY : leverOffY;
   const leverHandleX = leverTrackX + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2;
 
+  // NFB sizing: 2P is wider
+  const nfbWidth = is220V ? 110 : 100;
+  const nfbX = is220V ? xOffset + 55 : xOffset + 60;
+  const poleLabel = is220V ? '2P' : '1P';
+
   return (
     <g>
-      {/* Circuit label */}
+      {/* Circuit label + voltage tag */}
       {showLabel && (
-        <text x={cx} y={286} textAnchor="middle" fill="#8a96a6" fontSize="9"
+        <text x={cx} y={286} textAnchor="middle" fontSize="9"
           fontFamily="var(--font-mono)">
-          {circuit.label}
+          <tspan fill="#8a96a6">{circuit.label}</tspan>
+          {showVoltageLabel && (
+            <tspan fill={is220V ? '#f87171' : '#4ade80'} fontSize="8"> {circuit.voltage}V</tspan>
+          )}
         </text>
       )}
 
       {/* NFB Breaker body */}
-      <rect x={xOffset + 60} y={10} width={100} height={40} rx={4}
-        fill="#2a2a2a" stroke="#555" strokeWidth={1.5} />
-      <text x={xOffset + 95} y={28} textAnchor="middle" fill="#aaa"
+      <rect x={nfbX} y={10} width={nfbWidth} height={40} rx={4}
+        fill="#2a2a2a" stroke={is220V ? '#744' : '#555'} strokeWidth={1.5} />
+      <text x={xOffset + 85} y={28} textAnchor="middle" fill="#aaa"
         fontSize={10} fontWeight="bold" fontFamily="var(--font-mono)">
         NFB
       </text>
-      <text x={xOffset + 95} y={42} textAnchor="middle" fill="#777"
+      <text x={xOffset + 85} y={42} textAnchor="middle" fill="#777"
         fontSize={9} fontFamily="var(--font-mono)">
         {circuit.breaker.ratedCurrent}A
+      </text>
+      {/* Pole type label */}
+      <text x={xOffset + 110} y={28} textAnchor="middle"
+        fill={is220V ? '#f87171' : '#777'} fontSize={8} fontWeight="bold"
+        fontFamily="var(--font-mono)">
+        {poleLabel}
       </text>
 
       {/* Lever track */}
@@ -170,12 +190,23 @@ function SingleCircuitSVG({
 
       {/* === Wiring states === */}
 
-      {/* Placeholder: grey dashed line when not wired */}
+      {/* Placeholder: grey dashed line(s) when not wired */}
       {showPlaceholder && (
         <>
-          <line x1={cx} y1={50} x2={cx} y2={200}
-            stroke="#555" strokeWidth={3} strokeDasharray="8 6"
-            strokeLinecap="round" opacity={0.5} />
+          {is220V ? (
+            <>
+              <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={200}
+                stroke="#555" strokeWidth={2} strokeDasharray="8 6"
+                strokeLinecap="round" opacity={0.5} />
+              <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={200}
+                stroke="#555" strokeWidth={2} strokeDasharray="8 6"
+                strokeLinecap="round" opacity={0.5} />
+            </>
+          ) : (
+            <line x1={cx} y1={50} x2={cx} y2={200}
+              stroke="#555" strokeWidth={3} strokeDasharray="8 6"
+              strokeLinecap="round" opacity={0.5} />
+          )}
           <text x={cx} y={140} textAnchor="middle" fill="#888" fontSize={10}
             fontFamily="var(--font-mono)">
             拖曳線材
@@ -187,66 +218,143 @@ function SingleCircuitSVG({
         </>
       )}
 
-      {/* Preview: dashed colored line following cursor during drag */}
+      {/* Preview: dashed colored line(s) following cursor during drag */}
       {showPreviewLine && (
         <>
-          <line x1={cx} y1={50} x2={cx} y2={previewY}
-            stroke={previewColor} strokeWidth={4} strokeDasharray="10 5"
-            strokeLinecap="round" opacity={0.8} />
+          {is220V ? (
+            <>
+              <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={previewY}
+                stroke="#ef4444" strokeWidth={3} strokeDasharray="10 5"
+                strokeLinecap="round" opacity={0.8} />
+              <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={previewY}
+                stroke="#222" strokeWidth={3} strokeDasharray="10 5"
+                strokeLinecap="round" opacity={0.8} />
+            </>
+          ) : (
+            <line x1={cx} y1={50} x2={cx} y2={previewY}
+              stroke={previewColor} strokeWidth={4} strokeDasharray="10 5"
+              strokeLinecap="round" opacity={0.8} />
+          )}
           {previewY > 80 && (
-            <circle cx={cx} cy={previewY} r={4} fill={previewColor} opacity={0.8} />
+            <circle cx={cx} cy={previewY} r={4} fill={is220V ? '#ef4444' : previewColor} opacity={0.8} />
           )}
         </>
       )}
 
-      {/* Connected wire: solid line with color based on wire gauge */}
+      {/* Connected wire: solid line(s) with color based on wire gauge */}
       {showWire && !isPowered && !isBurned && (
-        <>
-          <line x1={cx} y1={50} x2={cx} y2={120}
-            stroke={connectedColor} strokeWidth={4} strokeLinecap="round"
-            className={flashActive ? 'wire-flash' : 'wire-connected'} />
-          <circle cx={cx} cy={120} r={5} fill={connectedColor}
-            className={flashActive ? 'junction-flash' : ''} />
-          <line x1={cx} y1={120} x2={cx} y2={200}
-            stroke={connectedColor} strokeWidth={4} strokeLinecap="round"
-            className={flashActive ? 'wire-flash' : 'wire-connected'} />
-        </>
+        is220V ? (
+          <>
+            <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={120}
+              stroke="#ef4444" strokeWidth={3} strokeLinecap="round"
+              className={flashActive ? 'wire-flash' : 'wire-connected'} />
+            <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={120}
+              stroke="#333" strokeWidth={3} strokeLinecap="round"
+              className={flashActive ? 'wire-flash' : 'wire-connected'} />
+            <circle cx={cx} cy={120} r={5} fill={connectedColor}
+              className={flashActive ? 'junction-flash' : ''} />
+            <line x1={cx - DUAL_OFFSET} y1={120} x2={cx - DUAL_OFFSET} y2={200}
+              stroke="#ef4444" strokeWidth={3} strokeLinecap="round"
+              className={flashActive ? 'wire-flash' : 'wire-connected'} />
+            <line x1={cx + DUAL_OFFSET} y1={120} x2={cx + DUAL_OFFSET} y2={200}
+              stroke="#333" strokeWidth={3} strokeLinecap="round"
+              className={flashActive ? 'wire-flash' : 'wire-connected'} />
+          </>
+        ) : (
+          <>
+            <line x1={cx} y1={50} x2={cx} y2={120}
+              stroke={connectedColor} strokeWidth={4} strokeLinecap="round"
+              className={flashActive ? 'wire-flash' : 'wire-connected'} />
+            <circle cx={cx} cy={120} r={5} fill={connectedColor}
+              className={flashActive ? 'junction-flash' : ''} />
+            <line x1={cx} y1={120} x2={cx} y2={200}
+              stroke={connectedColor} strokeWidth={4} strokeLinecap="round"
+              className={flashActive ? 'wire-flash' : 'wire-connected'} />
+          </>
+        )
       )}
 
       {/* Powered wire: uses heat color */}
       {showWire && isPowered && !isBurned && (
-        <>
-          <line x1={cx} y1={50} x2={cx} y2={120}
-            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
-            filter={glowFilterId(circuitState.status)} />
-          <circle cx={cx} cy={120} r={5} fill={wireColor}
-            filter={glowFilterId(circuitState.status)} />
-          <line x1={cx} y1={120} x2={cx} y2={200}
-            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
-            filter={glowFilterId(circuitState.status)} />
-        </>
+        is220V ? (
+          <>
+            <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={120}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={120}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <circle cx={cx} cy={120} r={5} fill={wireColor}
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx - DUAL_OFFSET} y1={120} x2={cx - DUAL_OFFSET} y2={200}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx + DUAL_OFFSET} y1={120} x2={cx + DUAL_OFFSET} y2={200}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+          </>
+        ) : (
+          <>
+            <line x1={cx} y1={50} x2={cx} y2={120}
+              stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <circle cx={cx} cy={120} r={5} fill={wireColor}
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx} y1={120} x2={cx} y2={200}
+              stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+          </>
+        )
       )}
 
       {/* Burned wire */}
       {isBurned && (
-        <>
-          <line x1={cx} y1={50} x2={cx} y2={113}
-            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
-            filter={glowFilterId(circuitState.status)} />
-          <line x1={cx} y1={127} x2={cx} y2={200}
-            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
-            filter={glowFilterId(circuitState.status)} />
-        </>
+        is220V ? (
+          <>
+            <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={113}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={113}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx - DUAL_OFFSET} y1={127} x2={cx - DUAL_OFFSET} y2={200}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx + DUAL_OFFSET} y1={127} x2={cx + DUAL_OFFSET} y2={200}
+              stroke={wireColor} strokeWidth={3} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+          </>
+        ) : (
+          <>
+            <line x1={cx} y1={50} x2={cx} y2={113}
+              stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+            <line x1={cx} y1={127} x2={cx} y2={200}
+              stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+              filter={glowFilterId(circuitState.status)} />
+          </>
+        )
       )}
 
-      {/* Outlet */}
+      {/* Outlet: T-type for 220V, standard dual-flat for 110V */}
       <rect x={xOffset + 70} y={200} width={60} height={50} rx={6}
         fill="#222"
-        stroke={isOverDropZone ? '#eab308' : '#666'}
+        stroke={isOverDropZone ? '#eab308' : (is220V ? '#744' : '#666')}
         strokeWidth={isOverDropZone ? 3 : 2}
         filter={isOverDropZone ? 'url(#glow-drop)' : 'none'} />
-      <rect x={xOffset + 85} y={215} width={8} height={20} rx={2} fill="#444" />
-      <rect x={xOffset + 107} y={215} width={8} height={20} rx={2} fill="#444" />
+      {is220V ? (
+        <>
+          {/* T-type outlet: horizontal bar + vertical pin */}
+          <rect x={xOffset + 83} y={215} width={34} height={6} rx={2} fill="#555" />
+          <rect x={xOffset + 96} y={221} width={8} height={16} rx={2} fill="#555" />
+        </>
+      ) : (
+        <>
+          {/* Standard dual-flat outlet */}
+          <rect x={xOffset + 85} y={215} width={8} height={20} rx={2} fill="#444" />
+          <rect x={xOffset + 107} y={215} width={8} height={20} rx={2} fill="#444" />
+        </>
+      )}
 
       {/* Burned: exposed copper core + peeled insulation */}
       {isBurned && (
@@ -319,6 +427,9 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
   const n = circuits.length;
   const svgWidth = n * CIRCUIT_WIDTH;
   const isSingle = n === 1;
+
+  // Show voltage labels only when there are mixed voltages
+  const hasMixedVoltage = n > 1 && new Set(circuits.map(c => c.voltage)).size > 1;
 
   // Lever drag state (global lever)
   const leverDragging = useRef(false);
@@ -492,6 +603,7 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
               flashActive={flashCircuitId === cId}
               xOffset={i * CIRCUIT_WIDTH}
               showLabel={!isSingle}
+              showVoltageLabel={hasMixedVoltage}
             />
           );
         })}

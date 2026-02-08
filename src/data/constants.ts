@@ -9,13 +9,14 @@ export const DEFAULT_WIRES = [
   { crossSection: 8, maxCurrent: 45, costPerMeter: 18 },
 ] as const satisfies readonly Wire[];
 
-/** 預設電器（PRD v0.2 第 3 節） */
+/** 預設電器（PRD v0.2 第 3 節 + v0.3 電壓區分） */
 export const DEFAULT_APPLIANCES = [
   { name: '吹風機', power: 1200, voltage: 110 },
   { name: '快煮壺', power: 1500, voltage: 110 },
   { name: '微波爐', power: 1100, voltage: 110 },
   { name: '廚下加熱器', power: 800, voltage: 110 },
   { name: '烘衣機', power: 2200, voltage: 220 },
+  { name: '電熱水器', power: 4400, voltage: 220 },
 ] as const satisfies readonly Appliance[];
 
 /** 預設 NFB（PRD v0.1 第 6 節） */

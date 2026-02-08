@@ -32,6 +32,7 @@ export function createSingleCircuitLevel(opts: {
       {
         id: 'c1',
         label: '主迴路',
+        voltage: 110,
         breaker,
         availableAppliances: opts.requiredAppliances,
       },
@@ -63,6 +64,7 @@ export function toLegacyCircuit(
   return {
     id: config.id,
     label: config.label,
+    voltage: config.voltage,
     breaker: config.breaker,
     wire: connectedWire,
     appliances: assignedAppliances,
