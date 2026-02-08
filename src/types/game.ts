@@ -50,6 +50,20 @@ export interface SimulationState {
   readonly breakerTripTimer: number;
 }
 
+/** 拖拉接線狀態 */
+export interface WiringState {
+  /** 是否正在拖曳 */
+  readonly isDragging: boolean;
+  /** 正在拖曳的線材 */
+  readonly dragWire: Wire | null;
+  /** SVG 座標系中的游標位置 */
+  readonly cursorPos: { readonly x: number; readonly y: number } | null;
+  /** 是否已完成接線 */
+  readonly isWired: boolean;
+  /** 已連接的線材 */
+  readonly connectedWire: Wire | null;
+}
+
 /** 模擬可調參數 */
 export interface SimulationConfig {
   /** 過載時每秒熱度上升係數 */

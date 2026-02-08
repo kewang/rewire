@@ -59,6 +59,30 @@
 - ResultPanel 自動 scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 - 電路圖 SVG 響應式：width="100%" maxWidth=260
 
+## Testing Workflow
+
+每個 change 實作完成後，正式交付人類測試前，MUST 用 agent-browser 執行 smoke test：
+
+### agent-browser 負責驗證（自動化適合的項目）
+- UI 渲染：各元件是否正確顯示、文字內容是否正確
+- 頁面流程：關卡選擇 → 進入遊戲 → 操作 → 結果顯示的基本 flow
+- 按鈕狀態：disabled/enabled 條件是否正確
+- 響應式：截圖桌面版與手機版（viewport 640px），確認 layout 切換
+- 回歸測試：既有功能未被破壞（送電、跳電、燒線、過關流程）
+- 視覺狀態截圖：各關鍵狀態的截圖留存比對
+
+### 人類負責驗證（自動化不適合的項目）
+- 拖曳/手勢操作的手感與流暢度
+- 觸控裝置（手機/平板）的實際操作體驗
+- 音效的聽感與時機
+- 動畫的視覺感受（流暢度、節奏感）
+- 整體遊戲體驗與沉浸感
+
+### 流程
+1. 實作完成 → agent-browser smoke test → 修復發現的問題
+2. smoke test 通過 → 人類體驗測試 → 回饋修正
+3. 全部通過 → opsx:archive
+
 ## Known Issues / Notes
 
 - 既有 lint error：GameBoard.tsx `tick` 變數在宣告前存取（非任何 change 引入）

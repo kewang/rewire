@@ -404,12 +404,108 @@ h3, h4 {
   color: var(--color-text-primary);
 }
 
+/* ── Wire Card Drag ──────────────────────────────────────────── */
+
+.wire-card {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wire-card:active {
+  cursor: grabbing;
+}
+
+.wire-card[data-disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.wire-card.dragging {
+  opacity: 0.4;
+  border-color: var(--color-accent-amber);
+  box-shadow: var(--shadow-card), var(--shadow-glow-amber);
+  transform: scale(0.95);
+}
+
 /* ── Circuit Diagram ──────────────────────────────────────────── */
 
 .circuit-diagram {
   display: flex;
   justify-content: center;
   margin-bottom: var(--space-md);
+}
+
+/* Drop zone highlight */
+.circuit-diagram.drop-zone-active {
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.15);
+}
+
+/* Wire connected transition */
+.wire-connected {
+  transition: stroke-dasharray 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Wire flash on successful connection */
+.wire-flash {
+  animation: wire-connect-flash 0.4s ease-out;
+}
+
+@keyframes wire-connect-flash {
+  0% {
+    opacity: 0.5;
+    stroke-width: 6;
+  }
+  50% {
+    opacity: 1;
+    stroke-width: 7;
+  }
+  100% {
+    opacity: 1;
+    stroke-width: 4;
+  }
+}
+
+/* Junction flash */
+.junction-flash {
+  animation: junction-pulse 0.4s ease-out;
+}
+
+@keyframes junction-pulse {
+  0% {
+    r: 5;
+    opacity: 0.5;
+  }
+  50% {
+    r: 10;
+    opacity: 1;
+  }
+  100% {
+    r: 5;
+    opacity: 1;
+  }
+}
+
+/* Connection flash burst */
+.connection-flash {
+  animation: flash-burst 0.4s ease-out forwards;
+}
+
+@keyframes flash-burst {
+  0% {
+    r: 4;
+    opacity: 0.8;
+  }
+  50% {
+    r: 16;
+    opacity: 0.6;
+  }
+  100% {
+    r: 20;
+    opacity: 0;
+  }
 }
 
 /* Warning pulse animation */
@@ -540,6 +636,7 @@ h3, h4 {
   .wire-selector .card-list > .card {
     flex: 0 0 140px;
     scroll-snap-align: start;
+    touch-action: none;
   }
 
   .level-select {

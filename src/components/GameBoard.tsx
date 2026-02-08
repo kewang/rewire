@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { Wire, Appliance, Level, SimulationState } from '../types/game';
+import type { Wire, Appliance, Level, SimulationState, WiringState } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_BREAKER, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialState, step } from '../engine/simulation';
@@ -13,6 +13,14 @@ import CircuitDiagram from './CircuitDiagram';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
 
+const INITIAL_WIRING: WiringState = {
+  isDragging: false,
+  dragWire: null,
+  cursorPos: null,
+  isWired: false,
+  connectedWire: null,
+};
+
 export default function GameBoard() {
   const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
   const [selectedWire, setSelectedWire] = useState<Wire>(DEFAULT_WIRES[0]);
@@ -20,6 +28,7 @@ export default function GameBoard() {
   const [simState, setSimState] = useState<SimulationState>(createInitialState());
   const [isPowered, setIsPowered] = useState(false);
   const [result, setResult] = useState<GameResult>('none');
+  const [wiring, setWiring] = useState<WiringState>(INITIAL_WIRING);
 
   const rafRef = useRef<number>(0);
   const prevTimeRef = useRef<number>(0);
@@ -105,7 +114,7 @@ export default function GameBoard() {
       setSimState(createInitialState());
       setResult('none');
     } else {
-      if (pluggedAppliances.length === 0) return;
+      if (pluggedAppliances.length === 0 || !wiring.isWired) return;
       setSimState(createInitialState());
       setResult('none');
       prevTimeRef.current = 0;
@@ -114,7 +123,7 @@ export default function GameBoard() {
       startApplianceSounds(pluggedAppliances);
       rafRef.current = requestAnimationFrame(tick);
     }
-  }, [isPowered, pluggedAppliances, tick]);
+  }, [isPowered, pluggedAppliances, wiring.isWired, tick]);
 
   useEffect(() => {
     return () => cancelAnimationFrame(rafRef.current);
@@ -129,6 +138,7 @@ export default function GameBoard() {
     setIsPowered(false);
     setSimState(createInitialState());
     setResult('none');
+    setWiring(INITIAL_WIRING);
   }, []);
 
   const handleBackToLevels = useCallback(() => {
@@ -143,6 +153,7 @@ export default function GameBoard() {
     setPluggedAppliances([]);
     setSelectedWire(DEFAULT_WIRES[0]);
     setCurrentLevel(null);
+    setWiring(INITIAL_WIRING);
   }, []);
 
   const handleSelectLevel = useCallback((level: Level) => {
@@ -151,7 +162,39 @@ export default function GameBoard() {
     setSelectedWire(DEFAULT_WIRES[0]);
     setSimState(createInitialState());
     setResult('none');
+    setWiring(INITIAL_WIRING);
   }, []);
+
+  // Wiring drag callbacks
+  const handleDragStart = useCallback((wire: Wire) => {
+    setWiring(prev => ({ ...prev, isDragging: true, dragWire: wire }));
+  }, []);
+
+  const handleDragMove = useCallback((pos: { x: number; y: number } | null) => {
+    setWiring(prev => ({ ...prev, cursorPos: pos }));
+  }, []);
+
+  const handleDragEnd = useCallback((dropped: boolean) => {
+    setWiring(prev => {
+      if (dropped && prev.dragWire) {
+        return {
+          isDragging: false,
+          dragWire: null,
+          cursorPos: null,
+          isWired: true,
+          connectedWire: prev.dragWire,
+        };
+      }
+      return { ...prev, isDragging: false, dragWire: null, cursorPos: null };
+    });
+  }, []);
+
+  // Sync connectedWire → selectedWire
+  useEffect(() => {
+    if (wiring.connectedWire) {
+      setSelectedWire(wiring.connectedWire);
+    }
+  }, [wiring.connectedWire]);
 
   const handleAddAppliance = useCallback((a: Appliance) => {
     setPluggedAppliances((prev) => [...prev, a]);
@@ -188,9 +231,11 @@ export default function GameBoard() {
         <section className="panel-left">
           <WireSelector
             wires={DEFAULT_WIRES}
-            selected={selectedWire}
-            onSelect={setSelectedWire}
+            wiring={wiring}
             disabled={isPowered}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
           />
         </section>
 
@@ -199,13 +244,14 @@ export default function GameBoard() {
             state={simState}
             isPowered={isPowered}
             breakerRated={DEFAULT_BREAKER.ratedCurrent}
+            wiring={wiring}
           />
           <button
             className={`nfb-switch ${isPowered ? 'on' : 'off'}`}
             onClick={handlePowerToggle}
-            disabled={pluggedAppliances.length === 0 && !isPowered}
+            disabled={(pluggedAppliances.length === 0 || !wiring.isWired) && !isPowered}
           >
-            {isPowered ? 'ON — 送電中' : 'OFF — 斷電'}
+            {isPowered ? 'ON — 送電中' : !wiring.isWired ? '請先接線' : 'OFF — 斷電'}
           </button>
         </section>
 
