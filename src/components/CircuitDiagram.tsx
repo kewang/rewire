@@ -6,6 +6,8 @@ interface CircuitDiagramProps {
   isPowered: boolean;
   breakerRated: number;
   wiring: WiringState;
+  onPowerToggle?: () => void;
+  leverDisabled?: boolean;
 }
 
 /** wireHeat 0→1 對應 白→黃→紅→黑 */
@@ -55,11 +57,26 @@ function clientToSvg(svgEl: SVGSVGElement, clientX: number, clientY: number): { 
   return { x: svgPt.x, y: svgPt.y };
 }
 
-export default function CircuitDiagram({ state, isPowered, breakerRated, wiring }: CircuitDiagramProps) {
+// NFB lever layout constants (SVG coords)
+const LEVER_TRACK_X = 138;
+const LEVER_TRACK_Y = 14;
+const LEVER_TRACK_W = 18;
+const LEVER_TRACK_H = 32;
+const LEVER_HANDLE_W = 14;
+const LEVER_HANDLE_H = 14;
+const LEVER_ON_Y = LEVER_TRACK_Y + 2;
+const LEVER_OFF_Y = LEVER_TRACK_Y + LEVER_TRACK_H - LEVER_HANDLE_H - 2;
+const LEVER_DRAG_THRESHOLD = 8; // SVG units to trigger toggle
+
+export default function CircuitDiagram({ state, isPowered, breakerRated, wiring, onPowerToggle, leverDisabled }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isOverDropZone, setIsOverDropZone] = useState(false);
   const [flashActive, setFlashActive] = useState(false);
   const prevIsWired = useRef(wiring.isWired);
+
+  // Lever drag state
+  const leverDragging = useRef(false);
+  const leverStartY = useRef(0);
 
   const wireColor = heatToColor(state.wireHeat);
   const isWarning = state.status === 'warning';
@@ -117,8 +134,53 @@ export default function CircuitDiagram({ state, isPowered, breakerRated, wiring 
     setIsOverDropZone(false);
   }, []);
 
+  // Lever pointer handlers
+  const handleLeverPointerDown = useCallback((e: React.PointerEvent) => {
+    if (leverDisabled || !onPowerToggle) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const svgPt = clientToSvg(svg, e.clientX, e.clientY);
+    leverDragging.current = false;
+    leverStartY.current = svgPt.y;
+    (e.target as Element).setPointerCapture(e.pointerId);
+  }, [leverDisabled, onPowerToggle]);
+
+  const handleLeverPointerMove = useCallback((e: React.PointerEvent) => {
+    if (leverDisabled || !onPowerToggle) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const svgPt = clientToSvg(svg, e.clientX, e.clientY);
+    const dy = svgPt.y - leverStartY.current;
+    if (Math.abs(dy) > LEVER_DRAG_THRESHOLD) {
+      leverDragging.current = true;
+      // Drag up on OFF → turn ON; drag down on ON → turn OFF
+      if (!isPowered && dy < -LEVER_DRAG_THRESHOLD) {
+        onPowerToggle();
+        leverStartY.current = svgPt.y; // prevent re-triggering
+      } else if (isPowered && dy > LEVER_DRAG_THRESHOLD) {
+        onPowerToggle();
+        leverStartY.current = svgPt.y;
+      }
+    }
+  }, [leverDisabled, onPowerToggle, isPowered]);
+
+  const handleLeverPointerUp = useCallback((e: React.PointerEvent) => {
+    if (leverDisabled || !onPowerToggle) return;
+    // Click toggle: no significant drag movement
+    if (!leverDragging.current) {
+      onPowerToggle();
+    }
+    leverDragging.current = false;
+    try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* already released */ }
+  }, [leverDisabled, onPowerToggle]);
+
   const previewColor = wiring.dragWire ? wireGaugeColor(wiring.dragWire.crossSection) : '#888';
   const connectedColor = wiring.connectedWire ? wireGaugeColor(wiring.connectedWire.crossSection) : '#888';
+
+  const leverHandleY = isPowered ? LEVER_ON_Y : LEVER_OFF_Y;
+  const leverHandleX = LEVER_TRACK_X + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2;
 
   return (
     <div
@@ -160,13 +222,55 @@ export default function CircuitDiagram({ state, isPowered, breakerRated, wiring 
           </filter>
         </defs>
 
-        {/* NFB Breaker */}
-        <rect x="70" y="10" width="60" height="40" rx="4"
-          fill={isPowered ? '#22c55e' : '#333'} stroke="#666" strokeWidth="2" />
-        <text x="100" y="35" textAnchor="middle" fill={isPowered ? '#000' : '#aaa'}
-          fontSize="12" fontWeight="bold">
-          NFB {breakerRated}A
+        {/* NFB Breaker body */}
+        <rect x="60" y="10" width="100" height="40" rx="4"
+          fill="#2a2a2a" stroke="#555" strokeWidth="1.5" />
+        {/* NFB label */}
+        <text x="95" y="28" textAnchor="middle" fill="#aaa"
+          fontSize="10" fontWeight="bold" fontFamily="var(--font-mono)">
+          NFB
         </text>
+        <text x="95" y="42" textAnchor="middle" fill="#777"
+          fontSize="9" fontFamily="var(--font-mono)">
+          {breakerRated}A
+        </text>
+
+        {/* Lever track */}
+        <rect x={LEVER_TRACK_X} y={LEVER_TRACK_Y} width={LEVER_TRACK_W} height={LEVER_TRACK_H}
+          rx="3" fill="#111" stroke="#444" strokeWidth="1" />
+        {/* ON / OFF labels */}
+        <text x={LEVER_TRACK_X + LEVER_TRACK_W / 2} y={LEVER_TRACK_Y + 10}
+          textAnchor="middle" fill="#4ade80" fontSize="6" fontWeight="bold"
+          fontFamily="var(--font-mono)">ON</text>
+        <text x={LEVER_TRACK_X + LEVER_TRACK_W / 2} y={LEVER_TRACK_Y + LEVER_TRACK_H - 3}
+          textAnchor="middle" fill="#888" fontSize="6" fontWeight="bold"
+          fontFamily="var(--font-mono)">OFF</text>
+
+        {/* Lever handle (interactive) */}
+        <rect
+          x={leverHandleX} y={leverHandleY}
+          width={LEVER_HANDLE_W} height={LEVER_HANDLE_H}
+          rx="2"
+          fill={isPowered ? '#22c55e' : '#555'}
+          stroke={isPowered ? '#4ade80' : '#777'}
+          strokeWidth="1.5"
+          className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
+          style={{ cursor: leverDisabled ? 'not-allowed' : 'pointer', touchAction: 'none' }}
+          onPointerDown={handleLeverPointerDown}
+          onPointerMove={handleLeverPointerMove}
+          onPointerUp={handleLeverPointerUp}
+        />
+        {/* Handle grip lines */}
+        <line x1={leverHandleX + 3} y1={leverHandleY + LEVER_HANDLE_H / 2 - 2}
+          x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 - 2}
+          stroke={isPowered ? '#000' : '#999'} strokeWidth="0.8" strokeLinecap="round"
+          className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
+          style={{ pointerEvents: 'none' }} />
+        <line x1={leverHandleX + 3} y1={leverHandleY + LEVER_HANDLE_H / 2 + 2}
+          x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 + 2}
+          stroke={isPowered ? '#000' : '#999'} strokeWidth="0.8" strokeLinecap="round"
+          className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
+          style={{ pointerEvents: 'none' }} />
 
         {/* === Wiring states === */}
 

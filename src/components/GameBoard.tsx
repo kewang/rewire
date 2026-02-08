@@ -245,14 +245,9 @@ export default function GameBoard() {
             isPowered={isPowered}
             breakerRated={DEFAULT_BREAKER.ratedCurrent}
             wiring={wiring}
+            onPowerToggle={handlePowerToggle}
+            leverDisabled={(pluggedAppliances.length === 0 || !wiring.isWired) && !isPowered}
           />
-          <button
-            className={`nfb-switch ${isPowered ? 'on' : 'off'}`}
-            onClick={handlePowerToggle}
-            disabled={(pluggedAppliances.length === 0 || !wiring.isWired) && !isPowered}
-          >
-            {isPowered ? 'ON — 送電中' : !wiring.isWired ? '請先接線' : 'OFF — 斷電'}
-          </button>
         </section>
 
         <section className="panel-right">

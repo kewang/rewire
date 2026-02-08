@@ -5,12 +5,13 @@ TBD - created by archiving change visual-feedback. Update Purpose after archive.
 ## Requirements
 ### Requirement: Circuit diagram visualization
 
-系統 MUST 在遊戲畫面中顯示簡化的線路圖（NFB → 線材 → 插座），並支援拖曳接線的視覺狀態。
+系統 MUST 在遊戲畫面中顯示簡化的線路圖（NFB → 線材 → 插座），並支援拖曳接線的視覺狀態。NFB MUST 以撥桿造型呈現，取代獨立的按鈕元素。
 
 #### Scenario: 顯示線路圖
 
 - **WHEN** 遊戲進入關卡
-- **THEN** MUST 在中央區域顯示 SVG 線路圖，包含 NFB、線材和插座的圖示
+- **THEN** MUST 在中央區域顯示 SVG 線路圖，包含 NFB 撥桿、線材和插座的圖示
+- **AND** NFB 區域 MUST 包含可操作的撥桿元件
 
 #### Scenario: 未接線狀態
 
