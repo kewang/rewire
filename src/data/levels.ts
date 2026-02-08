@@ -1,9 +1,9 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, DEFAULT_BREAKER } from './constants';
 
-const [hairDryer, kettle, , underSinkHeater, dryer] = DEFAULT_APPLIANCES;
+const [hairDryer, kettle, microwave, underSinkHeater, dryer] = DEFAULT_APPLIANCES;
 
-/** PRD v0.2 關卡定義 */
+/** 關卡定義（L01-L05 單迴路, L06-L08 多迴路） */
 export const LEVELS: readonly Level[] = [
   {
     name: 'L01 基礎教學',
@@ -53,6 +53,41 @@ export const LEVELS: readonly Level[] = [
     survivalTime: 15,
     circuitConfigs: [
       { id: 'c1', label: '主迴路', breaker: DEFAULT_BREAKER, availableAppliances: [dryer, kettle] },
+    ],
+  },
+  {
+    name: 'L06 雙迴路入門',
+    description: '廚房和客廳各有一條迴路。第一次體驗分迴路策略！',
+    requiredAppliances: [kettle, microwave, hairDryer],
+    budget: 120,
+    survivalTime: 8,
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
+      { id: 'c2', label: '客廳', breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+    ],
+  },
+  {
+    name: 'L07 預算壓力',
+    description: '三條迴路但預算吃緊。最安全的線材買不起，你敢冒險嗎？',
+    requiredAppliances: [kettle, underSinkHeater, hairDryer, dryer],
+    budget: 130,
+    survivalTime: 10,
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', breaker: DEFAULT_BREAKER, availableAppliances: [kettle, underSinkHeater] },
+      { id: 'c2', label: '臥室', breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+      { id: 'c3', label: '洗衣間', breaker: DEFAULT_BREAKER, availableAppliances: [dryer] },
+    ],
+  },
+  {
+    name: 'L08 負載均衡',
+    description: '五台電器、三條迴路。合理分配比選粗線更重要。',
+    requiredAppliances: [kettle, microwave, underSinkHeater, hairDryer, dryer],
+    budget: 180,
+    survivalTime: 15,
+    circuitConfigs: [
+      { id: 'c1', label: '廚房A', breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, underSinkHeater] },
+      { id: 'c2', label: '廚房B', breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, underSinkHeater] },
+      { id: 'c3', label: '客廳', breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, dryer] },
     ],
   },
 ] as const;

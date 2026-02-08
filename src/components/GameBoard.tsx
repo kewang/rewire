@@ -217,14 +217,18 @@ export default function GameBoard() {
   const handleSelectLevel = useCallback((level: Level) => {
     const ids = level.circuitConfigs.map(c => c.id);
     setCurrentLevel(level);
-    // Pre-populate appliances from requiredAppliances into first circuit (single-circuit compat)
+    // Auto-assign appliances that belong to exactly one circuit's availableAppliances
     const appls: Record<CircuitId, Appliance[]> = {};
     for (const config of level.circuitConfigs) {
       appls[config.id] = [];
     }
-    // For single-circuit levels, assign all required appliances to the only circuit
-    if (level.circuitConfigs.length === 1) {
-      appls[level.circuitConfigs[0].id] = [...level.requiredAppliances];
+    for (const appliance of level.requiredAppliances) {
+      const candidates = level.circuitConfigs.filter(
+        config => config.availableAppliances.includes(appliance)
+      );
+      if (candidates.length === 1) {
+        appls[candidates[0].id].push(appliance);
+      }
     }
     setCircuitAppliances(appls);
     setCircuitWires(createInitialCircuitWires(ids));
@@ -304,7 +308,7 @@ export default function GameBoard() {
   }
 
   return (
-    <div className="game-board">
+    <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}`}>
       <header className="game-header">
         <div className="header-top">
           <button className="back-button" onClick={handleBackToLevels}>← 返回</button>

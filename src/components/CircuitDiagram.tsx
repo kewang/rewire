@@ -60,7 +60,7 @@ function clientToSvg(svgEl: SVGSVGElement, clientX: number, clientY: number): { 
 
 // Layout constants
 const CIRCUIT_WIDTH = 200;
-const CIRCUIT_HEIGHT = 280;
+const CIRCUIT_HEIGHT = 300;
 const LEVER_TRACK_W = 18;
 const LEVER_TRACK_H = 32;
 const LEVER_HANDLE_W = 14;
@@ -121,7 +121,7 @@ function SingleCircuitSVG({
     <g>
       {/* Circuit label */}
       {showLabel && (
-        <text x={cx} y={CIRCUIT_HEIGHT - 2} textAnchor="middle" fill="#8a96a6" fontSize="9"
+        <text x={cx} y={286} textAnchor="middle" fill="#8a96a6" fontSize="9"
           fontFamily="var(--font-mono)">
           {circuit.label}
         </text>
@@ -301,7 +301,8 @@ function SingleCircuitSVG({
       )}
 
       {/* Status text */}
-      <text x={cx} y={272} textAnchor="middle" fill="#888" fontSize={11}>
+      <text x={cx} y={272} textAnchor="middle" fill="#888" fontSize={11}
+        fontFamily="var(--font-mono)">
         {isPowered ? '送電中' : isWired ? '已接線' : '未接線'}
       </text>
     </g>
@@ -434,7 +435,7 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
-      <svg ref={svgRef} viewBox={`0 0 ${svgWidth} ${CIRCUIT_HEIGHT}`} width="100%" style={{ maxWidth: isSingle ? 260 : n * 220 }}>
+      <svg ref={svgRef} viewBox={`0 0 ${svgWidth} ${CIRCUIT_HEIGHT}`} width="100%" style={{ maxWidth: isSingle ? 260 : n * 260 }}>
         <defs>
           <filter id="glow-warning">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -495,10 +496,11 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
           );
         })}
 
-        {/* Global power lever - rendered on first circuit's NFB position for single, separate for multi */}
-        {isSingle && (
+        {/* Global power lever - interactive overlays on all circuits' NFBs (all toggle the same global power) */}
+        {circuits.map((_, i) => (
           <rect
-            x={138 + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2}
+            key={`lever-${i}`}
+            x={i * CIRCUIT_WIDTH + 138 + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2}
             y={isPowered ? 14 + 2 : 14 + LEVER_TRACK_H - LEVER_HANDLE_H - 2}
             width={LEVER_HANDLE_W} height={LEVER_HANDLE_H}
             rx={2}
@@ -509,7 +511,7 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
             onPointerMove={handleLeverPointerMove}
             onPointerUp={handleLeverPointerUp}
           />
-        )}
+        ))}
       </svg>
     </div>
   );

@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 FR-A/FR-D 已完成，FR-B 多迴路 types/engine/ui 已完成（剩 levels + voltage-distinction）。**
+**PRD v0.2 完成。v0.3 FR-A/FR-B/FR-D 已完成（剩 FR-C voltage-distinction）。**
 
 ## Tech Stack
 
@@ -30,7 +30,7 @@
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti, calcTotalCurrent）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L05 關卡定義
+  - `levels.ts` — L01-L08 關卡定義（L01-L05 單迴路, L06-L08 多迴路）
   - `constants.ts` — 5 種線材、5 種電器、NFB 預設值
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
@@ -61,7 +61,7 @@
 - 工業深色主題：CSS variable 系統（`:root` 定義 30+ variables），背景 #0a0c0f/#0f1318
 - 響應式 layout：mobile ≤640px 單欄+水平滾動線材、tablet 641-1024px 兩欄、desktop ≥1025px 三欄 grid
 - ResultPanel 自動 scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-- 電路圖 SVG 響應式：width="100%" maxWidth=260（單迴路），多迴路 maxWidth = n × 220
+- 電路圖 SVG 響應式：width="100%" maxWidth=260（單迴路），多迴路 maxWidth = n × 260
 - 多迴路架構：CircuitDiagram 內 SingleCircuitSVG 子元件 + 水平並列（CIRCUIT_WIDTH=200）
 - 拖曳接線：Pointer Events API（非 HTML5 DnD），WiringState 集中管理於 GameBoard
 - 拖曳 drop zone：SVG 座標判定 circuitIndex = floor(svgX / CIRCUIT_WIDTH)，onTargetCircuitChange 回調
