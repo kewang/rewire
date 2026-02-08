@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId } from '../types/game';
+import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
@@ -12,6 +12,8 @@ import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
+
+const EMPTY_CONFIGS: CircuitConfig[] = [];
 
 function createInitialWiring(circuitIds: CircuitId[]): WiringState {
   const circuits: WiringState['circuits'] = {};
@@ -51,13 +53,14 @@ export default function GameBoard() {
   const prevTimeRef = useRef<number>(0);
   const multiStateRef = useRef<MultiCircuitState>(multiState);
   const buzzingRef = useRef(false);
+  const tickRef = useRef<FrameRequestCallback>(() => {});
 
   useEffect(() => {
     multiStateRef.current = multiState;
   }, [multiState]);
 
   // Derive circuitIds from current level
-  const circuitConfigs = currentLevel?.circuitConfigs ?? [];
+  const circuitConfigs = currentLevel?.circuitConfigs ?? EMPTY_CONFIGS;
   const circuitIds = useMemo(() => circuitConfigs.map(c => c.id), [circuitConfigs]);
 
   // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances
@@ -74,13 +77,13 @@ export default function GameBoard() {
   );
 
   const circuitsRef = useRef<Circuit[]>(circuits);
-  circuitsRef.current = circuits;
+  useEffect(() => { circuitsRef.current = circuits; }, [circuits]);
 
   const currentLevelRef = useRef(currentLevel);
-  currentLevelRef.current = currentLevel;
+  useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
 
   const circuitWiresRef = useRef(circuitWires);
-  circuitWiresRef.current = circuitWires;
+  useEffect(() => { circuitWiresRef.current = circuitWires; }, [circuitWires]);
 
   // Total cost: sum of all circuits' wire costs
   const totalCost = useMemo(() => {
@@ -159,8 +162,10 @@ export default function GameBoard() {
       return;
     }
 
-    rafRef.current = requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(tickRef.current);
   }, []);
+
+  useEffect(() => { tickRef.current = tick; }, [tick]);
 
   const handlePowerToggle = useCallback(() => {
     if (isPowered) {
@@ -274,8 +279,10 @@ export default function GameBoard() {
     setWiring(prev => ({ ...prev, targetCircuitId: circuitId }));
   }, []);
 
-  // Sync connectedWire → circuitWires per circuit
-  useEffect(() => {
+  // Sync connectedWire → circuitWires per circuit (render-time state adjustment)
+  const [prevWiringCircuitsSync, setPrevWiringCircuitsSync] = useState(wiring.circuits);
+  if (wiring.circuits !== prevWiringCircuitsSync) {
+    setPrevWiringCircuitsSync(wiring.circuits);
     const newWires: Record<CircuitId, Wire> = { ...circuitWires };
     let changed = false;
     for (const [id, cw] of Object.entries(wiring.circuits)) {
@@ -287,7 +294,7 @@ export default function GameBoard() {
     if (changed) {
       setCircuitWires(newWires);
     }
-  }, [wiring.circuits]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   const handleAddAppliance = useCallback((circuitId: CircuitId, a: Appliance) => {
     setCircuitAppliances(prev => ({

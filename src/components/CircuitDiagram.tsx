@@ -422,7 +422,8 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
   const containerRef = useRef<HTMLDivElement>(null);
   const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
   const [flashCircuitId, setFlashCircuitId] = useState<CircuitId | null>(null);
-  const prevWiringCircuits = useRef(wiring.circuits);
+  const [previewY, setPreviewY] = useState(120);
+  const [prevWiringCircuits, setPrevWiringCircuits] = useState(wiring.circuits);
 
   const n = circuits.length;
   const svgWidth = n * CIRCUIT_WIDTH;
@@ -435,54 +436,60 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
   const leverDragging = useRef(false);
   const leverStartY = useRef(0);
 
-  // Detect flash when a circuit's wiring completes
-  useEffect(() => {
+  // Detect flash when a circuit's wiring completes (render-time state adjustment)
+  if (wiring.circuits !== prevWiringCircuits) {
+    setPrevWiringCircuits(wiring.circuits);
     for (const c of circuits) {
-      const prev = prevWiringCircuits.current[c.id];
-      const curr = wiring.circuits[c.id];
-      if (curr?.isWired && !prev?.isWired) {
+      if (wiring.circuits[c.id]?.isWired && !prevWiringCircuits[c.id]?.isWired) {
         setFlashCircuitId(c.id);
-        setTimeout(() => setFlashCircuitId(null), 400);
       }
     }
-    prevWiringCircuits.current = wiring.circuits;
-  }, [wiring.circuits, circuits]);
+  }
+
+  // Clear flash after animation
+  useEffect(() => {
+    if (flashCircuitId !== null) {
+      const timer = setTimeout(() => setFlashCircuitId(null), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [flashCircuitId]);
+
+  // Clear overCircuitId when not dragging (render-time state adjustment)
+  if (!wiring.isDragging && overCircuitId !== null) {
+    setOverCircuitId(null);
+  }
+
+  // Notify parent when drag ends
+  useEffect(() => {
+    if (!wiring.isDragging) {
+      onTargetCircuitChange?.(null);
+    }
+  }, [wiring.isDragging, onTargetCircuitChange]);
 
   // Determine which circuit the cursor is over during drag
   useEffect(() => {
-    if (!wiring.isDragging || !wiring.cursorPos || !containerRef.current || !svgRef.current) {
-      if (!wiring.isDragging) {
-        setOverCircuitId(null);
-        onTargetCircuitChange?.(null);
-      }
-      return;
-    }
+    if (!wiring.isDragging || !wiring.cursorPos || !containerRef.current || !svgRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const cx = wiring.cursorPos.x;
     const cy = wiring.cursorPos.y;
-    if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) {
-      setOverCircuitId(null);
-      onTargetCircuitChange?.(null);
-      return;
+    let newOverId: CircuitId | null = null;
+    let newPreviewY = 120;
+    if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
+      const svgPt = clientToSvg(svgRef.current, cx, cy);
+      newPreviewY = Math.max(50, Math.min(250, svgPt.y));
+      const circuitIndex = Math.floor(svgPt.x / CIRCUIT_WIDTH);
+      if (circuitIndex >= 0 && circuitIndex < n) {
+        newOverId = circuits[circuitIndex].id;
+      }
     }
-    const svgPt = clientToSvg(svgRef.current, cx, cy);
-    const circuitIndex = Math.floor(svgPt.x / CIRCUIT_WIDTH);
-    if (circuitIndex >= 0 && circuitIndex < n) {
-      const cId = circuits[circuitIndex].id;
-      setOverCircuitId(cId);
-      onTargetCircuitChange?.(cId);
-    } else {
-      setOverCircuitId(null);
-      onTargetCircuitChange?.(null);
-    }
+    // Defer state updates to a rAF callback (avoids synchronous setState in effect)
+    const rafId = requestAnimationFrame(() => {
+      setPreviewY(newPreviewY);
+      setOverCircuitId(newOverId);
+      onTargetCircuitChange?.(newOverId);
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [wiring.isDragging, wiring.cursorPos, n, circuits, onTargetCircuitChange]);
-
-  // Get preview Y for drag
-  let previewY = 120;
-  if (wiring.isDragging && wiring.cursorPos && svgRef.current) {
-    const svgPt = clientToSvg(svgRef.current, wiring.cursorPos.x, wiring.cursorPos.y);
-    previewY = Math.max(50, Math.min(250, svgPt.y));
-  }
 
   const handlePointerEnter = useCallback(() => {
     // handled by effect
