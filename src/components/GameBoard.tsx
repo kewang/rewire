@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig } from '../types/game';
-import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST } from '../data/constants';
+import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState } from '../types/game';
+import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing, startApplianceSounds, stopApplianceSounds } from '../engine/audio';
@@ -11,7 +11,7 @@ import ResultPanel from './ResultPanel';
 import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
 
-type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'won' | 'over-budget';
+type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
 
 const EMPTY_CONFIGS: CircuitConfig[] = [];
 
@@ -114,6 +114,13 @@ export default function GameBoard() {
   // All circuits are wired
   const allWired = circuitIds.length > 0 && circuitIds.every(id => wiring.circuits[id]?.isWired);
 
+  // wetArea ELCB check: all wetArea circuits must have ELCB installed
+  const wetAreaMissingElcb = circuitConfigs.some(c => c.wetArea && !circuitElcb[c.id]);
+  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb;
+
+  // Track which scripted leakage events have fired
+  const firedLeakageEventsRef = useRef<Set<number>>(new Set());
+
   // rAF simulation loop
   const tick = useCallback((timestamp: number) => {
     if (prevTimeRef.current === 0) {
@@ -123,7 +130,77 @@ export default function GameBoard() {
     prevTimeRef.current = timestamp;
 
     const phases = Object.keys(circuitPhasesRef.current).length > 0 ? circuitPhasesRef.current : undefined;
-    const newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt, phases);
+    let newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt, phases);
+
+    // Leakage event processing
+    const curLevel = currentLevelRef.current;
+    if (curLevel?.leakageMode) {
+      const elcbs = circuitElcbRef.current;
+      const wetAreaConfigs = curLevel.circuitConfigs.filter(c => c.wetArea);
+      const updatedStates: Record<CircuitId, CircuitState> = { ...newMultiState.circuitStates };
+
+      if (curLevel.leakageMode === 'scripted' && curLevel.leakageEvents) {
+        for (let i = 0; i < curLevel.leakageEvents.length; i++) {
+          const evt = curLevel.leakageEvents[i];
+          if (firedLeakageEventsRef.current.has(i)) continue;
+          if (newMultiState.elapsed >= evt.time) {
+            firedLeakageEventsRef.current.add(i);
+            const cs = updatedStates[evt.circuitId];
+            if (cs && (cs.status === 'normal' || cs.status === 'warning')) {
+              if (elcbs[evt.circuitId]) {
+                updatedStates[evt.circuitId] = { ...cs, status: 'elcb-tripped', totalCurrent: 0 };
+              } else {
+                updatedStates[evt.circuitId] = { ...cs, status: 'leakage' };
+              }
+            }
+          }
+        }
+      } else if (curLevel.leakageMode === 'random') {
+        for (const config of wetAreaConfigs) {
+          const cs = updatedStates[config.id];
+          if (!cs || (cs.status !== 'normal' && cs.status !== 'warning')) continue;
+          if (Math.random() < LEAKAGE_CHANCE_PER_SECOND * dt) {
+            if (elcbs[config.id]) {
+              updatedStates[config.id] = { ...cs, status: 'elcb-tripped', totalCurrent: 0 };
+            } else {
+              updatedStates[config.id] = { ...cs, status: 'leakage' };
+            }
+          }
+        }
+      }
+
+      // Check if states actually changed
+      let statesChanged = false;
+      for (const id of Object.keys(updatedStates)) {
+        if (updatedStates[id] !== newMultiState.circuitStates[id]) {
+          statesChanged = true;
+          break;
+        }
+      }
+      if (statesChanged) {
+        // Recalculate overallStatus manually
+        const severityMap: Record<string, number> = {
+          normal: 0, warning: 1, tripped: 2, 'elcb-tripped': 2,
+          burned: 3, 'neutral-burned': 3, leakage: 3,
+        };
+        let worstSt: string = 'normal';
+        for (const cs of Object.values(updatedStates)) {
+          if ((severityMap[cs.status] ?? 0) > (severityMap[worstSt] ?? 0)) {
+            worstSt = cs.status;
+          }
+        }
+        // Also consider neutral-burned from the original
+        if (newMultiState.neutralHeat >= 1.0 && (severityMap['neutral-burned'] ?? 0) > (severityMap[worstSt] ?? 0)) {
+          worstSt = 'neutral-burned';
+        }
+        newMultiState = {
+          ...newMultiState,
+          circuitStates: updatedStates,
+          overallStatus: worstSt as MultiCircuitState['overallStatus'],
+        };
+      }
+    }
+
     setMultiState(newMultiState);
 
     // Buzzing management: trigger on any warning circuit, volume = max wireHeat
@@ -147,13 +224,13 @@ export default function GameBoard() {
       buzzingRef.current = false;
     }
 
-    // Terminal state: tripped, burned, or neutral-burned (use overallStatus)
-    if (newMultiState.overallStatus === 'tripped' || newMultiState.overallStatus === 'burned' || newMultiState.overallStatus === 'neutral-burned') {
+    // Terminal state: tripped, burned, neutral-burned, or leakage (use overallStatus)
+    if (newMultiState.overallStatus === 'tripped' || newMultiState.overallStatus === 'burned' || newMultiState.overallStatus === 'neutral-burned' || newMultiState.overallStatus === 'leakage') {
       setIsPowered(false);
       stopApplianceSounds();
       setResult(newMultiState.overallStatus);
       if (newMultiState.overallStatus === 'tripped') playTripped();
-      else playBurned(); // burned and neutral-burned share same sound
+      else playBurned(); // burned, neutral-burned, leakage share same sound
       return;
     }
 
@@ -190,16 +267,17 @@ export default function GameBoard() {
       setMultiState(createInitialMultiState(circuitIds));
       setResult('none');
     } else {
-      if (!hasAnyAppliance || !allWired) return;
+      if (!canPowerOn) return;
       setMultiState(createInitialMultiState(circuitIds));
       setResult('none');
       prevTimeRef.current = 0;
+      firedLeakageEventsRef.current = new Set();
       setIsPowered(true);
       playPowerOn();
       startApplianceSounds(allAppliances);
       rafRef.current = requestAnimationFrame(tick);
     }
-  }, [isPowered, hasAnyAppliance, allWired, circuitIds, allAppliances, tick]);
+  }, [isPowered, canPowerOn, circuitIds, allAppliances, tick]);
 
   useEffect(() => {
     return () => cancelAnimationFrame(rafRef.current);
@@ -211,6 +289,7 @@ export default function GameBoard() {
     stopBuzzing();
     stopApplianceSounds();
     buzzingRef.current = false;
+    firedLeakageEventsRef.current = new Set();
     setIsPowered(false);
     setMultiState(createInitialMultiState(circuitIds));
     setResult('none');
@@ -387,7 +466,8 @@ export default function GameBoard() {
             isPowered={isPowered}
             wiring={wiring}
             onPowerToggle={handlePowerToggle}
-            leverDisabled={(!hasAnyAppliance || !allWired) && !isPowered}
+            leverDisabled={!canPowerOn && !isPowered}
+            leverTooltip={!isPowered && !canPowerOn ? (wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : '請先分配電器') : undefined}
             onTargetCircuitChange={handleTargetCircuitChange}
             phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
             phaseMode={currentLevel?.phaseMode}

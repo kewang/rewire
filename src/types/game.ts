@@ -43,7 +43,7 @@ export interface Circuit {
 }
 
 /** 模擬狀態 */
-export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned' | 'neutral-burned';
+export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned' | 'neutral-burned' | 'elcb-tripped' | 'leakage';
 
 /** 單迴路模擬動態狀態 */
 export interface CircuitState {
@@ -133,8 +133,18 @@ export interface CircuitConfig {
   readonly availableAppliances: readonly Appliance[];
   /** 該迴路是否可安裝 ELCB 漏電斷路器 */
   readonly elcbAvailable?: boolean;
+  /** 該迴路是否為潮濕區域（需強制安裝 ELCB） */
+  readonly wetArea?: boolean;
   /** 相位分配（僅 110V 迴路適用，220V 為跨相 R-T） */
   readonly phase?: 'R' | 'T';
+}
+
+/** 漏電事件（腳本式） */
+export interface LeakageEvent {
+  /** 漏電觸發時間（秒） */
+  readonly time: number;
+  /** 漏電發生的目標迴路 ID */
+  readonly circuitId: CircuitId;
 }
 
 /** 關卡定義 */
@@ -153,4 +163,8 @@ export interface Level {
   readonly circuitConfigs: readonly CircuitConfig[];
   /** 相位分配模式：auto=固定不可切換，manual=玩家可切換 */
   readonly phaseMode?: 'auto' | 'manual';
+  /** 漏電模式：scripted=腳本式（固定時間），random=隨機式（每秒機率） */
+  readonly leakageMode?: 'scripted' | 'random';
+  /** 腳本式漏電事件列表（leakageMode='scripted' 時使用） */
+  readonly leakageEvents?: readonly LeakageEvent[];
 }

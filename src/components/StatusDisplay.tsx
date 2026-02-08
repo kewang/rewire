@@ -16,6 +16,8 @@ const STATUS_LABELS: Record<SimulationStatus, string> = {
   tripped: '跳電',
   burned: '燒毀',
   'neutral-burned': '中性線燒毀',
+  'elcb-tripped': 'ELCB 跳脫',
+  leakage: '漏電！',
 };
 
 const STATUS_COLORS: Record<SimulationStatus, string> = {
@@ -24,6 +26,8 @@ const STATUS_COLORS: Record<SimulationStatus, string> = {
   tripped: '#ef4444',
   burned: '#ef4444',
   'neutral-burned': '#ef4444',
+  'elcb-tripped': '#3b82f6',
+  leakage: '#ef4444',
 };
 
 export default function StatusDisplay({ circuits, multiState, cost, budget, survivalTime, phases }: StatusDisplayProps) {

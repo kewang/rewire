@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 進行中：FR-G extended-materials-ii 完成，接下來 FR-E phase-balancing → FR-F ELCB。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。**
 
 ## Tech Stack
 
@@ -17,21 +17,21 @@
 
 - `src/components/` — React 元件
   - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）
-  - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要）
+  - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示）
-  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局
+  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局 + 相位標籤/切換
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState, WiringState, CircuitConfig 等
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage)
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel
 - `src/engine/` — 模擬引擎邏輯
-  - `simulation.ts` — 純函式模擬引擎（step, stepMulti, calcTotalCurrent）
+  - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases), calcTotalCurrent）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L10 關卡定義（L01-L05 單迴路, L06-L10 多迴路）
-  - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB 成本常數
+  - `levels.ts` — L01-L15 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB）
+  - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
@@ -77,6 +77,17 @@
 - ELCB 成本框架：CircuitConfig.elcbAvailable 控制顯示、per-circuit toggle、$35/迴路
 - NFB 多規格：BREAKER_15A/20A/30A 命名常數，DEFAULT_BREAKER = BREAKER_20A（向後相容）
 - buzzing 音效：任一迴路 warning 時觸發，音量 = max wireHeat across all circuits
+- 相位平衡：單相三線制 R-N(110V) / T-N(110V) / R-T(220V)，中性線電流 I_N = |Σ I_R − Σ I_T|
+- 中性線熱度：同 wire heat model（heatRate=0.4, coolRate=0.15），NEUTRAL_MAX_CURRENT=30A
+- SimulationStatus: neutral-burned 與 burned 同權重（severity=3）
+- phaseMode: auto=固定不可切換、manual=玩家可切換 R↔T（未送電時）
+- 220V 迴路無 phase（跨相 R-T），不計入中性線電流
+- ELCB 漏電保護：wetArea 迴路強制安裝 ELCB 才能送電
+- 漏電事件：腳本式（固定時間觸發）或隨機式（LEAKAGE_CHANCE_PER_SECOND=0.05，每秒 5%）
+- ELCB 跳脫 = elcb-tripped（severity=2，同 tripped），迴路斷電但不算失敗
+- 無 ELCB 漏電 = leakage（severity=3，同 burned），即時觸電失敗
+- 漏電事件由 GameBoard rAF loop 驅動（非 simulation engine），保持純函式語義
+- 乾燥迴路永不觸發漏電事件
 
 ## Testing Workflow
 

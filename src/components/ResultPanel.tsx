@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import type { Circuit, MultiCircuitState } from '../types/game';
 
-type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'won' | 'over-budget';
+type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
 
 interface ResultPanelProps {
   result: GameResult;
@@ -24,10 +24,10 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
 
   if (result === 'none') return null;
 
-  // Find the failed circuit (first tripped or burned)
+  // Find the failed circuit (first tripped, burned, or leakage)
   const failedCircuit = circuits.find(c => {
     const cs = multiState.circuitStates[c.id];
-    return cs && (cs.status === 'tripped' || cs.status === 'burned');
+    return cs && (cs.status === 'tripped' || cs.status === 'burned' || cs.status === 'leakage');
   });
   const failedState = failedCircuit ? multiState.circuitStates[failedCircuit.id] : null;
   const isSingle = circuits.length === 1;
@@ -106,6 +106,19 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
             <p><strong>中性線容量：</strong>30A</p>
             <p className="result-hint">
               紅相(R)與黑相(T)負載嚴重不平衡，中性線電流超過 30A 安全容量導致燒毀。試著平衡兩相的負載分配！
+            </p>
+          </div>
+        </>
+      )}
+
+      {result === 'leakage' && failedCircuit && (
+        <>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>漏電觸電！</h2>
+          <div className="result-details">
+            <p><strong>失敗類型：</strong>漏電觸電危險</p>
+            {!isSingle && <p><strong>失敗迴路：</strong>{failedCircuit.label}</p>}
+            <p className="result-hint">
+              {!isSingle ? `${failedCircuit.label}` : '迴路'}發生漏電，但未安裝 ELCB 漏電斷路器，造成觸電危險！潮濕區域迴路務必安裝 ELCB。
             </p>
           </div>
         </>

@@ -71,13 +71,15 @@ export function toLegacyCircuit(
   };
 }
 
-/** 狀態嚴重度排序：burned/neutral-burned > tripped > warning > normal */
+/** 狀態嚴重度排序：burned/neutral-burned/leakage > tripped/elcb-tripped > warning > normal */
 const STATUS_SEVERITY: Record<CircuitState['status'], number> = {
   normal: 0,
   warning: 1,
   tripped: 2,
+  'elcb-tripped': 2,
   burned: 3,
   'neutral-burned': 3,
+  leakage: 3,
 };
 
 /** 計算所有迴路中最嚴重的狀態 */

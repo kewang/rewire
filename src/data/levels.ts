@@ -1,7 +1,7 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
 
-const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, , fridge] = DEFAULT_APPLIANCES;
+const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, bathHeater, fridge] = DEFAULT_APPLIANCES;
 
 /** 關卡定義（L01-L05 單迴路, L06-L09 多迴路） */
 export const LEVELS: readonly Level[] = [
@@ -138,6 +138,47 @@ export const LEVELS: readonly Level[] = [
       { id: 'c2', label: '廚房B', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [microwave, underSinkHeater, hairDryer], phase: 'R' },
       { id: 'c3', label: '客廳', voltage: 110, breaker: BREAKER_15A, availableAppliances: [hairDryer, fridge], phase: 'T' },
       { id: 'c4', label: '冷氣', voltage: 220, breaker: BREAKER_30A, availableAppliances: [airCon] },
+    ],
+  },
+  {
+    name: 'L13 ELCB 入門',
+    description: '浴室迴路必須安裝 ELCB 漏電斷路器。第 5 秒會發生漏電 — ELCB 會保護你！',
+    requiredAppliances: [hairDryer],
+    budget: 200,
+    survivalTime: 10,
+    leakageMode: 'scripted',
+    leakageEvents: [{ time: 5, circuitId: 'c1' }],
+    circuitConfigs: [
+      { id: 'c1', label: '浴室', voltage: 220, breaker: BREAKER_30A, availableAppliances: [bathHeater, waterHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c2', label: '臥室', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+    ],
+  },
+  {
+    name: 'L14 ELCB 預算壓力',
+    description: '浴室 ELCB 必裝，壓縮線材預算。廚房高負載能撐住嗎？',
+    requiredAppliances: [kettle, microwave, fridge],
+    budget: 185,
+    survivalTime: 12,
+    leakageMode: 'random',
+    circuitConfigs: [
+      { id: 'c1', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c2', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, fridge] },
+      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+    ],
+  },
+  {
+    name: 'L15 綜合挑戰',
+    description: 'v0.4 畢業考！相位平衡 + ELCB + 多迴路預算。全部考驗一次來！',
+    requiredAppliances: [kettle, microwave, hairDryer, ihStove, fridge],
+    budget: 300,
+    survivalTime: 20,
+    phaseMode: 'manual',
+    leakageMode: 'random',
+    circuitConfigs: [
+      { id: 'c1', label: '廚房A', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, fridge], phase: 'R' },
+      { id: 'c2', label: '廚房B', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [microwave, hairDryer, fridge], phase: 'R' },
+      { id: 'c3', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c4', label: 'IH 爐', voltage: 220, breaker: BREAKER_30A, availableAppliances: [ihStove] },
     ],
   },
 ] as const;

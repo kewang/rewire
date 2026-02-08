@@ -73,7 +73,7 @@ export function step(
   config: SimulationConfig = DEFAULT_CONFIG,
 ): CircuitState {
   // 終態不可逆
-  if (state.status === 'tripped' || state.status === 'burned') {
+  if (state.status === 'tripped' || state.status === 'burned' || state.status === 'elcb-tripped' || state.status === 'leakage') {
     return state;
   }
 
@@ -141,8 +141,8 @@ export function stepMulti(
   phases?: Record<CircuitId, 'R' | 'T'>,
   config: SimulationConfig = DEFAULT_CONFIG,
 ): MultiCircuitState {
-  // neutral-burned 終態保護
-  if (state.overallStatus === 'neutral-burned') {
+  // 致命終態保護
+  if (state.overallStatus === 'neutral-burned' || state.overallStatus === 'leakage') {
     return state;
   }
 
@@ -165,6 +165,8 @@ export function stepMulti(
       const phase = phases[circuit.id];
       if (!phase) continue; // 220V 迴路無 phase，不計入
       const cs = newCircuitStates[circuit.id];
+      // 跳脫/斷電的迴路不計入中性線電流
+      if (cs.status === 'elcb-tripped' || cs.status === 'tripped' || cs.status === 'burned' || cs.status === 'leakage') continue;
       if (phase === 'R') {
         sumR += cs.totalCurrent;
       } else {

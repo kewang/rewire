@@ -8,6 +8,7 @@ interface CircuitDiagramProps {
   wiring: WiringState;
   onPowerToggle?: () => void;
   leverDisabled?: boolean;
+  leverTooltip?: string;
   onTargetCircuitChange?: (circuitId: CircuitId | null) => void;
   phases?: Record<CircuitId, 'R' | 'T'>;
   phaseMode?: 'auto' | 'manual';
@@ -113,6 +114,8 @@ function SingleCircuitSVG({
   const wireColor = heatToColor(circuitState.wireHeat);
   const isWarning = circuitState.status === 'warning';
   const isBurned = circuitState.status === 'burned';
+  const isElcbTripped = circuitState.status === 'elcb-tripped';
+  const isLeakage = circuitState.status === 'leakage';
   const is220V = circuit.voltage === 220;
 
   // Dual-line offset for 220V (lines at cx±2)
@@ -445,16 +448,61 @@ function SingleCircuitSVG({
           filter="url(#flash-glow)" className="connection-flash" />
       )}
 
+      {/* ELCB tripped visual: dashed grey wire + ELCB badge */}
+      {isElcbTripped && (
+        <>
+          {is220V ? (
+            <>
+              <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={200}
+                stroke="#555" strokeWidth={3} strokeDasharray="6 4" strokeLinecap="round" opacity={0.5} />
+              <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={200}
+                stroke="#555" strokeWidth={3} strokeDasharray="6 4" strokeLinecap="round" opacity={0.5} />
+            </>
+          ) : (
+            <line x1={cx} y1={50} x2={cx} y2={200}
+              stroke="#555" strokeWidth={4} strokeDasharray="6 4" strokeLinecap="round" opacity={0.5} />
+          )}
+          <rect x={cx - 22} y={108} width={44} height={20} rx={3}
+            fill="rgba(59,130,246,0.2)" stroke="#3b82f6" strokeWidth={1} />
+          <text x={cx} y={122} textAnchor="middle" fill="#60a5fa" fontSize={9}
+            fontWeight="bold" fontFamily="var(--font-mono)">
+            ELCB
+          </text>
+        </>
+      )}
+
+      {/* Leakage visual: red flash + danger symbol */}
+      {isLeakage && (
+        <>
+          {is220V ? (
+            <>
+              <line x1={cx - DUAL_OFFSET} y1={50} x2={cx - DUAL_OFFSET} y2={200}
+                stroke="#ef4444" strokeWidth={3} strokeLinecap="round" filter="url(#glow-burned)" />
+              <line x1={cx + DUAL_OFFSET} y1={50} x2={cx + DUAL_OFFSET} y2={200}
+                stroke="#ef4444" strokeWidth={3} strokeLinecap="round" filter="url(#glow-burned)" />
+            </>
+          ) : (
+            <line x1={cx} y1={50} x2={cx} y2={200}
+              stroke="#ef4444" strokeWidth={4} strokeLinecap="round" filter="url(#glow-burned)" />
+          )}
+          <text x={cx} y={125} textAnchor="middle" fill="#ef4444" fontSize={14}
+            fontWeight="bold" fontFamily="var(--font-mono)">
+            ⚡
+          </text>
+        </>
+      )}
+
       {/* Status text */}
-      <text x={cx} y={272} textAnchor="middle" fill="#888" fontSize={11}
-        fontFamily="var(--font-mono)">
-        {isPowered ? '送電中' : isWired ? '已接線' : '未接線'}
+      <text x={cx} y={272} textAnchor="middle"
+        fill={isElcbTripped ? '#3b82f6' : isLeakage ? '#ef4444' : '#888'}
+        fontSize={11} fontFamily="var(--font-mono)">
+        {isElcbTripped ? 'ELCB 跳脫' : isLeakage ? '漏電！' : isPowered ? '送電中' : isWired ? '已接線' : '未接線'}
       </text>
     </g>
   );
 }
 
-export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, onTargetCircuitChange, phases, phaseMode, onTogglePhase }: CircuitDiagramProps) {
+export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
@@ -671,6 +719,14 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
             onPointerUp={handleLeverPointerUp}
           />
         ))}
+
+        {/* Lever disabled tooltip */}
+        {leverDisabled && leverTooltip && (
+          <text x={svgWidth / 2} y={CIRCUIT_HEIGHT - 8} textAnchor="middle"
+            fill="#eab308" fontSize={10} fontFamily="var(--font-mono)">
+            {leverTooltip}
+          </text>
+        )}
       </svg>
     </div>
   );
