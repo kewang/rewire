@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 FR-A/FR-B/FR-D 已完成（剩 FR-C voltage-distinction）。**
+**PRD v0.2 完成。v0.3 全部完成（FR-A drag-drop, FR-B multi-circuit, FR-C voltage-distinction, FR-D levels）。**
 
 ## Tech Stack
 
@@ -30,8 +30,8 @@
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti, calcTotalCurrent）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L08 關卡定義（L01-L05 單迴路, L06-L08 多迴路）
-  - `constants.ts` — 5 種線材、5 種電器、NFB 預設值
+  - `levels.ts` — L01-L09 關卡定義（L01-L05 單迴路, L06-L09 多迴路）
+  - `constants.ts` — 5 種線材、6 種電器（含電熱水器 220V）、NFB 預設值
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
