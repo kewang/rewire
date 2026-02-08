@@ -19,6 +19,8 @@ const INITIAL_WIRING: WiringState = {
   cursorPos: null,
   isWired: false,
   connectedWire: null,
+  circuits: {},
+  targetCircuitId: null,
 };
 
 export default function GameBoard() {
@@ -40,6 +42,8 @@ export default function GameBoard() {
   }, [simState]);
 
   const circuit = {
+    id: 'c1',
+    label: '主迴路',
     breaker: DEFAULT_BREAKER,
     wire: selectedWire,
     appliances: pluggedAppliances,
@@ -178,6 +182,7 @@ export default function GameBoard() {
     setWiring(prev => {
       if (dropped && prev.dragWire) {
         return {
+          ...prev,
           isDragging: false,
           dragWire: null,
           cursorPos: null,

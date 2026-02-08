@@ -1,41 +1,4 @@
-# game-data-model Specification
-
-## Purpose
-遊戲核心資料模型型別定義，包含線材、電器、NFB、迴路、關卡等。
-
-## Requirements
-
-### Requirement: Wire type definition
-
-系統 MUST 定義 Wire 型別，包含線徑（mm²）、最大安全電流（A）、每米成本等屬性。
-
-#### Scenario: Wire 型別包含必要屬性
-
-- **WHEN** 建立一個 Wire 物件
-- **THEN** 該物件 MUST 包含 `crossSection`（線徑 mm²）、`maxCurrent`（安全電流上限 A）、`costPerMeter`（每米成本）屬性
-
-### Requirement: Appliance type definition
-
-系統 MUST 定義 Appliance 型別，包含名稱、功率（W）、電壓（V）等屬性。
-
-#### Scenario: Appliance 型別包含必要屬性
-
-- **WHEN** 建立一個 Appliance 物件
-- **THEN** 該物件 MUST 包含 `name`（名稱）、`power`（功率 W）、`voltage`（電壓 V）屬性
-
-#### Scenario: 電流可由功率和電壓推算
-
-- **WHEN** 已知 Appliance 的 power 和 voltage
-- **THEN** 電流 MUST 可透過 `power / voltage` 計算得出
-
-### Requirement: Breaker type definition
-
-系統 MUST 定義 Breaker（NFB）型別，包含額定電流和跳脫延遲。
-
-#### Scenario: Breaker 型別包含必要屬性
-
-- **WHEN** 建立一個 Breaker 物件
-- **THEN** 該物件 MUST 包含 `ratedCurrent`（額定電流 A）、`tripDelay`（跳脫延遲秒數）屬性
+## MODIFIED Requirements
 
 ### Requirement: Circuit type definition
 
@@ -50,15 +13,6 @@
 
 - **WHEN** 建立一個 Circuit 物件
 - **THEN** 原有的 `breaker`、`wire`、`appliances` 欄位 MUST 保留且型別不變
-
-### Requirement: Simulation status type
-
-系統 MUST 定義 SimulationStatus 型別，涵蓋四種狀態：normal、warning、tripped、burned。
-
-#### Scenario: 狀態為字串字面量聯合型別
-
-- **WHEN** 使用 SimulationStatus 型別
-- **THEN** 其值 MUST 為 `'normal'`、`'warning'`、`'tripped'`、`'burned'` 之一
 
 ### Requirement: Level type definition
 

@@ -1,5 +1,5 @@
 import type { Level } from '../types/game';
-import { DEFAULT_APPLIANCES } from './constants';
+import { DEFAULT_APPLIANCES, DEFAULT_BREAKER } from './constants';
 
 const [hairDryer, kettle, , underSinkHeater, dryer] = DEFAULT_APPLIANCES;
 
@@ -11,6 +11,9 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer],
     budget: 50,
     survivalTime: 5,
+    circuitConfigs: [
+      { id: 'c1', label: '主迴路', breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+    ],
   },
   {
     name: 'L02 燒線陷阱',
@@ -18,6 +21,9 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer, kettle],
     budget: 120,
     survivalTime: 5,
+    circuitConfigs: [
+      { id: 'c1', label: '主迴路', breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
+    ],
   },
   {
     name: 'L03 成本取捨',
@@ -25,6 +31,9 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer, kettle],
     budget: 55,
     survivalTime: 5,
+    circuitConfigs: [
+      { id: 'c1', label: '主迴路', breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
+    ],
   },
   {
     name: 'L04 低功率陷阱',
@@ -32,6 +41,9 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [underSinkHeater, kettle],
     budget: 85,
     survivalTime: 8,
+    circuitConfigs: [
+      { id: 'c1', label: '主迴路', breaker: DEFAULT_BREAKER, availableAppliances: [underSinkHeater, kettle] },
+    ],
   },
   {
     name: 'L05 長時間耐久',
@@ -39,5 +51,8 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [dryer, kettle],
     budget: 85,
     survivalTime: 15,
+    circuitConfigs: [
+      { id: 'c1', label: '主迴路', breaker: DEFAULT_BREAKER, availableAppliances: [dryer, kettle] },
+    ],
   },
 ] as const;

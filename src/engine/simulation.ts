@@ -1,6 +1,9 @@
 import type {
   Appliance,
   Circuit,
+  CircuitId,
+  CircuitState,
+  MultiCircuitState,
   SimulationConfig,
   SimulationState,
   SimulationStatus,
@@ -17,7 +20,7 @@ export function calcTotalCurrent(appliances: readonly Appliance[]): number {
   return appliances.reduce((sum, a) => sum + a.power / a.voltage, 0);
 }
 
-/** 建立初始模擬狀態 */
+/** 建立初始模擬狀態（單迴路，向後相容） */
 export function createInitialState(): SimulationState {
   return {
     status: 'normal',
@@ -25,6 +28,29 @@ export function createInitialState(): SimulationState {
     wireHeat: 0,
     elapsed: 0,
     breakerTripTimer: 0,
+  };
+}
+
+/** 建立初始單迴路狀態 */
+export function createInitialCircuitState(): CircuitState {
+  return {
+    status: 'normal',
+    totalCurrent: 0,
+    wireHeat: 0,
+    breakerTripTimer: 0,
+  };
+}
+
+/** 建立多迴路初始狀態 */
+export function createInitialMultiState(circuitIds: CircuitId[]): MultiCircuitState {
+  const circuitStates: Record<CircuitId, CircuitState> = {};
+  for (const id of circuitIds) {
+    circuitStates[id] = createInitialCircuitState();
+  }
+  return {
+    circuitStates,
+    elapsed: 0,
+    overallStatus: 'normal',
   };
 }
 
