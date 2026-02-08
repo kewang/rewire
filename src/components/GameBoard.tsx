@@ -11,7 +11,7 @@ import ResultPanel from './ResultPanel';
 import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
 
-type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
+type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'won' | 'over-budget';
 
 const EMPTY_CONFIGS: CircuitConfig[] = [];
 
@@ -49,6 +49,7 @@ export default function GameBoard() {
   const [result, setResult] = useState<GameResult>('none');
   const [wiring, setWiring] = useState<WiringState>(createInitialWiring([]));
   const [circuitElcb, setCircuitElcb] = useState<Record<CircuitId, boolean>>({});
+  const [circuitPhases, setCircuitPhases] = useState<Record<CircuitId, 'R' | 'T'>>({});
 
   const rafRef = useRef<number>(0);
   const prevTimeRef = useRef<number>(0);
@@ -89,6 +90,9 @@ export default function GameBoard() {
   const circuitElcbRef = useRef(circuitElcb);
   useEffect(() => { circuitElcbRef.current = circuitElcb; }, [circuitElcb]);
 
+  const circuitPhasesRef = useRef(circuitPhases);
+  useEffect(() => { circuitPhasesRef.current = circuitPhases; }, [circuitPhases]);
+
   // Total cost: sum of all circuits' wire costs + ELCB costs
   const totalCost = useMemo(() => {
     return circuitIds.reduce((sum, id) => {
@@ -118,7 +122,8 @@ export default function GameBoard() {
     const dt = Math.min((timestamp - prevTimeRef.current) / 1000, 0.1);
     prevTimeRef.current = timestamp;
 
-    const newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt);
+    const phases = Object.keys(circuitPhasesRef.current).length > 0 ? circuitPhasesRef.current : undefined;
+    const newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt, phases);
     setMultiState(newMultiState);
 
     // Buzzing management: trigger on any warning circuit, volume = max wireHeat
@@ -142,13 +147,13 @@ export default function GameBoard() {
       buzzingRef.current = false;
     }
 
-    // Terminal state: tripped or burned (use overallStatus)
-    if (newMultiState.overallStatus === 'tripped' || newMultiState.overallStatus === 'burned') {
+    // Terminal state: tripped, burned, or neutral-burned (use overallStatus)
+    if (newMultiState.overallStatus === 'tripped' || newMultiState.overallStatus === 'burned' || newMultiState.overallStatus === 'neutral-burned') {
       setIsPowered(false);
       stopApplianceSounds();
       setResult(newMultiState.overallStatus);
       if (newMultiState.overallStatus === 'tripped') playTripped();
-      else playBurned();
+      else playBurned(); // burned and neutral-burned share same sound
       return;
     }
 
@@ -224,6 +229,7 @@ export default function GameBoard() {
     setCircuitAppliances({});
     setCircuitWires({});
     setCircuitElcb({});
+    setCircuitPhases({});
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -247,6 +253,12 @@ export default function GameBoard() {
     setCircuitAppliances(appls);
     setCircuitWires(createInitialCircuitWires(ids));
     setCircuitElcb({});
+    // Initialize phase assignments from CircuitConfig.phase
+    const phases: Record<CircuitId, 'R' | 'T'> = {};
+    for (const config of level.circuitConfigs) {
+      if (config.phase) phases[config.id] = config.phase;
+    }
+    setCircuitPhases(phases);
     setMultiState(createInitialMultiState(ids));
     setResult('none');
     setWiring(createInitialWiring(ids));
@@ -311,6 +323,14 @@ export default function GameBoard() {
     setCircuitElcb(prev => ({ ...prev, [circuitId]: !prev[circuitId] }));
   }, []);
 
+  const handleTogglePhase = useCallback((circuitId: CircuitId) => {
+    if (isPowered || currentLevel?.phaseMode !== 'manual') return;
+    setCircuitPhases(prev => ({
+      ...prev,
+      [circuitId]: prev[circuitId] === 'R' ? 'T' : 'R',
+    }));
+  }, [isPowered, currentLevel?.phaseMode]);
+
   const handleAddAppliance = useCallback((circuitId: CircuitId, a: Appliance) => {
     setCircuitAppliances(prev => ({
       ...prev,
@@ -344,6 +364,7 @@ export default function GameBoard() {
           cost={totalCost}
           budget={currentLevel.budget}
           survivalTime={currentLevel.survivalTime}
+          phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
         />
       </header>
 
@@ -368,6 +389,9 @@ export default function GameBoard() {
             onPowerToggle={handlePowerToggle}
             leverDisabled={(!hasAnyAppliance || !allWired) && !isPowered}
             onTargetCircuitChange={handleTargetCircuitChange}
+            phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
+            phaseMode={currentLevel?.phaseMode}
+            onTogglePhase={handleTogglePhase}
           />
         </section>
 

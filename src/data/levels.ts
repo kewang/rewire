@@ -1,7 +1,7 @@
 import type { Level } from '../types/game';
-import { DEFAULT_APPLIANCES, DEFAULT_BREAKER } from './constants';
+import { DEFAULT_APPLIANCES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
 
-const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, , , fridge] = DEFAULT_APPLIANCES;
+const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, , fridge] = DEFAULT_APPLIANCES;
 
 /** 關卡定義（L01-L05 單迴路, L06-L09 多迴路） */
 export const LEVELS: readonly Level[] = [
@@ -111,6 +111,33 @@ export const LEVELS: readonly Level[] = [
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [fridge, microwave] },
       { id: 'c2', label: 'IH 爐', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [ihStove] },
+    ],
+  },
+  {
+    name: 'L11 相位平衡入門',
+    description: '單相三線制登場！紅相和黑相要均衡分配，否則中性線會過載燒毀。',
+    requiredAppliances: [kettle, hairDryer, fridge, airCon],
+    budget: 200,
+    survivalTime: 12,
+    phaseMode: 'auto',
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, fridge], phase: 'R' },
+      { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge], phase: 'T' },
+      { id: 'c3', label: '冷氣', voltage: 220, breaker: BREAKER_30A, availableAppliances: [airCon] },
+    ],
+  },
+  {
+    name: 'L12 相位平衡進階',
+    description: '四條迴路，兩條都在紅相！你可以手動切換相位來平衡負載。',
+    requiredAppliances: [kettle, microwave, hairDryer, underSinkHeater, fridge, airCon],
+    budget: 250,
+    survivalTime: 15,
+    phaseMode: 'manual',
+    circuitConfigs: [
+      { id: 'c1', label: '廚房A', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, underSinkHeater], phase: 'R' },
+      { id: 'c2', label: '廚房B', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [microwave, underSinkHeater, hairDryer], phase: 'R' },
+      { id: 'c3', label: '客廳', voltage: 110, breaker: BREAKER_15A, availableAppliances: [hairDryer, fridge], phase: 'T' },
+      { id: 'c4', label: '冷氣', voltage: 220, breaker: BREAKER_30A, availableAppliances: [airCon] },
     ],
   },
 ] as const;

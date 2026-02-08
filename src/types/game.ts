@@ -43,7 +43,7 @@ export interface Circuit {
 }
 
 /** 模擬狀態 */
-export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned';
+export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned' | 'neutral-burned';
 
 /** 單迴路模擬動態狀態 */
 export interface CircuitState {
@@ -65,6 +65,10 @@ export interface MultiCircuitState {
   readonly elapsed: number;
   /** 整體狀態，由所有迴路最嚴重狀態決定 */
   readonly overallStatus: SimulationStatus;
+  /** 中性線電流 (A) */
+  readonly neutralCurrent: number;
+  /** 中性線熱度 (0.0 ~ 1.0) */
+  readonly neutralHeat: number;
 }
 
 /** 模擬動態狀態（單迴路，向後相容） */
@@ -129,6 +133,8 @@ export interface CircuitConfig {
   readonly availableAppliances: readonly Appliance[];
   /** 該迴路是否可安裝 ELCB 漏電斷路器 */
   readonly elcbAvailable?: boolean;
+  /** 相位分配（僅 110V 迴路適用，220V 為跨相 R-T） */
+  readonly phase?: 'R' | 'T';
 }
 
 /** 關卡定義 */
@@ -145,4 +151,6 @@ export interface Level {
   readonly survivalTime: number;
   /** 多迴路配置 */
   readonly circuitConfigs: readonly CircuitConfig[];
+  /** 相位分配模式：auto=固定不可切換，manual=玩家可切換 */
+  readonly phaseMode?: 'auto' | 'manual';
 }

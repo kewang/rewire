@@ -39,5 +39,8 @@ export const DEFAULT_BREAKER: Breaker = BREAKER_20A;
 /** ELCB 漏電斷路器每迴路成本 */
 export const ELCB_COST = 35;
 
+/** 中性線安全容量 (A) */
+export const NEUTRAL_MAX_CURRENT = 30;
+
 /** 預設線長（米），v0.1 固定值 */
 export const DEFAULT_WIRE_LENGTH = 10;

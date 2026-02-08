@@ -9,6 +9,9 @@ interface CircuitDiagramProps {
   onPowerToggle?: () => void;
   leverDisabled?: boolean;
   onTargetCircuitChange?: (circuitId: CircuitId | null) => void;
+  phases?: Record<CircuitId, 'R' | 'T'>;
+  phaseMode?: 'auto' | 'manual';
+  onTogglePhase?: (circuitId: CircuitId) => void;
 }
 
 /** wireHeat 0→1 對應 白→黃→紅→黑 */
@@ -84,6 +87,9 @@ function SingleCircuitSVG({
   xOffset,
   showLabel,
   showVoltageLabel,
+  phase,
+  phaseMode,
+  onTogglePhase,
 }: {
   circuit: Circuit;
   circuitState: CircuitState;
@@ -99,6 +105,9 @@ function SingleCircuitSVG({
   xOffset: number;
   showLabel: boolean;
   showVoltageLabel: boolean;
+  phase?: 'R' | 'T';
+  phaseMode?: 'auto' | 'manual';
+  onTogglePhase?: () => void;
 }) {
   const cx = xOffset + 100; // center x of this circuit
   const wireColor = heatToColor(circuitState.wireHeat);
@@ -188,6 +197,33 @@ function SingleCircuitSVG({
         x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 + 2}
         stroke={isPowered ? '#000' : '#999'} strokeWidth={0.8} strokeLinecap="round"
         style={{ pointerEvents: 'none' }} />
+
+      {/* Phase label and toggle */}
+      {phase && (
+        <g>
+          {/* Phase badge */}
+          <rect x={xOffset + 10} y={14} width={38} height={18} rx={3}
+            fill={phase === 'R' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)'}
+            stroke={phase === 'R' ? '#ef4444' : '#3b82f6'} strokeWidth={1} />
+          <text x={xOffset + 29} y={27} textAnchor="middle"
+            fill={phase === 'R' ? '#f87171' : '#60a5fa'} fontSize={10}
+            fontWeight="bold" fontFamily="var(--font-mono)">
+            {phase === 'R' ? 'R相' : 'T相'}
+          </text>
+          {/* Toggle button (manual mode only, not powered) */}
+          {phaseMode === 'manual' && !isPowered && (
+            <g className="phase-toggle-btn" style={{ cursor: 'pointer' }}
+              onClick={onTogglePhase}>
+              <rect x={xOffset + 10} y={35} width={38} height={14} rx={2}
+                fill="rgba(255,255,255,0.05)" stroke="#555" strokeWidth={0.8} />
+              <text x={xOffset + 29} y={45} textAnchor="middle"
+                fill="#8a96a6" fontSize={7} fontFamily="var(--font-mono)">
+                切換
+              </text>
+            </g>
+          )}
+        </g>
+      )}
 
       {/* === Wiring states === */}
 
@@ -418,7 +454,7 @@ function SingleCircuitSVG({
   );
 }
 
-export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, onTargetCircuitChange }: CircuitDiagramProps) {
+export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, onTargetCircuitChange, phases, phaseMode, onTogglePhase }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
@@ -612,6 +648,9 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
               xOffset={i * CIRCUIT_WIDTH}
               showLabel={!isSingle}
               showVoltageLabel={hasMixedVoltage}
+              phase={phases?.[cId]}
+              phaseMode={phaseMode}
+              onTogglePhase={onTogglePhase ? () => onTogglePhase(cId) : undefined}
             />
           );
         })}

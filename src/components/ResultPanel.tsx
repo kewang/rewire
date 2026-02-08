@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import type { Circuit, MultiCircuitState } from '../types/game';
 
-type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
+type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'won' | 'over-budget';
 
 interface ResultPanelProps {
   result: GameResult;
@@ -92,6 +92,20 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
             <p><strong>線材安全電流：</strong>{failedCircuit.wire.maxCurrent}A（{failedCircuit.wire.crossSection}mm²）</p>
             <p className="result-hint">
               {!isSingle ? `${failedCircuit.label}的` : ''}總電流 {failedState.totalCurrent.toFixed(1)}A 超過 {failedCircuit.wire.crossSection}mm² 線材的安全電流 {failedCircuit.wire.maxCurrent}A，長時間過載導致燒線。試試更粗的線材？
+            </p>
+          </div>
+        </>
+      )}
+
+      {result === 'neutral-burned' && (
+        <>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>中性線燒毀！</h2>
+          <div className="result-details">
+            <p><strong>失敗類型：</strong>中性線過載燒毀</p>
+            <p><strong>中性線電流：</strong>{multiState.neutralCurrent.toFixed(1)}A</p>
+            <p><strong>中性線容量：</strong>30A</p>
+            <p className="result-hint">
+              紅相(R)與黑相(T)負載嚴重不平衡，中性線電流超過 30A 安全容量導致燒毀。試著平衡兩相的負載分配！
             </p>
           </div>
         </>

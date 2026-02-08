@@ -9,6 +9,7 @@ import type {
   SimulationStatus,
 } from '../types/game';
 import { worstStatus } from '../types/helpers';
+import { NEUTRAL_MAX_CURRENT } from '../data/constants';
 
 /** 預設模擬參數：過載約 3 秒燒毀（PRD 要求） */
 const DEFAULT_CONFIG: SimulationConfig = {
@@ -55,6 +56,8 @@ export function createInitialMultiState(circuitIds: CircuitId[]): MultiCircuitSt
     circuitStates,
     elapsed: 0,
     overallStatus: 'normal',
+    neutralCurrent: 0,
+    neutralHeat: 0,
   };
 }
 
@@ -128,14 +131,21 @@ export function step(
 
 /**
  * 多迴路步進：迭代各迴路呼叫 step()，更新 elapsed 和 overallStatus。
+ * 支援相位分配：計算中性線電流 I_N = |Σ I_R − Σ I_T| 與熱度步進。
  * 純函式，不產生副作用。
  */
 export function stepMulti(
   circuits: readonly Circuit[],
   state: MultiCircuitState,
   dt: number,
+  phases?: Record<CircuitId, 'R' | 'T'>,
   config: SimulationConfig = DEFAULT_CONFIG,
 ): MultiCircuitState {
+  // neutral-burned 終態保護
+  if (state.overallStatus === 'neutral-burned') {
+    return state;
+  }
+
   const newElapsed = state.elapsed + dt;
 
   const newCircuitStates: Record<CircuitId, CircuitState> = {};
@@ -144,9 +154,51 @@ export function stepMulti(
     newCircuitStates[circuit.id] = step(circuit, circuitState, dt, config);
   }
 
+  // 計算中性線電流與熱度
+  let neutralCurrent = 0;
+  let neutralHeat = state.neutralHeat;
+
+  if (phases) {
+    let sumR = 0;
+    let sumT = 0;
+    for (const circuit of circuits) {
+      const phase = phases[circuit.id];
+      if (!phase) continue; // 220V 迴路無 phase，不計入
+      const cs = newCircuitStates[circuit.id];
+      if (phase === 'R') {
+        sumR += cs.totalCurrent;
+      } else {
+        sumT += cs.totalCurrent;
+      }
+    }
+    neutralCurrent = Math.abs(sumR - sumT);
+
+    // 中性線熱度步進（同 wire heat model）
+    if (neutralCurrent > NEUTRAL_MAX_CURRENT) {
+      const overloadRatio = neutralCurrent / NEUTRAL_MAX_CURRENT - 1;
+      neutralHeat += overloadRatio * config.heatRate * dt;
+    } else {
+      neutralHeat -= config.coolRate * dt;
+    }
+    neutralHeat = Math.max(0, Math.min(1, neutralHeat));
+  }
+
+  // neutral-burned 判定
+  if (neutralHeat >= 1.0) {
+    return {
+      circuitStates: newCircuitStates,
+      elapsed: newElapsed,
+      overallStatus: 'neutral-burned',
+      neutralCurrent,
+      neutralHeat: 1,
+    };
+  }
+
   return {
     circuitStates: newCircuitStates,
     elapsed: newElapsed,
     overallStatus: worstStatus(newCircuitStates),
+    neutralCurrent,
+    neutralHeat,
   };
 }

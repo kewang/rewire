@@ -1,9 +1,4 @@
-# multi-circuit-simulation Specification
-
-## Purpose
-多迴路步進函式，迭代各迴路獨立運算並匯總 overallStatus。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Multi-circuit step function
 
@@ -55,12 +50,3 @@
 
 - **WHEN** overallStatus 已為 `'neutral-burned'`
 - **THEN** stepMulti MUST 回傳相同狀態不做任何變更
-
-### Requirement: stepMulti is a pure function
-
-stepMulti MUST 為純函式，不產生副作用。
-
-#### Scenario: 純函式可重現
-
-- **WHEN** 以相同的 circuits、MultiCircuitState 和 dt 呼叫 stepMulti
-- **THEN** 回傳結果 MUST 完全相同

@@ -181,6 +181,49 @@
   opacity: 0.5;
 }
 
+/* ── Phase Balance ───────────────────────────────────────────── */
+
+.phase-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.05em;
+}
+
+.phase-badge.phase-R {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.phase-badge.phase-T {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.phase-badge.phase-N {
+  background: rgba(255, 255, 255, 0.08);
+  color: #8a96a6;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.phase-balance-indicator {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.phase-toggle-btn:hover rect {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: #888;
+}
+
 /* ── Cards (shared) ───────────────────────────────────────────── */
 
 .card-list {
