@@ -1,7 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState } from '../types/game';
-import { toLegacyState } from '../types/helpers';
-import { DEFAULT_WIRES, DEFAULT_BREAKER, DEFAULT_WIRE_LENGTH } from '../data/constants';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId } from '../types/game';
+import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing, startApplianceSounds, stopApplianceSounds } from '../engine/audio';
@@ -14,28 +13,39 @@ import CircuitDiagram from './CircuitDiagram';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'won' | 'over-budget';
 
-const DEFAULT_CIRCUIT_ID = 'c1';
+function createInitialWiring(circuitIds: CircuitId[]): WiringState {
+  const circuits: WiringState['circuits'] = {};
+  for (const id of circuitIds) {
+    circuits[id] = { isWired: false, connectedWire: null };
+  }
+  return {
+    isDragging: false,
+    dragWire: null,
+    cursorPos: null,
+    isWired: false,
+    connectedWire: null,
+    circuits,
+    targetCircuitId: null,
+  };
+}
 
-const INITIAL_MULTI_STATE = createInitialMultiState([DEFAULT_CIRCUIT_ID]);
+function createInitialCircuitWires(circuitIds: CircuitId[]): Record<CircuitId, Wire> {
+  const result: Record<CircuitId, Wire> = {};
+  for (const id of circuitIds) {
+    result[id] = DEFAULT_WIRES[0];
+  }
+  return result;
+}
 
-const INITIAL_WIRING: WiringState = {
-  isDragging: false,
-  dragWire: null,
-  cursorPos: null,
-  isWired: false,
-  connectedWire: null,
-  circuits: {},
-  targetCircuitId: null,
-};
 
 export default function GameBoard() {
   const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
-  const [selectedWire, setSelectedWire] = useState<Wire>(DEFAULT_WIRES[0]);
-  const [pluggedAppliances, setPluggedAppliances] = useState<Appliance[]>([]);
-  const [multiState, setMultiState] = useState<MultiCircuitState>(INITIAL_MULTI_STATE);
+  const [circuitWires, setCircuitWires] = useState<Record<CircuitId, Wire>>({});
+  const [circuitAppliances, setCircuitAppliances] = useState<Record<CircuitId, Appliance[]>>({});
+  const [multiState, setMultiState] = useState<MultiCircuitState>(createInitialMultiState([]));
   const [isPowered, setIsPowered] = useState(false);
   const [result, setResult] = useState<GameResult>('none');
-  const [wiring, setWiring] = useState<WiringState>(INITIAL_WIRING);
+  const [wiring, setWiring] = useState<WiringState>(createInitialWiring([]));
 
   const rafRef = useRef<number>(0);
   const prevTimeRef = useRef<number>(0);
@@ -46,26 +56,49 @@ export default function GameBoard() {
     multiStateRef.current = multiState;
   }, [multiState]);
 
-  const circuit: Circuit = {
-    id: DEFAULT_CIRCUIT_ID,
-    label: '主迴路',
-    breaker: DEFAULT_BREAKER,
-    wire: selectedWire,
-    appliances: pluggedAppliances,
-  };
-  const circuitsRef = useRef<Circuit[]>([circuit]);
-  circuitsRef.current = [circuit];
+  // Derive circuitIds from current level
+  const circuitConfigs = currentLevel?.circuitConfigs ?? [];
+  const circuitIds = useMemo(() => circuitConfigs.map(c => c.id), [circuitConfigs]);
+
+  // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances
+  const circuits: Circuit[] = useMemo(() =>
+    circuitConfigs.map(config => ({
+      id: config.id,
+      label: config.label,
+      breaker: config.breaker,
+      wire: circuitWires[config.id] ?? DEFAULT_WIRES[0],
+      appliances: circuitAppliances[config.id] ?? [],
+    })),
+    [circuitConfigs, circuitWires, circuitAppliances]
+  );
+
+  const circuitsRef = useRef<Circuit[]>(circuits);
+  circuitsRef.current = circuits;
 
   const currentLevelRef = useRef(currentLevel);
   currentLevelRef.current = currentLevel;
 
-  const selectedWireRef = useRef(selectedWire);
-  selectedWireRef.current = selectedWire;
+  const circuitWiresRef = useRef(circuitWires);
+  circuitWiresRef.current = circuitWires;
 
-  const cost = selectedWire.costPerMeter * DEFAULT_WIRE_LENGTH;
+  // Total cost: sum of all circuits' wire costs
+  const totalCost = useMemo(() => {
+    return circuitIds.reduce((sum, id) => {
+      const wire = circuitWires[id] ?? DEFAULT_WIRES[0];
+      return sum + wire.costPerMeter * DEFAULT_WIRE_LENGTH;
+    }, 0);
+  }, [circuitIds, circuitWires]);
 
-  // Bridge: 從 MultiCircuitState 轉出供子元件使用的 SimulationState
-  const simState = toLegacyState(multiState, DEFAULT_CIRCUIT_ID);
+  // All appliances across all circuits (for sound)
+  const allAppliances = useMemo(() => {
+    return circuitIds.flatMap(id => circuitAppliances[id] ?? []);
+  }, [circuitIds, circuitAppliances]);
+
+  // Has at least one appliance across all circuits
+  const hasAnyAppliance = allAppliances.length > 0;
+
+  // All circuits are wired
+  const allWired = circuitIds.length > 0 && circuitIds.every(id => wiring.circuits[id]?.isWired);
 
   // rAF simulation loop
   const tick = useCallback((timestamp: number) => {
@@ -78,16 +111,22 @@ export default function GameBoard() {
     const newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt);
     setMultiState(newMultiState);
 
-    // Bridge for buzzing: 用第一個迴路的狀態
-    const cs = newMultiState.circuitStates[DEFAULT_CIRCUIT_ID];
+    // Buzzing management: trigger on any warning circuit, volume = max wireHeat
+    let maxWarnHeat = 0;
+    let hasWarning = false;
+    for (const cs of Object.values(newMultiState.circuitStates)) {
+      if (cs.status === 'warning') {
+        hasWarning = true;
+        if (cs.wireHeat > maxWarnHeat) maxWarnHeat = cs.wireHeat;
+      }
+    }
 
-    // Buzzing management
-    if (cs.status === 'warning') {
+    if (hasWarning) {
       if (!buzzingRef.current) {
         startBuzzing();
         buzzingRef.current = true;
       }
-      updateBuzzingVolume(cs.wireHeat);
+      updateBuzzingVolume(maxWarnHeat);
     } else if (buzzingRef.current) {
       stopBuzzing();
       buzzingRef.current = false;
@@ -103,12 +142,16 @@ export default function GameBoard() {
       return;
     }
 
-    // Win condition check (use elapsed from MultiCircuitState)
+    // Win condition check
     const level = currentLevelRef.current;
     if (level && newMultiState.elapsed >= level.survivalTime) {
       setIsPowered(false);
       stopApplianceSounds();
-      const wireCost = selectedWireRef.current.costPerMeter * DEFAULT_WIRE_LENGTH;
+      // Sum wire costs from all circuits at this moment
+      const wires = circuitWiresRef.current;
+      const wireCost = Object.values(wires).reduce(
+        (sum, w) => sum + w.costPerMeter * DEFAULT_WIRE_LENGTH, 0
+      );
       const gameResult = wireCost > level.budget ? 'over-budget' : 'won';
       setResult(gameResult);
       if (gameResult === 'won') playWin();
@@ -126,19 +169,19 @@ export default function GameBoard() {
       stopApplianceSounds();
       buzzingRef.current = false;
       setIsPowered(false);
-      setMultiState(INITIAL_MULTI_STATE);
+      setMultiState(createInitialMultiState(circuitIds));
       setResult('none');
     } else {
-      if (pluggedAppliances.length === 0 || !wiring.isWired) return;
-      setMultiState(INITIAL_MULTI_STATE);
+      if (!hasAnyAppliance || !allWired) return;
+      setMultiState(createInitialMultiState(circuitIds));
       setResult('none');
       prevTimeRef.current = 0;
       setIsPowered(true);
       playPowerOn();
-      startApplianceSounds(pluggedAppliances);
+      startApplianceSounds(allAppliances);
       rafRef.current = requestAnimationFrame(tick);
     }
-  }, [isPowered, pluggedAppliances, wiring.isWired, tick]);
+  }, [isPowered, hasAnyAppliance, allWired, circuitIds, allAppliances, tick]);
 
   useEffect(() => {
     return () => cancelAnimationFrame(rafRef.current);
@@ -151,10 +194,10 @@ export default function GameBoard() {
     stopApplianceSounds();
     buzzingRef.current = false;
     setIsPowered(false);
-    setMultiState(INITIAL_MULTI_STATE);
+    setMultiState(createInitialMultiState(circuitIds));
     setResult('none');
-    setWiring(INITIAL_WIRING);
-  }, []);
+    setWiring(createInitialWiring(circuitIds));
+  }, [circuitIds]);
 
   const handleBackToLevels = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -163,21 +206,31 @@ export default function GameBoard() {
     stopApplianceSounds();
     buzzingRef.current = false;
     setIsPowered(false);
-    setMultiState(INITIAL_MULTI_STATE);
+    setMultiState(createInitialMultiState([]));
     setResult('none');
-    setPluggedAppliances([]);
-    setSelectedWire(DEFAULT_WIRES[0]);
+    setCircuitAppliances({});
+    setCircuitWires({});
     setCurrentLevel(null);
-    setWiring(INITIAL_WIRING);
+    setWiring(createInitialWiring([]));
   }, []);
 
   const handleSelectLevel = useCallback((level: Level) => {
+    const ids = level.circuitConfigs.map(c => c.id);
     setCurrentLevel(level);
-    setPluggedAppliances([...level.requiredAppliances]);
-    setSelectedWire(DEFAULT_WIRES[0]);
-    setMultiState(INITIAL_MULTI_STATE);
+    // Pre-populate appliances from requiredAppliances into first circuit (single-circuit compat)
+    const appls: Record<CircuitId, Appliance[]> = {};
+    for (const config of level.circuitConfigs) {
+      appls[config.id] = [];
+    }
+    // For single-circuit levels, assign all required appliances to the only circuit
+    if (level.circuitConfigs.length === 1) {
+      appls[level.circuitConfigs[0].id] = [...level.requiredAppliances];
+    }
+    setCircuitAppliances(appls);
+    setCircuitWires(createInitialCircuitWires(ids));
+    setMultiState(createInitialMultiState(ids));
     setResult('none');
-    setWiring(INITIAL_WIRING);
+    setWiring(createInitialWiring(ids));
   }, []);
 
   // Wiring drag callbacks
@@ -191,33 +244,58 @@ export default function GameBoard() {
 
   const handleDragEnd = useCallback((dropped: boolean) => {
     setWiring(prev => {
-      if (dropped && prev.dragWire) {
+      const tid = prev.targetCircuitId;
+      if (dropped && prev.dragWire && tid) {
+        const newCircuits = { ...prev.circuits };
+        newCircuits[tid] = { isWired: true, connectedWire: prev.dragWire };
+        const allCircuitsWired = Object.values(newCircuits).every(c => c.isWired);
         return {
           ...prev,
           isDragging: false,
           dragWire: null,
           cursorPos: null,
-          isWired: true,
+          isWired: allCircuitsWired,
           connectedWire: prev.dragWire,
+          circuits: newCircuits,
+          targetCircuitId: null,
         };
       }
-      return { ...prev, isDragging: false, dragWire: null, cursorPos: null };
+      return { ...prev, isDragging: false, dragWire: null, cursorPos: null, targetCircuitId: null };
     });
   }, []);
 
-  // Sync connectedWire → selectedWire
-  useEffect(() => {
-    if (wiring.connectedWire) {
-      setSelectedWire(wiring.connectedWire);
-    }
-  }, [wiring.connectedWire]);
-
-  const handleAddAppliance = useCallback((a: Appliance) => {
-    setPluggedAppliances((prev) => [...prev, a]);
+  // Called by CircuitDiagram when cursor enters/leaves a circuit's drop zone
+  const handleTargetCircuitChange = useCallback((circuitId: CircuitId | null) => {
+    setWiring(prev => ({ ...prev, targetCircuitId: circuitId }));
   }, []);
 
-  const handleRemoveAppliance = useCallback((index: number) => {
-    setPluggedAppliances((prev) => prev.filter((_, i) => i !== index));
+  // Sync connectedWire → circuitWires per circuit
+  useEffect(() => {
+    const newWires: Record<CircuitId, Wire> = { ...circuitWires };
+    let changed = false;
+    for (const [id, cw] of Object.entries(wiring.circuits)) {
+      if (cw.connectedWire && (!newWires[id] || newWires[id] !== cw.connectedWire)) {
+        newWires[id] = cw.connectedWire;
+        changed = true;
+      }
+    }
+    if (changed) {
+      setCircuitWires(newWires);
+    }
+  }, [wiring.circuits]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAddAppliance = useCallback((circuitId: CircuitId, a: Appliance) => {
+    setCircuitAppliances(prev => ({
+      ...prev,
+      [circuitId]: [...(prev[circuitId] ?? []), a],
+    }));
+  }, []);
+
+  const handleRemoveAppliance = useCallback((circuitId: CircuitId, index: number) => {
+    setCircuitAppliances(prev => ({
+      ...prev,
+      [circuitId]: (prev[circuitId] ?? []).filter((_, i) => i !== index),
+    }));
   }, []);
 
   // Level select screen
@@ -234,10 +312,9 @@ export default function GameBoard() {
           <span className="level-goal">通電 {currentLevel.survivalTime}秒</span>
         </div>
         <StatusDisplay
-          state={simState}
-          wireMaxCurrent={selectedWire.maxCurrent}
-          breakerRated={DEFAULT_BREAKER.ratedCurrent}
-          cost={cost}
+          circuits={circuits}
+          multiState={multiState}
+          cost={totalCost}
           budget={currentLevel.budget}
           survivalTime={currentLevel.survivalTime}
         />
@@ -257,19 +334,20 @@ export default function GameBoard() {
 
         <section className="panel-center">
           <CircuitDiagram
-            state={simState}
+            circuits={circuits}
+            multiState={multiState}
             isPowered={isPowered}
-            breakerRated={DEFAULT_BREAKER.ratedCurrent}
             wiring={wiring}
             onPowerToggle={handlePowerToggle}
-            leverDisabled={(pluggedAppliances.length === 0 || !wiring.isWired) && !isPowered}
+            leverDisabled={(!hasAnyAppliance || !allWired) && !isPowered}
+            onTargetCircuitChange={handleTargetCircuitChange}
           />
         </section>
 
         <section className="panel-right">
           <AppliancePanel
-            available={currentLevel.requiredAppliances}
-            plugged={pluggedAppliances}
+            circuitConfigs={currentLevel.circuitConfigs}
+            circuitAppliances={circuitAppliances}
             onAdd={handleAddAppliance}
             onRemove={handleRemoveAppliance}
             disabled={isPowered}
@@ -280,10 +358,9 @@ export default function GameBoard() {
 
       <ResultPanel
         result={result}
-        state={simState}
-        wire={selectedWire}
-        breaker={DEFAULT_BREAKER}
-        cost={cost}
+        circuits={circuits}
+        multiState={multiState}
+        cost={totalCost}
         budget={currentLevel.budget}
         onRetry={handleRetry}
         onBackToLevels={handleBackToLevels}

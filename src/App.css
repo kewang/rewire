@@ -191,6 +191,37 @@
   transform: none;
 }
 
+/* Circuit selector tabs (multi-circuit) */
+.circuit-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.circuit-tab {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.circuit-tab:hover {
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+.circuit-tab.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(234, 179, 8, 0.08);
+}
+
 .card-title {
   font-family: var(--font-mono);
   font-weight: 600;

@@ -1,13 +1,14 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
-import type { SimulationState, WiringState } from '../types/game';
+import type { Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState } from '../types/game';
 
 interface CircuitDiagramProps {
-  state: SimulationState;
+  circuits: readonly Circuit[];
+  multiState: MultiCircuitState;
   isPowered: boolean;
-  breakerRated: number;
   wiring: WiringState;
   onPowerToggle?: () => void;
   leverDisabled?: boolean;
+  onTargetCircuitChange?: (circuitId: CircuitId | null) => void;
 }
 
 /** wireHeat 0→1 對應 白→黃→紅→黑 */
@@ -32,9 +33,9 @@ function heatToColor(heat: number): string {
   return `hsl(0, ${s}%, ${l}%)`;
 }
 
-function glowFilter(state: SimulationState): string {
-  if (state.status === 'warning') return 'url(#glow-warning)';
-  if (state.status === 'burned') return 'url(#glow-burned)';
+function glowFilterId(status: CircuitState['status']): string {
+  if (status === 'warning') return 'url(#glow-warning)';
+  if (status === 'burned') return 'url(#glow-burned)';
   return 'none';
 }
 
@@ -57,84 +58,329 @@ function clientToSvg(svgEl: SVGSVGElement, clientX: number, clientY: number): { 
   return { x: svgPt.x, y: svgPt.y };
 }
 
-// NFB lever layout constants (SVG coords)
-const LEVER_TRACK_X = 138;
-const LEVER_TRACK_Y = 14;
+// Layout constants
+const CIRCUIT_WIDTH = 200;
+const CIRCUIT_HEIGHT = 280;
 const LEVER_TRACK_W = 18;
 const LEVER_TRACK_H = 32;
 const LEVER_HANDLE_W = 14;
 const LEVER_HANDLE_H = 14;
-const LEVER_ON_Y = LEVER_TRACK_Y + 2;
-const LEVER_OFF_Y = LEVER_TRACK_Y + LEVER_TRACK_H - LEVER_HANDLE_H - 2;
-const LEVER_DRAG_THRESHOLD = 8; // SVG units to trigger toggle
+const LEVER_DRAG_THRESHOLD = 8;
 
-export default function CircuitDiagram({ state, isPowered, breakerRated, wiring, onPowerToggle, leverDisabled }: CircuitDiagramProps) {
+/** Single circuit SVG sub-component (renders within parent SVG at given x offset) */
+function SingleCircuitSVG({
+  circuit,
+  circuitState,
+  isPowered,
+  isWired,
+  connectedWire,
+  isDragging,
+  isOverDropZone,
+  showPreview,
+  previewY,
+  dragWire,
+  flashActive,
+  xOffset,
+  showLabel,
+}: {
+  circuit: Circuit;
+  circuitState: CircuitState;
+  isPowered: boolean;
+  isWired: boolean;
+  connectedWire: Circuit['wire'] | null;
+  isDragging: boolean;
+  isOverDropZone: boolean;
+  showPreview: boolean;
+  previewY: number;
+  dragWire: Circuit['wire'] | null;
+  flashActive: boolean;
+  xOffset: number;
+  showLabel: boolean;
+}) {
+  const cx = xOffset + 100; // center x of this circuit
+  const wireColor = heatToColor(circuitState.wireHeat);
+  const isWarning = circuitState.status === 'warning';
+  const isBurned = circuitState.status === 'burned';
+
+  const showWire = isWired && !isDragging;
+  const showPlaceholder = !isWired && !(isDragging && isOverDropZone);
+  const showPreviewLine = isDragging && isOverDropZone && showPreview;
+
+  const previewColor = dragWire ? wireGaugeColor(dragWire.crossSection) : '#888';
+  const connectedColor = connectedWire ? wireGaugeColor(connectedWire.crossSection) : '#888';
+
+  // NFB layout for this circuit
+  const leverTrackX = xOffset + 138;
+  const leverTrackY = 14;
+  const leverOnY = leverTrackY + 2;
+  const leverOffY = leverTrackY + LEVER_TRACK_H - LEVER_HANDLE_H - 2;
+  const leverHandleY = isPowered ? leverOnY : leverOffY;
+  const leverHandleX = leverTrackX + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2;
+
+  return (
+    <g>
+      {/* Circuit label */}
+      {showLabel && (
+        <text x={cx} y={CIRCUIT_HEIGHT - 2} textAnchor="middle" fill="#8a96a6" fontSize="9"
+          fontFamily="var(--font-mono)">
+          {circuit.label}
+        </text>
+      )}
+
+      {/* NFB Breaker body */}
+      <rect x={xOffset + 60} y={10} width={100} height={40} rx={4}
+        fill="#2a2a2a" stroke="#555" strokeWidth={1.5} />
+      <text x={xOffset + 95} y={28} textAnchor="middle" fill="#aaa"
+        fontSize={10} fontWeight="bold" fontFamily="var(--font-mono)">
+        NFB
+      </text>
+      <text x={xOffset + 95} y={42} textAnchor="middle" fill="#777"
+        fontSize={9} fontFamily="var(--font-mono)">
+        {circuit.breaker.ratedCurrent}A
+      </text>
+
+      {/* Lever track */}
+      <rect x={leverTrackX} y={leverTrackY} width={LEVER_TRACK_W} height={LEVER_TRACK_H}
+        rx={3} fill="#111" stroke="#444" strokeWidth={1} />
+      <text x={leverTrackX + LEVER_TRACK_W / 2} y={leverTrackY + 10}
+        textAnchor="middle" fill="#4ade80" fontSize={6} fontWeight="bold"
+        fontFamily="var(--font-mono)">ON</text>
+      <text x={leverTrackX + LEVER_TRACK_W / 2} y={leverTrackY + LEVER_TRACK_H - 3}
+        textAnchor="middle" fill="#888" fontSize={6} fontWeight="bold"
+        fontFamily="var(--font-mono)">OFF</text>
+
+      {/* Lever handle (non-interactive in per-circuit, main lever is global) */}
+      <rect
+        x={leverHandleX} y={leverHandleY}
+        width={LEVER_HANDLE_W} height={LEVER_HANDLE_H}
+        rx={2}
+        fill={isPowered ? '#22c55e' : '#555'}
+        stroke={isPowered ? '#4ade80' : '#777'}
+        strokeWidth={1.5}
+        style={{ pointerEvents: 'none' }}
+      />
+      <line x1={leverHandleX + 3} y1={leverHandleY + LEVER_HANDLE_H / 2 - 2}
+        x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 - 2}
+        stroke={isPowered ? '#000' : '#999'} strokeWidth={0.8} strokeLinecap="round"
+        style={{ pointerEvents: 'none' }} />
+      <line x1={leverHandleX + 3} y1={leverHandleY + LEVER_HANDLE_H / 2 + 2}
+        x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 + 2}
+        stroke={isPowered ? '#000' : '#999'} strokeWidth={0.8} strokeLinecap="round"
+        style={{ pointerEvents: 'none' }} />
+
+      {/* === Wiring states === */}
+
+      {/* Placeholder: grey dashed line when not wired */}
+      {showPlaceholder && (
+        <>
+          <line x1={cx} y1={50} x2={cx} y2={200}
+            stroke="#555" strokeWidth={3} strokeDasharray="8 6"
+            strokeLinecap="round" opacity={0.5} />
+          <text x={cx} y={140} textAnchor="middle" fill="#888" fontSize={10}
+            fontFamily="var(--font-mono)">
+            拖曳線材
+          </text>
+          <text x={cx} y={155} textAnchor="middle" fill="#888" fontSize={10}
+            fontFamily="var(--font-mono)">
+            到此處接線
+          </text>
+        </>
+      )}
+
+      {/* Preview: dashed colored line following cursor during drag */}
+      {showPreviewLine && (
+        <>
+          <line x1={cx} y1={50} x2={cx} y2={previewY}
+            stroke={previewColor} strokeWidth={4} strokeDasharray="10 5"
+            strokeLinecap="round" opacity={0.8} />
+          {previewY > 80 && (
+            <circle cx={cx} cy={previewY} r={4} fill={previewColor} opacity={0.8} />
+          )}
+        </>
+      )}
+
+      {/* Connected wire: solid line with color based on wire gauge */}
+      {showWire && !isPowered && !isBurned && (
+        <>
+          <line x1={cx} y1={50} x2={cx} y2={120}
+            stroke={connectedColor} strokeWidth={4} strokeLinecap="round"
+            className={flashActive ? 'wire-flash' : 'wire-connected'} />
+          <circle cx={cx} cy={120} r={5} fill={connectedColor}
+            className={flashActive ? 'junction-flash' : ''} />
+          <line x1={cx} y1={120} x2={cx} y2={200}
+            stroke={connectedColor} strokeWidth={4} strokeLinecap="round"
+            className={flashActive ? 'wire-flash' : 'wire-connected'} />
+        </>
+      )}
+
+      {/* Powered wire: uses heat color */}
+      {showWire && isPowered && !isBurned && (
+        <>
+          <line x1={cx} y1={50} x2={cx} y2={120}
+            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+            filter={glowFilterId(circuitState.status)} />
+          <circle cx={cx} cy={120} r={5} fill={wireColor}
+            filter={glowFilterId(circuitState.status)} />
+          <line x1={cx} y1={120} x2={cx} y2={200}
+            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+            filter={glowFilterId(circuitState.status)} />
+        </>
+      )}
+
+      {/* Burned wire */}
+      {isBurned && (
+        <>
+          <line x1={cx} y1={50} x2={cx} y2={113}
+            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+            filter={glowFilterId(circuitState.status)} />
+          <line x1={cx} y1={127} x2={cx} y2={200}
+            stroke={wireColor} strokeWidth={4} strokeLinecap="round"
+            filter={glowFilterId(circuitState.status)} />
+        </>
+      )}
+
+      {/* Outlet */}
+      <rect x={xOffset + 70} y={200} width={60} height={50} rx={6}
+        fill="#222"
+        stroke={isOverDropZone ? '#eab308' : '#666'}
+        strokeWidth={isOverDropZone ? 3 : 2}
+        filter={isOverDropZone ? 'url(#glow-drop)' : 'none'} />
+      <rect x={xOffset + 85} y={215} width={8} height={20} rx={2} fill="#444" />
+      <rect x={xOffset + 107} y={215} width={8} height={20} rx={2} fill="#444" />
+
+      {/* Burned: exposed copper core + peeled insulation */}
+      {isBurned && (
+        <>
+          <line x1={cx} y1={115} x2={cx} y2={125} stroke="#d97706" strokeWidth={3} strokeLinecap="round" />
+          <polygon points={`${cx - 2},113 ${cx - 6},108 ${cx},113`} fill="#1a1a1a" />
+          <polygon points={`${cx + 2},113 ${cx + 6},108 ${cx},113`} fill="#1a1a1a" />
+          <polygon points={`${cx - 2},127 ${cx - 6},132 ${cx},127`} fill="#1a1a1a" />
+          <polygon points={`${cx + 2},127 ${cx + 6},132 ${cx},127`} fill="#1a1a1a" />
+        </>
+      )}
+
+      {/* Warning smoke particles */}
+      {isWarning && circuitState.wireHeat >= 0.3 && (
+        <>
+          {(() => {
+            const opacity = circuitState.wireHeat >= 0.7 ? 0.6 : 0.2 + (circuitState.wireHeat - 0.3) * 1.0;
+            const r = circuitState.wireHeat >= 0.7 ? 5 : 4;
+            return (
+              <>
+                <circle className="smoke-particle warning-smoke-1" cx={cx - 6} cy={116} r={r}
+                  fill={`rgba(180,180,180,${opacity})`} />
+                <circle className="smoke-particle warning-smoke-2" cx={cx + 6} cy={110} r={r}
+                  fill={`rgba(180,180,180,${opacity * 0.8})`} />
+                {circuitState.wireHeat >= 0.7 && (
+                  <circle className="smoke-particle warning-smoke-3" cx={cx} cy={104} r={r}
+                    fill={`rgba(180,180,180,${opacity * 0.7})`} />
+                )}
+              </>
+            );
+          })()}
+        </>
+      )}
+
+      {/* Fire + smoke particles when burned */}
+      {isBurned && (
+        <>
+          <circle className="fire-particle fire-1" cx={cx - 4} cy={118} r={4} fill="rgba(255,120,20,0.8)" />
+          <circle className="fire-particle fire-2" cx={cx + 4} cy={116} r={3} fill="rgba(255,80,10,0.7)" />
+          <circle className="fire-particle fire-3" cx={cx} cy={114} r={5} fill="rgba(255,160,40,0.9)" />
+          <circle className="fire-particle fire-4" cx={cx - 2} cy={120} r={3} fill="rgba(255,60,0,0.6)" />
+          <circle className="smoke-particle smoke-1" cx={cx - 5} cy={108} r={3} fill="rgba(100,100,100,0.6)" />
+          <circle className="smoke-particle smoke-2" cx={cx + 5} cy={104} r={4} fill="rgba(80,80,80,0.5)" />
+          <circle className="smoke-particle smoke-3" cx={cx} cy={100} r={3} fill="rgba(60,60,60,0.4)" />
+        </>
+      )}
+
+      {/* Flash effect on successful connection */}
+      {flashActive && (
+        <circle cx={cx} cy={120} r={12} fill="rgba(234,179,8,0.6)"
+          filter="url(#flash-glow)" className="connection-flash" />
+      )}
+
+      {/* Status text */}
+      <text x={cx} y={272} textAnchor="middle" fill="#888" fontSize={11}>
+        {isPowered ? '送電中' : isWired ? '已接線' : '未接線'}
+      </text>
+    </g>
+  );
+}
+
+export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, onTargetCircuitChange }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [isOverDropZone, setIsOverDropZone] = useState(false);
-  const [flashActive, setFlashActive] = useState(false);
-  const prevIsWired = useRef(wiring.isWired);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
+  const [flashCircuitId, setFlashCircuitId] = useState<CircuitId | null>(null);
+  const prevWiringCircuits = useRef(wiring.circuits);
 
-  // Lever drag state
+  const n = circuits.length;
+  const svgWidth = n * CIRCUIT_WIDTH;
+  const isSingle = n === 1;
+
+  // Lever drag state (global lever)
   const leverDragging = useRef(false);
   const leverStartY = useRef(0);
 
-  const wireColor = heatToColor(state.wireHeat);
-  const isWarning = state.status === 'warning';
-  const isBurned = state.status === 'burned';
-
-  // Trigger flash when wiring completes (isWired: false → true)
+  // Detect flash when a circuit's wiring completes
   useEffect(() => {
-    if (wiring.isWired && !prevIsWired.current) {
-      setFlashActive(true);
-      setTimeout(() => setFlashActive(false), 400);
+    for (const c of circuits) {
+      const prev = prevWiringCircuits.current[c.id];
+      const curr = wiring.circuits[c.id];
+      if (curr?.isWired && !prev?.isWired) {
+        setFlashCircuitId(c.id);
+        setTimeout(() => setFlashCircuitId(null), 400);
+      }
     }
-    prevIsWired.current = wiring.isWired;
-  }, [wiring.isWired]);
+    prevWiringCircuits.current = wiring.circuits;
+  }, [wiring.circuits, circuits]);
 
-  // Reset drop zone highlight when drag ends
+  // Determine which circuit the cursor is over during drag
   useEffect(() => {
-    if (!wiring.isDragging) {
-      setIsOverDropZone(false);
+    if (!wiring.isDragging || !wiring.cursorPos || !containerRef.current || !svgRef.current) {
+      if (!wiring.isDragging) {
+        setOverCircuitId(null);
+        onTargetCircuitChange?.(null);
+      }
+      return;
     }
-  }, [wiring.isDragging]);
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = wiring.cursorPos.x;
+    const cy = wiring.cursorPos.y;
+    if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) {
+      setOverCircuitId(null);
+      onTargetCircuitChange?.(null);
+      return;
+    }
+    const svgPt = clientToSvg(svgRef.current, cx, cy);
+    const circuitIndex = Math.floor(svgPt.x / CIRCUIT_WIDTH);
+    if (circuitIndex >= 0 && circuitIndex < n) {
+      const cId = circuits[circuitIndex].id;
+      setOverCircuitId(cId);
+      onTargetCircuitChange?.(cId);
+    } else {
+      setOverCircuitId(null);
+      onTargetCircuitChange?.(null);
+    }
+  }, [wiring.isDragging, wiring.cursorPos, n, circuits, onTargetCircuitChange]);
 
-  // Track cursor entering/leaving this element during drag via global pointermove
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!wiring.isDragging || !wiring.cursorPos) return;
-    const el = containerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const inside =
-      wiring.cursorPos.x >= rect.left &&
-      wiring.cursorPos.x <= rect.right &&
-      wiring.cursorPos.y >= rect.top &&
-      wiring.cursorPos.y <= rect.bottom;
-    setIsOverDropZone(inside);
-  }, [wiring.isDragging, wiring.cursorPos]);
-
-  const showWire = wiring.isWired && !wiring.isDragging;
-  // Show placeholder when not wired — even during drag if cursor isn't over drop zone
-  const showPlaceholder = !wiring.isWired && !(wiring.isDragging && isOverDropZone);
-  // Only show preview when dragging AND cursor is inside the diagram
-  const showPreview = wiring.isDragging && isOverDropZone;
-
-  // Convert drag cursor to SVG coords for preview line
+  // Get preview Y for drag
   let previewY = 120;
-  if (showPreview && wiring.cursorPos && svgRef.current) {
+  if (wiring.isDragging && wiring.cursorPos && svgRef.current) {
     const svgPt = clientToSvg(svgRef.current, wiring.cursorPos.x, wiring.cursorPos.y);
     previewY = Math.max(50, Math.min(250, svgPt.y));
   }
 
   const handlePointerEnter = useCallback(() => {
-    if (wiring.isDragging) setIsOverDropZone(true);
-  }, [wiring.isDragging]);
-
-  const handlePointerLeave = useCallback(() => {
-    setIsOverDropZone(false);
+    // handled by effect
   }, []);
 
-  // Lever pointer handlers
+  const handlePointerLeave = useCallback(() => {
+    setOverCircuitId(null);
+  }, []);
+
+  // Global lever pointer handlers
   const handleLeverPointerDown = useCallback((e: React.PointerEvent) => {
     if (leverDisabled || !onPowerToggle) return;
     e.stopPropagation();
@@ -155,10 +401,9 @@ export default function CircuitDiagram({ state, isPowered, breakerRated, wiring,
     const dy = svgPt.y - leverStartY.current;
     if (Math.abs(dy) > LEVER_DRAG_THRESHOLD) {
       leverDragging.current = true;
-      // Drag up on OFF → turn ON; drag down on ON → turn OFF
       if (!isPowered && dy < -LEVER_DRAG_THRESHOLD) {
         onPowerToggle();
-        leverStartY.current = svgPt.y; // prevent re-triggering
+        leverStartY.current = svgPt.y;
       } else if (isPowered && dy > LEVER_DRAG_THRESHOLD) {
         onPowerToggle();
         leverStartY.current = svgPt.y;
@@ -168,7 +413,6 @@ export default function CircuitDiagram({ state, isPowered, breakerRated, wiring,
 
   const handleLeverPointerUp = useCallback((e: React.PointerEvent) => {
     if (leverDisabled || !onPowerToggle) return;
-    // Click toggle: no significant drag movement
     if (!leverDragging.current) {
       onPowerToggle();
     }
@@ -176,20 +420,21 @@ export default function CircuitDiagram({ state, isPowered, breakerRated, wiring,
     try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* already released */ }
   }, [leverDisabled, onPowerToggle]);
 
-  const previewColor = wiring.dragWire ? wireGaugeColor(wiring.dragWire.crossSection) : '#888';
-  const connectedColor = wiring.connectedWire ? wireGaugeColor(wiring.connectedWire.crossSection) : '#888';
+  // For single circuit, use first circuit's lever directly (keep identical look)
+  // For multi circuit, render a global power lever at a fixed position
 
-  const leverHandleY = isPowered ? LEVER_ON_Y : LEVER_OFF_Y;
-  const leverHandleX = LEVER_TRACK_X + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2;
+  // Overall status classes for container
+  const hasWarning = Object.values(multiState.circuitStates).some(cs => cs.status === 'warning');
+  const hasBurned = Object.values(multiState.circuitStates).some(cs => cs.status === 'burned');
 
   return (
     <div
       ref={containerRef}
-      className={`circuit-diagram ${isWarning ? 'warning-pulse' : ''} ${isBurned ? 'burned-smoke' : ''} ${isOverDropZone ? 'drop-zone-active' : ''}`}
+      className={`circuit-diagram ${hasWarning ? 'warning-pulse' : ''} ${hasBurned ? 'burned-smoke' : ''} ${overCircuitId ? 'drop-zone-active' : ''}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
-      <svg ref={svgRef} viewBox="0 0 200 280" width="100%" style={{ maxWidth: 260 }}>
+      <svg ref={svgRef} viewBox={`0 0 ${svgWidth} ${CIRCUIT_HEIGHT}`} width="100%" style={{ maxWidth: isSingle ? 260 : n * 220 }}>
         <defs>
           <filter id="glow-warning">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -222,193 +467,49 @@ export default function CircuitDiagram({ state, isPowered, breakerRated, wiring,
           </filter>
         </defs>
 
-        {/* NFB Breaker body */}
-        <rect x="60" y="10" width="100" height="40" rx="4"
-          fill="#2a2a2a" stroke="#555" strokeWidth="1.5" />
-        {/* NFB label */}
-        <text x="95" y="28" textAnchor="middle" fill="#aaa"
-          fontSize="10" fontWeight="bold" fontFamily="var(--font-mono)">
-          NFB
-        </text>
-        <text x="95" y="42" textAnchor="middle" fill="#777"
-          fontSize="9" fontFamily="var(--font-mono)">
-          {breakerRated}A
-        </text>
+        {circuits.map((circuit, i) => {
+          const cId = circuit.id;
+          const cs = multiState.circuitStates[cId] ?? { status: 'normal' as const, totalCurrent: 0, wireHeat: 0, breakerTripTimer: 0 };
+          const cw = wiring.circuits[cId];
+          const isWired = cw?.isWired ?? false;
+          const connectedWire = cw?.connectedWire ?? null;
+          const isOver = overCircuitId === cId;
 
-        {/* Lever track */}
-        <rect x={LEVER_TRACK_X} y={LEVER_TRACK_Y} width={LEVER_TRACK_W} height={LEVER_TRACK_H}
-          rx="3" fill="#111" stroke="#444" strokeWidth="1" />
-        {/* ON / OFF labels */}
-        <text x={LEVER_TRACK_X + LEVER_TRACK_W / 2} y={LEVER_TRACK_Y + 10}
-          textAnchor="middle" fill="#4ade80" fontSize="6" fontWeight="bold"
-          fontFamily="var(--font-mono)">ON</text>
-        <text x={LEVER_TRACK_X + LEVER_TRACK_W / 2} y={LEVER_TRACK_Y + LEVER_TRACK_H - 3}
-          textAnchor="middle" fill="#888" fontSize="6" fontWeight="bold"
-          fontFamily="var(--font-mono)">OFF</text>
+          return (
+            <SingleCircuitSVG
+              key={cId}
+              circuit={circuit}
+              circuitState={cs}
+              isPowered={isPowered}
+              isWired={isWired}
+              connectedWire={connectedWire}
+              isDragging={wiring.isDragging}
+              isOverDropZone={isOver}
+              showPreview={isOver}
+              previewY={previewY}
+              dragWire={wiring.dragWire}
+              flashActive={flashCircuitId === cId}
+              xOffset={i * CIRCUIT_WIDTH}
+              showLabel={!isSingle}
+            />
+          );
+        })}
 
-        {/* Lever handle (interactive) */}
-        <rect
-          x={leverHandleX} y={leverHandleY}
-          width={LEVER_HANDLE_W} height={LEVER_HANDLE_H}
-          rx="2"
-          fill={isPowered ? '#22c55e' : '#555'}
-          stroke={isPowered ? '#4ade80' : '#777'}
-          strokeWidth="1.5"
-          className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
-          style={{ cursor: leverDisabled ? 'not-allowed' : 'pointer', touchAction: 'none' }}
-          onPointerDown={handleLeverPointerDown}
-          onPointerMove={handleLeverPointerMove}
-          onPointerUp={handleLeverPointerUp}
-        />
-        {/* Handle grip lines */}
-        <line x1={leverHandleX + 3} y1={leverHandleY + LEVER_HANDLE_H / 2 - 2}
-          x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 - 2}
-          stroke={isPowered ? '#000' : '#999'} strokeWidth="0.8" strokeLinecap="round"
-          className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
-          style={{ pointerEvents: 'none' }} />
-        <line x1={leverHandleX + 3} y1={leverHandleY + LEVER_HANDLE_H / 2 + 2}
-          x2={leverHandleX + LEVER_HANDLE_W - 3} y2={leverHandleY + LEVER_HANDLE_H / 2 + 2}
-          stroke={isPowered ? '#000' : '#999'} strokeWidth="0.8" strokeLinecap="round"
-          className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
-          style={{ pointerEvents: 'none' }} />
-
-        {/* === Wiring states === */}
-
-        {/* Placeholder: grey dashed line when not wired */}
-        {showPlaceholder && (
-          <>
-            <line x1="100" y1="50" x2="100" y2="200"
-              stroke="#555" strokeWidth="3" strokeDasharray="8 6"
-              strokeLinecap="round" opacity="0.5" />
-            <text x="100" y="140" textAnchor="middle" fill="#888" fontSize="10"
-              fontFamily="var(--font-mono)">
-              拖曳線材
-            </text>
-            <text x="100" y="155" textAnchor="middle" fill="#888" fontSize="10"
-              fontFamily="var(--font-mono)">
-              到此處接線
-            </text>
-          </>
+        {/* Global power lever - rendered on first circuit's NFB position for single, separate for multi */}
+        {isSingle && (
+          <rect
+            x={138 + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2}
+            y={isPowered ? 14 + 2 : 14 + LEVER_TRACK_H - LEVER_HANDLE_H - 2}
+            width={LEVER_HANDLE_W} height={LEVER_HANDLE_H}
+            rx={2}
+            fill="transparent"
+            className={`nfb-lever-handle ${leverDisabled ? 'disabled' : ''}`}
+            style={{ cursor: leverDisabled ? 'not-allowed' : 'pointer', touchAction: 'none' }}
+            onPointerDown={handleLeverPointerDown}
+            onPointerMove={handleLeverPointerMove}
+            onPointerUp={handleLeverPointerUp}
+          />
         )}
-
-        {/* Preview: dashed colored line following cursor during drag */}
-        {showPreview && (
-          <>
-            <line x1="100" y1="50" x2="100" y2={previewY}
-              stroke={previewColor} strokeWidth="4" strokeDasharray="10 5"
-              strokeLinecap="round" opacity="0.8" />
-            {previewY > 80 && (
-              <circle cx="100" cy={previewY} r="4" fill={previewColor} opacity="0.8" />
-            )}
-          </>
-        )}
-
-        {/* Connected wire: solid line with color based on wire gauge */}
-        {showWire && !isPowered && !isBurned && (
-          <>
-            <line x1="100" y1="50" x2="100" y2="120"
-              stroke={connectedColor} strokeWidth="4" strokeLinecap="round"
-              className={flashActive ? 'wire-flash' : 'wire-connected'} />
-            <circle cx="100" cy="120" r="5" fill={connectedColor}
-              className={flashActive ? 'junction-flash' : ''} />
-            <line x1="100" y1="120" x2="100" y2="200"
-              stroke={connectedColor} strokeWidth="4" strokeLinecap="round"
-              className={flashActive ? 'wire-flash' : 'wire-connected'} />
-          </>
-        )}
-
-        {/* Powered wire: uses heat color as before */}
-        {showWire && isPowered && !isBurned && (
-          <>
-            <line x1="100" y1="50" x2="100" y2="120"
-              stroke={wireColor} strokeWidth="4" strokeLinecap="round"
-              filter={glowFilter(state)} />
-            <circle cx="100" cy="120" r="5" fill={wireColor}
-              filter={glowFilter(state)} />
-            <line x1="100" y1="120" x2="100" y2="200"
-              stroke={wireColor} strokeWidth="4" strokeLinecap="round"
-              filter={glowFilter(state)} />
-          </>
-        )}
-
-        {/* Burned wire */}
-        {isBurned && (
-          <>
-            <line x1="100" y1="50" x2="100" y2="113"
-              stroke={wireColor} strokeWidth="4" strokeLinecap="round"
-              filter={glowFilter(state)} />
-            <line x1="100" y1="127" x2="100" y2="200"
-              stroke={wireColor} strokeWidth="4" strokeLinecap="round"
-              filter={glowFilter(state)} />
-          </>
-        )}
-
-        {/* Outlet (highlight when dragging over) */}
-        <rect x="70" y="200" width="60" height="50" rx="6"
-          fill="#222"
-          stroke={isOverDropZone ? '#eab308' : '#666'}
-          strokeWidth={isOverDropZone ? 3 : 2}
-          filter={isOverDropZone ? 'url(#glow-drop)' : 'none'} />
-        {/* Outlet slots */}
-        <rect x="85" y="215" width="8" height="20" rx="2" fill="#444" />
-        <rect x="107" y="215" width="8" height="20" rx="2" fill="#444" />
-
-        {/* Burned: exposed copper core + peeled insulation */}
-        {isBurned && (
-          <>
-            <line x1="100" y1="115" x2="100" y2="125" stroke="#d97706" strokeWidth="3" strokeLinecap="round" />
-            <polygon points="98,113 94,108 100,113" fill="#1a1a1a" />
-            <polygon points="102,113 106,108 100,113" fill="#1a1a1a" />
-            <polygon points="98,127 94,132 100,127" fill="#1a1a1a" />
-            <polygon points="102,127 106,132 100,127" fill="#1a1a1a" />
-          </>
-        )}
-
-        {/* Warning smoke particles */}
-        {isWarning && state.wireHeat >= 0.3 && (
-          <>
-            {(() => {
-              const opacity = state.wireHeat >= 0.7 ? 0.6 : 0.2 + (state.wireHeat - 0.3) * 1.0;
-              const r = state.wireHeat >= 0.7 ? 5 : 4;
-              return (
-                <>
-                  <circle className="smoke-particle warning-smoke-1" cx="94" cy="116" r={r}
-                    fill={`rgba(180,180,180,${opacity})`} />
-                  <circle className="smoke-particle warning-smoke-2" cx="106" cy="110" r={r}
-                    fill={`rgba(180,180,180,${opacity * 0.8})`} />
-                  {state.wireHeat >= 0.7 && (
-                    <circle className="smoke-particle warning-smoke-3" cx="100" cy="104" r={r}
-                      fill={`rgba(180,180,180,${opacity * 0.7})`} />
-                  )}
-                </>
-              );
-            })()}
-          </>
-        )}
-
-        {/* Fire + smoke particles when burned */}
-        {isBurned && (
-          <>
-            <circle className="fire-particle fire-1" cx="96" cy="118" r="4" fill="rgba(255,120,20,0.8)" />
-            <circle className="fire-particle fire-2" cx="104" cy="116" r="3" fill="rgba(255,80,10,0.7)" />
-            <circle className="fire-particle fire-3" cx="100" cy="114" r="5" fill="rgba(255,160,40,0.9)" />
-            <circle className="fire-particle fire-4" cx="98" cy="120" r="3" fill="rgba(255,60,0,0.6)" />
-            <circle className="smoke-particle smoke-1" cx="95" cy="108" r="3" fill="rgba(100,100,100,0.6)" />
-            <circle className="smoke-particle smoke-2" cx="105" cy="104" r="4" fill="rgba(80,80,80,0.5)" />
-            <circle className="smoke-particle smoke-3" cx="100" cy="100" r="3" fill="rgba(60,60,60,0.4)" />
-          </>
-        )}
-
-        {/* Flash effect on successful connection */}
-        {flashActive && (
-          <circle cx="100" cy="120" r="12" fill="rgba(234,179,8,0.6)"
-            filter="url(#flash-glow)" className="connection-flash" />
-        )}
-
-        {/* Status text */}
-        <text x="100" y="272" textAnchor="middle" fill="#888" fontSize="11">
-          {isPowered ? '送電中' : wiring.isWired ? '已接線' : '未接線'}
-        </text>
       </svg>
     </div>
   );

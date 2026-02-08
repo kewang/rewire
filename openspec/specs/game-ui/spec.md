@@ -70,7 +70,7 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 
 ### Requirement: Real-time status display
 
-遊戲 MUST 即時顯示迴路的模擬狀態數據。
+遊戲 MUST 即時顯示迴路的模擬狀態數據。多迴路時 MUST 顯示各迴路摘要。
 
 #### Scenario: 顯示關鍵數據
 
@@ -103,6 +103,12 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 - **WHEN** 模擬尚未開始（elapsed 為 0）
 - **THEN** 剩餘時間 MUST 顯示完整的 survivalTime 值
 
+#### Scenario: 多迴路狀態摘要
+
+- **WHEN** 有多個迴路
+- **THEN** MUST 顯示各迴路的摘要（label + 狀態 + 電流）
+- **AND** 最上方 MUST 保留 overall 狀態
+
 #### Scenario: 響應式狀態面板
 
 - **WHEN** viewport 寬度 ≤ 640px
@@ -110,7 +116,7 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 
 ### Requirement: Failure result display
 
-模擬結束於失敗狀態時，MUST 顯示失敗原因與關鍵數字。
+模擬結束於失敗狀態時，MUST 顯示失敗原因與關鍵數字，多迴路時 MUST 標示失敗迴路。
 
 #### Scenario: 跳電結果
 
@@ -123,6 +129,12 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 - **WHEN** 模擬狀態變為 burned
 - **THEN** MUST 顯示結果面板，包含失敗類型「燒線」、總電流、線材安全電流上限
 - **AND** MUST 提供重試按鈕與返回關卡選擇按鈕
+
+#### Scenario: 多迴路失敗標示
+
+- **WHEN** 多迴路中迴路 B 為跳電或燒毀
+- **THEN** ResultPanel MUST 標示是哪個迴路發生問題
+- **AND** MUST 顯示該迴路的相關數據
 
 #### Scenario: 過關成功
 
