@@ -181,6 +181,58 @@ function createApplianceSound(ctx: AudioContext, name: string): ApplianceAudioNo
     return { osc, gain, lfo, lfoGain };
   }
 
+  if (name === 'IH 爐') {
+    // High-frequency square hum simulating electromagnetic heating
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = 2000;
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    return { osc, gain };
+  }
+
+  if (name === '冰箱') {
+    // Low steady sine simulating compressor
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 100;
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    return { osc, gain };
+  }
+
+  if (name === '冷氣') {
+    // Low triangle with LFO simulating compressor + fan
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = 120;
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.8;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.01;
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    osc.connect(gain);
+    lfo.start();
+    osc.start();
+    return { osc, gain, lfo, lfoGain };
+  }
+
+  if (name === '浴室暖風機') {
+    // Mid-frequency triangle simulating fan motor
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = 300;
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    return { osc, gain };
+  }
+
   return null;
 }
 

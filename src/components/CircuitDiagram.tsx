@@ -45,7 +45,8 @@ function wireGaugeColor(crossSection: number): string {
   if (crossSection <= 2.0) return '#86efac'; // green-300
   if (crossSection <= 3.5) return '#fde047'; // yellow-300
   if (crossSection <= 5.5) return '#fdba74'; // orange-300
-  return '#f87171'; // red-400
+  if (crossSection <= 8) return '#f87171'; // red-400
+  return '#a855f7'; // purple-500 (14mm²)
 }
 
 function clientToSvg(svgEl: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {

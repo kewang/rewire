@@ -1,7 +1,7 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, DEFAULT_BREAKER } from './constants';
 
-const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater] = DEFAULT_APPLIANCES;
+const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, , , fridge] = DEFAULT_APPLIANCES;
 
 /** 關卡定義（L01-L05 單迴路, L06-L09 多迴路） */
 export const LEVELS: readonly Level[] = [
@@ -100,6 +100,17 @@ export const LEVELS: readonly Level[] = [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, underSinkHeater] },
       { id: 'c2', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [waterHeater] },
       { id: 'c3', label: '洗衣間', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [dryer] },
+    ],
+  },
+  {
+    name: 'L10 新電器暖身',
+    description: 'IH 爐需要 220V 專用迴路。冰箱和微波爐走廚房 110V。認識新電器！',
+    requiredAppliances: [ihStove, fridge, microwave],
+    budget: 150,
+    survivalTime: 10,
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [fridge, microwave] },
+      { id: 'c2', label: 'IH 爐', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [ihStove] },
     ],
   },
 ] as const;

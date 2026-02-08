@@ -1,8 +1,5 @@
-# scoring-and-levels Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change scoring-and-levels. Update Purpose after archive.
-## Requirements
 ### Requirement: Cost calculation
 
 系統 MUST 根據選擇的線材和 ELCB 計算成本：成本 = Σ(線長 × 每米單價) + Σ(ELCB 安裝費)。
@@ -90,33 +87,3 @@ TBD - created by archiving change scoring-and-levels. Update Purpose after archi
   - c2「IH 爐」220V / 20A NFB — 可用：IH 爐
 - **AND** 目標電器 MUST 為 IH 爐 + 冰箱 + 微波爐
 - **AND** 預算 MUST 為 $150，survivalTime MUST 為 10 秒
-
-### Requirement: Win condition
-
-系統 MUST 在指定電器正常通電滿目標秒數時判定過關。
-
-#### Scenario: 過關判定
-
-- **WHEN** 模擬狀態的 elapsed 達到關卡的 survivalTime
-- **AND** 狀態為 normal 或 warning
-- **THEN** MUST 判定為過關
-
-#### Scenario: 超預算失敗
-
-- **WHEN** 過關時線材成本超過關卡預算
-- **THEN** MUST 判定為超預算失敗
-
-### Requirement: Level selection UI
-
-系統 MUST 提供關卡選擇畫面，玩家可選擇要挑戰的關卡。
-
-#### Scenario: 顯示關卡列表
-
-- **WHEN** 遊戲啟動或返回選擇畫面
-- **THEN** MUST 顯示所有關卡的名稱與簡述
-
-#### Scenario: 選擇關卡進入遊戲
-
-- **WHEN** 玩家點選一個關卡
-- **THEN** MUST 進入該關卡的遊戲畫面
-

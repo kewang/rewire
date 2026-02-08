@@ -127,6 +127,8 @@ export interface CircuitConfig {
   readonly breaker: Breaker;
   /** 可分配到此迴路的電器清單 */
   readonly availableAppliances: readonly Appliance[];
+  /** 該迴路是否可安裝 ELCB 漏電斷路器 */
+  readonly elcbAvailable?: boolean;
 }
 
 /** 關卡定義 */

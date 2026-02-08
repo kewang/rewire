@@ -7,6 +7,7 @@ export const DEFAULT_WIRES = [
   { crossSection: 3.5, maxCurrent: 25, costPerMeter: 8 },
   { crossSection: 5.5, maxCurrent: 30, costPerMeter: 12 },
   { crossSection: 8, maxCurrent: 45, costPerMeter: 18 },
+  { crossSection: 14, maxCurrent: 70, costPerMeter: 28 },
 ] as const satisfies readonly Wire[];
 
 /** 預設電器（PRD v0.2 第 3 節 + v0.3 電壓區分） */
@@ -17,13 +18,26 @@ export const DEFAULT_APPLIANCES = [
   { name: '廚下加熱器', power: 800, voltage: 110 },
   { name: '烘衣機', power: 2200, voltage: 220 },
   { name: '電熱水器', power: 4400, voltage: 220 },
+  { name: 'IH 爐', power: 3000, voltage: 220 },
+  { name: '冷氣', power: 2800, voltage: 220 },
+  { name: '浴室暖風機', power: 1650, voltage: 220 },
+  { name: '冰箱', power: 200, voltage: 110 },
 ] as const satisfies readonly Appliance[];
 
-/** 預設 NFB（PRD v0.1 第 6 節） */
-export const DEFAULT_BREAKER: Breaker = {
-  ratedCurrent: 20,
-  tripDelay: 1.5,
-} as const;
+/** NFB 15A（照明/低功率迴路） */
+export const BREAKER_15A: Breaker = { ratedCurrent: 15, tripDelay: 1.5 } as const;
+
+/** NFB 20A（一般插座迴路，預設） */
+export const BREAKER_20A: Breaker = { ratedCurrent: 20, tripDelay: 1.5 } as const;
+
+/** NFB 30A（大電流專用迴路） */
+export const BREAKER_30A: Breaker = { ratedCurrent: 30, tripDelay: 1.5 } as const;
+
+/** 預設 NFB（向後相容，等同 BREAKER_20A） */
+export const DEFAULT_BREAKER: Breaker = BREAKER_20A;
+
+/** ELCB 漏電斷路器每迴路成本 */
+export const ELCB_COST = 35;
 
 /** 預設線長（米），v0.1 固定值 */
 export const DEFAULT_WIRE_LENGTH = 10;

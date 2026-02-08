@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig } from '../types/game';
-import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH } from '../data/constants';
+import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing, startApplianceSounds, stopApplianceSounds } from '../engine/audio';
@@ -48,6 +48,7 @@ export default function GameBoard() {
   const [isPowered, setIsPowered] = useState(false);
   const [result, setResult] = useState<GameResult>('none');
   const [wiring, setWiring] = useState<WiringState>(createInitialWiring([]));
+  const [circuitElcb, setCircuitElcb] = useState<Record<CircuitId, boolean>>({});
 
   const rafRef = useRef<number>(0);
   const prevTimeRef = useRef<number>(0);
@@ -85,13 +86,18 @@ export default function GameBoard() {
   const circuitWiresRef = useRef(circuitWires);
   useEffect(() => { circuitWiresRef.current = circuitWires; }, [circuitWires]);
 
-  // Total cost: sum of all circuits' wire costs
+  const circuitElcbRef = useRef(circuitElcb);
+  useEffect(() => { circuitElcbRef.current = circuitElcb; }, [circuitElcb]);
+
+  // Total cost: sum of all circuits' wire costs + ELCB costs
   const totalCost = useMemo(() => {
     return circuitIds.reduce((sum, id) => {
       const wire = circuitWires[id] ?? DEFAULT_WIRES[0];
-      return sum + wire.costPerMeter * DEFAULT_WIRE_LENGTH;
+      const wireCost = wire.costPerMeter * DEFAULT_WIRE_LENGTH;
+      const elcbCost = circuitElcb[id] ? ELCB_COST : 0;
+      return sum + wireCost + elcbCost;
     }, 0);
-  }, [circuitIds, circuitWires]);
+  }, [circuitIds, circuitWires, circuitElcb]);
 
   // All appliances across all circuits (for sound)
   const allAppliances = useMemo(() => {
@@ -151,12 +157,13 @@ export default function GameBoard() {
     if (level && newMultiState.elapsed >= level.survivalTime) {
       setIsPowered(false);
       stopApplianceSounds();
-      // Sum wire costs from all circuits at this moment
+      // Sum wire + ELCB costs from all circuits at this moment
       const wires = circuitWiresRef.current;
-      const wireCost = Object.values(wires).reduce(
-        (sum, w) => sum + w.costPerMeter * DEFAULT_WIRE_LENGTH, 0
+      const elcbs = circuitElcbRef.current;
+      const finalCost = Object.entries(wires).reduce(
+        (sum, [id, w]) => sum + w.costPerMeter * DEFAULT_WIRE_LENGTH + (elcbs[id] ? ELCB_COST : 0), 0
       );
-      const gameResult = wireCost > level.budget ? 'over-budget' : 'won';
+      const gameResult = finalCost > level.budget ? 'over-budget' : 'won';
       setResult(gameResult);
       if (gameResult === 'won') playWin();
       return;
@@ -216,6 +223,7 @@ export default function GameBoard() {
     setResult('none');
     setCircuitAppliances({});
     setCircuitWires({});
+    setCircuitElcb({});
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -238,6 +246,7 @@ export default function GameBoard() {
     }
     setCircuitAppliances(appls);
     setCircuitWires(createInitialCircuitWires(ids));
+    setCircuitElcb({});
     setMultiState(createInitialMultiState(ids));
     setResult('none');
     setWiring(createInitialWiring(ids));
@@ -295,6 +304,12 @@ export default function GameBoard() {
       setCircuitWires(newWires);
     }
   }
+
+  const hasAnyElcbOption = circuitConfigs.some(c => c.elcbAvailable);
+
+  const handleToggleElcb = useCallback((circuitId: CircuitId) => {
+    setCircuitElcb(prev => ({ ...prev, [circuitId]: !prev[circuitId] }));
+  }, []);
 
   const handleAddAppliance = useCallback((circuitId: CircuitId, a: Appliance) => {
     setCircuitAppliances(prev => ({
@@ -365,6 +380,22 @@ export default function GameBoard() {
             disabled={isPowered}
             isPowered={isPowered}
           />
+          {hasAnyElcbOption && (
+            <div className="elcb-panel">
+              <h3 className="elcb-panel-title">ELCB 漏電斷路器 (${ELCB_COST}/迴路)</h3>
+              {circuitConfigs.filter(c => c.elcbAvailable).map(config => (
+                <label key={config.id} className="elcb-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!!circuitElcb[config.id]}
+                    onChange={() => handleToggleElcb(config.id)}
+                    disabled={isPowered}
+                  />
+                  <span className="elcb-label">{config.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
