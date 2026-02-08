@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成（FR-A drag-drop, FR-B multi-circuit, FR-C voltage-distinction, FR-D levels）。v0.4 PRD 已撰寫（FR-E phase-balancing, FR-F ELCB, FR-G extended-materials-ii）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 進行中：FR-G extended-materials-ii 完成，接下來 FR-E phase-balancing → FR-F ELCB。**
 
 ## Tech Stack
 
@@ -30,8 +30,8 @@
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti, calcTotalCurrent）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L09 關卡定義（L01-L05 單迴路, L06-L09 多迴路）
-  - `constants.ts` — 5 種線材、6 種電器（含電熱水器 220V）、NFB 預設值
+  - `levels.ts` — L01-L10 關卡定義（L01-L05 單迴路, L06-L10 多迴路）
+  - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB 成本常數
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
@@ -47,6 +47,7 @@
 - OpenSpec 工作流程管理所有 change
 - PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
+- **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
 
 ## Key Design Decisions
 
@@ -68,11 +69,13 @@
 - 拖曳流程：pointerdown 設 capture → 移動超閾值啟動拖曳 → releaseCapture + global listeners → elementFromPoint 偵測 drop zone
 - 觸控長按 150ms 啟動拖曳，移動 >10px 取消長按（避免與捲動衝突）
 - 電路圖三態：未接線（灰色虛線+提示文字）→ 拖曳中預覽（彩色虛線跟隨游標）→ 已接線（實線+閃光動畫）
-- 線材顏色依線徑區分：1.6mm²藍、2.0mm²綠、3.5mm²黃、5.5mm²橘、8.0mm²紅
+- 線材顏色依線徑區分：1.6mm²藍、2.0mm²綠、3.5mm²黃、5.5mm²橘、8.0mm²紅、14mm²紫
 - 送電前置條件：所有迴路都已接線（isWired = 衍生值）才能啟用 NFB 開關
 - 全域送電開關（非獨立 per-circuit NFB），未來可擴展
 - AppliancePanel 多迴路：circuit-tabs 選擇目標迴路 + availableAppliances 過濾
-- 成本計算：totalCost = Σ(circuitWires[id].costPerMeter × DEFAULT_WIRE_LENGTH)
+- 成本計算：totalCost = Σ(wire.costPerMeter × DEFAULT_WIRE_LENGTH) + Σ(hasElcb ? ELCB_COST : 0)
+- ELCB 成本框架：CircuitConfig.elcbAvailable 控制顯示、per-circuit toggle、$35/迴路
+- NFB 多規格：BREAKER_15A/20A/30A 命名常數，DEFAULT_BREAKER = BREAKER_20A（向後相容）
 - buzzing 音效：任一迴路 warning 時觸發，音量 = max wireHeat across all circuits
 
 ## Testing Workflow
@@ -101,5 +104,4 @@
 
 ## Known Issues / Notes
 
-- 既有 lint error：GameBoard.tsx `tick` 變數在宣告前存取（非任何 change 引入）
 - 電器音效目前用 Web Audio API 合成，未來可換真實音檔提升品質
