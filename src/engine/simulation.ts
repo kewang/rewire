@@ -8,6 +8,7 @@ import type {
   SimulationState,
   SimulationStatus,
 } from '../types/game';
+import { worstStatus } from '../types/helpers';
 
 /** 預設模擬參數：過載約 3 秒燒毀（PRD 要求） */
 const DEFAULT_CONFIG: SimulationConfig = {
@@ -55,22 +56,22 @@ export function createInitialMultiState(circuitIds: CircuitId[]): MultiCircuitSt
 }
 
 /**
- * 模擬步進：純函式，接收 Circuit + 當前狀態 + dt，回傳新狀態。
+ * 單迴路模擬步進：純函式，接收 Circuit + 當前 CircuitState + dt，回傳新 CircuitState。
+ * 不管理 elapsed（由 stepMulti 統一管理）。
  * 終態（tripped / burned）不可逆。
  */
 export function step(
   circuit: Circuit,
-  state: SimulationState,
+  state: CircuitState,
   dt: number,
   config: SimulationConfig = DEFAULT_CONFIG,
-): SimulationState {
+): CircuitState {
   // 終態不可逆
   if (state.status === 'tripped' || state.status === 'burned') {
     return state;
   }
 
   const totalCurrent = calcTotalCurrent(circuit.appliances);
-  const elapsed = state.elapsed + dt;
 
   // 斷路器跳脫判定（實際 NFB 在 1.25 倍額定以上才會快速跳脫）
   const tripThreshold = circuit.breaker.ratedCurrent * 1.25;
@@ -82,7 +83,6 @@ export function step(
         status: 'tripped',
         totalCurrent,
         wireHeat: state.wireHeat,
-        elapsed,
         breakerTripTimer,
       };
     }
@@ -106,7 +106,6 @@ export function step(
       status: 'burned',
       totalCurrent,
       wireHeat: 1,
-      elapsed,
       breakerTripTimer,
     };
   }
@@ -119,7 +118,31 @@ export function step(
     status,
     totalCurrent,
     wireHeat,
-    elapsed,
     breakerTripTimer,
+  };
+}
+
+/**
+ * 多迴路步進：迭代各迴路呼叫 step()，更新 elapsed 和 overallStatus。
+ * 純函式，不產生副作用。
+ */
+export function stepMulti(
+  circuits: readonly Circuit[],
+  state: MultiCircuitState,
+  dt: number,
+  config: SimulationConfig = DEFAULT_CONFIG,
+): MultiCircuitState {
+  const newElapsed = state.elapsed + dt;
+
+  const newCircuitStates: Record<CircuitId, CircuitState> = {};
+  for (const circuit of circuits) {
+    const circuitState = state.circuitStates[circuit.id] ?? createInitialCircuitState();
+    newCircuitStates[circuit.id] = step(circuit, circuitState, dt, config);
+  }
+
+  return {
+    circuitStates: newCircuitStates,
+    elapsed: newElapsed,
+    overallStatus: worstStatus(newCircuitStates),
   };
 }
