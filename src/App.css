@@ -717,6 +717,398 @@ h3, h4 {
   }
 }
 
+/* ── Crimp Mini-Game ─────────────────────────────────────────── */
+
+.crimp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+  animation: crimp-overlay-in 0.3s ease-out;
+}
+
+@keyframes crimp-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.crimp-card {
+  width: 420px;
+  max-width: calc(100vw - 2rem);
+  background:
+    linear-gradient(180deg, #181e28 0%, #121820 100%);
+  border: 1px solid #2e3a4a;
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.6),
+    0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  overflow: hidden;
+  animation: crimp-card-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes crimp-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header */
+.crimp-header {
+  padding: var(--space-xl) var(--space-xl) var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+.crimp-header-tag {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--color-accent-amber);
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  padding: 2px 10px;
+  border-radius: 2px;
+  margin-bottom: var(--space-sm);
+}
+
+.crimp-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+}
+
+.crimp-circuit-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+/* Steps shared */
+.crimp-step {
+  padding: var(--space-lg) var(--space-xl) var(--space-xl);
+}
+
+.crimp-step-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-lg);
+}
+
+.crimp-step-num {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--color-accent-amber);
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+/* Step 1: Terminal Selection */
+.crimp-terminal-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.crimp-terminal-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 140px;
+  justify-content: center;
+}
+
+.crimp-terminal-btn:hover:not(.disabled) {
+  border-color: var(--color-accent-amber);
+  background: var(--color-bg-card-hover);
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.15);
+  transform: translateY(-2px);
+}
+
+.crimp-terminal-btn:active:not(.disabled) {
+  transform: translateY(0);
+}
+
+.crimp-terminal-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.crimp-terminal-icon {
+  color: var(--color-accent-amber);
+  line-height: 0;
+}
+
+.crimp-terminal-btn.disabled .crimp-terminal-icon {
+  color: var(--color-text-muted);
+}
+
+.crimp-terminal-name {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.crimp-terminal-compat {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.crimp-terminal-btn.disabled .crimp-terminal-compat {
+  color: var(--color-accent-red);
+}
+
+/* Step 2: Crimp Action */
+.crimp-step-action {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.crimp-instruction {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.crimp-bar-container {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-sm) 0;
+}
+
+.crimp-bar-zones {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.crimp-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+
+.crimp-zone-poor-left,
+.crimp-zone-poor-right {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+.crimp-zone-good-left,
+.crimp-zone-good-right {
+  background: rgba(132, 204, 22, 0.25);
+}
+
+.crimp-zone-excellent {
+  background: rgba(34, 197, 94, 0.35);
+}
+
+.crimp-bar-track {
+  position: relative;
+  height: 40px;
+  background:
+    linear-gradient(180deg, #0d1117 0%, #161c24 50%, #0d1117 100%);
+  border: 1px solid #2a3444;
+  border-radius: 6px;
+  overflow: visible;
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.crimp-sweet-spot {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background:
+    linear-gradient(180deg,
+      rgba(34, 197, 94, 0.08) 0%,
+      rgba(34, 197, 94, 0.15) 50%,
+      rgba(34, 197, 94, 0.08) 100%
+    );
+  border-left: 1px dashed rgba(34, 197, 94, 0.4);
+  border-right: 1px dashed rgba(34, 197, 94, 0.4);
+}
+
+.crimp-bar-needle {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.crimp-needle-head {
+  width: 3px;
+  height: 100%;
+  background: var(--color-accent-amber);
+  border-radius: 2px;
+  box-shadow:
+    0 0 8px rgba(234, 179, 8, 0.6),
+    0 0 20px rgba(234, 179, 8, 0.3);
+}
+
+.crimp-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-xs) 2px 0;
+  font-family: var(--font-display);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.crimp-label-poor {
+  color: #f97316;
+  flex: 1;
+}
+
+.crimp-label-good {
+  color: #84cc16;
+  flex: 0.7;
+  text-align: center;
+}
+
+.crimp-label-excellent {
+  color: #22c55e;
+  flex: 0.5;
+  text-align: center;
+}
+
+.crimp-tap-hint {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-accent-amber);
+  margin-top: var(--space-xl);
+  animation: crimp-tap-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes crimp-tap-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Step 3: Result */
+.crimp-result-display {
+  text-align: center;
+  padding: var(--space-lg);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.crimp-quality-badge {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--crimp-quality-color);
+  text-shadow: 0 0 24px var(--crimp-quality-color);
+  margin-bottom: var(--space-lg);
+}
+
+.crimp-result-stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2xl);
+}
+
+.crimp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.crimp-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+}
+
+.crimp-stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--crimp-quality-color);
+}
+
+.crimp-confirm-btn {
+  width: 100%;
+  padding: var(--space-md) var(--space-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #d97706, #eab308);
+  color: #000;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.25);
+}
+
+.crimp-confirm-btn:hover {
+  background: linear-gradient(135deg, #b45309, #d97706);
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(234, 179, 8, 0.4);
+}
+
+.crimp-confirm-btn:active {
+  transform: translateY(0);
+}
+
 /* ── Responsive: Tablet (641px – 1024px) ──────────────────────── */
 
 @media (max-width: 1024px) {
@@ -819,6 +1211,28 @@ h3, h4 {
 
   .result-details p {
     font-size: 0.82rem;
+  }
+
+  .crimp-card {
+    width: 100%;
+    border-radius: var(--radius-lg);
+  }
+
+  .crimp-header {
+    padding: var(--space-lg) var(--space-lg) var(--space-sm);
+  }
+
+  .crimp-step {
+    padding: var(--space-md) var(--space-lg) var(--space-lg);
+  }
+
+  .crimp-terminal-btn {
+    min-height: 120px;
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .crimp-result-stats {
+    gap: var(--space-lg);
   }
 
 }

@@ -47,3 +47,17 @@ export const LEAKAGE_CHANCE_PER_SECOND = 0.05;
 
 /** 預設線長（米），v0.1 固定值 */
 export const DEFAULT_WIRE_LENGTH = 10;
+
+/** 壓接端子定義 */
+export const CRIMP_TERMINALS = [
+  { type: 'o-ring' as const, name: 'O 型環', compatibleCrossSections: [1.6, 2.0, 3.5, 5.5] },
+  { type: 'y-fork' as const, name: 'Y 型叉', compatibleCrossSections: [1.6, 2.0, 3.5, 5.5, 8, 14] },
+] as const;
+
+/** 壓接品質 → 接觸電阻倍率對照 */
+export const CRIMP_QUALITY_MAP = {
+  excellent: 1.00,
+  good: 1.05,
+  poor: 1.25,
+  none: 1.50,
+} as const;

@@ -80,7 +80,11 @@ export function step(
   // Defensive: only count appliances matching circuit voltage
   const totalCurrent = calcTotalCurrent(circuit.appliances, circuit.voltage);
 
-  // 斷路器跳脫判定（實際 NFB 在 1.25 倍額定以上才會快速跳脫）
+  // 接觸電阻影響有效加熱電流（NFB 跳脫仍看實際電流）
+  const contactResistance = circuit.contactResistance ?? 1.0;
+  const effectiveCurrent = totalCurrent * Math.sqrt(contactResistance);
+
+  // 斷路器跳脫判定（實際 NFB 在 1.25 倍額定以上才會快速跳脫，用 totalCurrent）
   const tripThreshold = circuit.breaker.ratedCurrent * 1.25;
   let breakerTripTimer = state.breakerTripTimer;
   if (totalCurrent > tripThreshold) {
@@ -97,10 +101,10 @@ export function step(
     breakerTripTimer = 0;
   }
 
-  // 線材熱度模型
+  // 線材熱度模型（用 effectiveCurrent 判定過載）
   let wireHeat = state.wireHeat;
-  if (totalCurrent > circuit.wire.maxCurrent) {
-    const overloadRatio = totalCurrent / circuit.wire.maxCurrent - 1;
+  if (effectiveCurrent > circuit.wire.maxCurrent) {
+    const overloadRatio = effectiveCurrent / circuit.wire.maxCurrent - 1;
     wireHeat += overloadRatio * config.heatRate * dt;
   } else {
     wireHeat -= config.coolRate * dt;
@@ -117,9 +121,9 @@ export function step(
     };
   }
 
-  // 狀態判定
+  // 狀態判定（用 effectiveCurrent 判定 warning）
   const status: SimulationStatus =
-    totalCurrent > circuit.wire.maxCurrent ? 'warning' : 'normal';
+    effectiveCurrent > circuit.wire.maxCurrent ? 'warning' : 'normal';
 
   return {
     status,

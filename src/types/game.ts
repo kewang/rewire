@@ -40,6 +40,24 @@ export interface Circuit {
   readonly breaker: Breaker;
   readonly wire: Wire;
   readonly appliances: readonly Appliance[];
+  /** 接觸電阻倍率（壓接品質影響，預設 1.0） */
+  readonly contactResistance?: number;
+}
+
+/** 壓接品質 */
+export type CrimpQuality = 'excellent' | 'good' | 'poor' | 'none';
+
+/** 壓接端子類型 */
+export type CrimpTerminalType = 'o-ring' | 'y-fork';
+
+/** 壓接結果 */
+export interface CrimpResult {
+  /** 端子類型 */
+  readonly terminalType: CrimpTerminalType;
+  /** 壓接品質 */
+  readonly quality: CrimpQuality;
+  /** 接觸電阻倍率 */
+  readonly contactResistance: number;
 }
 
 /** 模擬狀態 */
@@ -167,4 +185,6 @@ export interface Level {
   readonly leakageMode?: 'scripted' | 'random';
   /** 腳本式漏電事件列表（leakageMode='scripted' 時使用） */
   readonly leakageEvents?: readonly LeakageEvent[];
+  /** 是否要求壓接端子（true 時所有迴路接線後必須完成壓接才能送電） */
+  readonly requiresCrimp?: boolean;
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState } from '../types/game';
+import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
@@ -10,6 +10,7 @@ import StatusDisplay from './StatusDisplay';
 import ResultPanel from './ResultPanel';
 import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
+import CrimpMiniGame from './CrimpMiniGame';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
 
@@ -50,6 +51,9 @@ export default function GameBoard() {
   const [wiring, setWiring] = useState<WiringState>(createInitialWiring([]));
   const [circuitElcb, setCircuitElcb] = useState<Record<CircuitId, boolean>>({});
   const [circuitPhases, setCircuitPhases] = useState<Record<CircuitId, 'R' | 'T'>>({});
+  const [circuitCrimps, setCircuitCrimps] = useState<Record<CircuitId, CrimpResult>>({});
+  const [pendingCrimpCircuitId, setPendingCrimpCircuitId] = useState<CircuitId | null>(null);
+  const [pendingCrimpWire, setPendingCrimpWire] = useState<Wire | null>(null);
 
   const rafRef = useRef<number>(0);
   const prevTimeRef = useRef<number>(0);
@@ -65,7 +69,7 @@ export default function GameBoard() {
   const circuitConfigs = currentLevel?.circuitConfigs ?? EMPTY_CONFIGS;
   const circuitIds = useMemo(() => circuitConfigs.map(c => c.id), [circuitConfigs]);
 
-  // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances
+  // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances + circuitCrimps
   const circuits: Circuit[] = useMemo(() =>
     circuitConfigs.map(config => ({
       id: config.id,
@@ -74,8 +78,9 @@ export default function GameBoard() {
       breaker: config.breaker,
       wire: circuitWires[config.id] ?? DEFAULT_WIRES[0],
       appliances: circuitAppliances[config.id] ?? [],
+      contactResistance: circuitCrimps[config.id]?.contactResistance,
     })),
-    [circuitConfigs, circuitWires, circuitAppliances]
+    [circuitConfigs, circuitWires, circuitAppliances, circuitCrimps]
   );
 
   const circuitsRef = useRef<Circuit[]>(circuits);
@@ -116,7 +121,10 @@ export default function GameBoard() {
 
   // wetArea ELCB check: all wetArea circuits must have ELCB installed
   const wetAreaMissingElcb = circuitConfigs.some(c => c.wetArea && !circuitElcb[c.id]);
-  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb;
+
+  // Crimp check: requiresCrimp levels need all circuits crimped
+  const crimpMissing = currentLevel?.requiresCrimp === true && !circuitIds.every(id => circuitCrimps[id]);
+  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb && !crimpMissing;
 
   // Track which scripted leakage events have fired
   const firedLeakageEventsRef = useRef<Set<number>>(new Set());
@@ -294,6 +302,9 @@ export default function GameBoard() {
     setMultiState(createInitialMultiState(circuitIds));
     setResult('none');
     setWiring(createInitialWiring(circuitIds));
+    setCircuitCrimps({});
+    setPendingCrimpCircuitId(null);
+    setPendingCrimpWire(null);
   }, [circuitIds]);
 
   const handleBackToLevels = useCallback(() => {
@@ -309,6 +320,9 @@ export default function GameBoard() {
     setCircuitWires({});
     setCircuitElcb({});
     setCircuitPhases({});
+    setCircuitCrimps({});
+    setPendingCrimpCircuitId(null);
+    setPendingCrimpWire(null);
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -332,6 +346,9 @@ export default function GameBoard() {
     setCircuitAppliances(appls);
     setCircuitWires(createInitialCircuitWires(ids));
     setCircuitElcb({});
+    setCircuitCrimps({});
+    setPendingCrimpCircuitId(null);
+    setPendingCrimpWire(null);
     // Initialize phase assignments from CircuitConfig.phase
     const phases: Record<CircuitId, 'R' | 'T'> = {};
     for (const config of level.circuitConfigs) {
@@ -356,6 +373,27 @@ export default function GameBoard() {
     setWiring(prev => {
       const tid = prev.targetCircuitId;
       if (dropped && prev.dragWire && tid) {
+        // requiresCrimp: don't mark isWired yet, trigger crimp mini-game
+        if (currentLevel?.requiresCrimp) {
+          setPendingCrimpCircuitId(tid);
+          setPendingCrimpWire(prev.dragWire);
+          // Update circuitWires immediately so wire is recorded
+          setCircuitWires(w => ({ ...w, [tid]: prev.dragWire! }));
+          // Clear old crimp result for this circuit (re-wiring)
+          setCircuitCrimps(c => {
+            const next = { ...c };
+            delete next[tid];
+            return next;
+          });
+          return {
+            ...prev,
+            isDragging: false,
+            dragWire: null,
+            cursorPos: null,
+            targetCircuitId: null,
+          };
+        }
+        // Non-requiresCrimp: original flow
         const newCircuits = { ...prev.circuits };
         newCircuits[tid] = { isWired: true, connectedWire: prev.dragWire };
         const allCircuitsWired = Object.values(newCircuits).every(c => c.isWired);
@@ -372,7 +410,30 @@ export default function GameBoard() {
       }
       return { ...prev, isDragging: false, dragWire: null, cursorPos: null, targetCircuitId: null };
     });
-  }, []);
+  }, [currentLevel?.requiresCrimp]);
+
+  // Crimp mini-game complete callback
+  const handleCrimpComplete = useCallback((result: CrimpResult) => {
+    const cid = pendingCrimpCircuitId;
+    if (!cid) return;
+    // Save crimp result
+    setCircuitCrimps(prev => ({ ...prev, [cid]: result }));
+    // Mark circuit as wired
+    setWiring(prev => {
+      const wire = pendingCrimpWire;
+      const newCircuits = { ...prev.circuits };
+      newCircuits[cid] = { isWired: true, connectedWire: wire };
+      const allCircuitsWired = Object.values(newCircuits).every(c => c.isWired);
+      return {
+        ...prev,
+        isWired: allCircuitsWired,
+        connectedWire: wire,
+        circuits: newCircuits,
+      };
+    });
+    setPendingCrimpCircuitId(null);
+    setPendingCrimpWire(null);
+  }, [pendingCrimpCircuitId, pendingCrimpWire]);
 
   // Called by CircuitDiagram when cursor enters/leaves a circuit's drop zone
   const handleTargetCircuitChange = useCallback((circuitId: CircuitId | null) => {
@@ -467,11 +528,12 @@ export default function GameBoard() {
             wiring={wiring}
             onPowerToggle={handlePowerToggle}
             leverDisabled={!canPowerOn && !isPowered}
-            leverTooltip={!isPowered && !canPowerOn ? (wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : '請先分配電器') : undefined}
+            leverTooltip={!isPowered && !canPowerOn ? (wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : crimpMissing ? '請先完成所有迴路壓接' : '請先分配電器') : undefined}
             onTargetCircuitChange={handleTargetCircuitChange}
             phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
             phaseMode={currentLevel?.phaseMode}
             onTogglePhase={handleTogglePhase}
+            circuitCrimps={Object.keys(circuitCrimps).length > 0 ? circuitCrimps : undefined}
           />
         </section>
 
@@ -512,6 +574,14 @@ export default function GameBoard() {
         onRetry={handleRetry}
         onBackToLevels={handleBackToLevels}
       />
+
+      {pendingCrimpCircuitId && pendingCrimpWire && (
+        <CrimpMiniGame
+          wire={pendingCrimpWire}
+          circuitLabel={circuitConfigs.find(c => c.id === pendingCrimpCircuitId)?.label ?? pendingCrimpCircuitId}
+          onComplete={handleCrimpComplete}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
-import type { Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState } from '../types/game';
+import type { Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult } from '../types/game';
 
 interface CircuitDiagramProps {
   circuits: readonly Circuit[];
@@ -13,6 +13,7 @@ interface CircuitDiagramProps {
   phases?: Record<CircuitId, 'R' | 'T'>;
   phaseMode?: 'auto' | 'manual';
   onTogglePhase?: (circuitId: CircuitId) => void;
+  circuitCrimps?: Record<CircuitId, CrimpResult>;
 }
 
 /** wireHeat 0→1 對應 白→黃→紅→黑 */
@@ -91,6 +92,7 @@ function SingleCircuitSVG({
   phase,
   phaseMode,
   onTogglePhase,
+  crimpResult,
 }: {
   circuit: Circuit;
   circuitState: CircuitState;
@@ -109,6 +111,7 @@ function SingleCircuitSVG({
   phase?: 'R' | 'T';
   phaseMode?: 'auto' | 'manual';
   onTogglePhase?: () => void;
+  crimpResult?: CrimpResult;
 }) {
   const cx = xOffset + 100; // center x of this circuit
   const wireColor = heatToColor(circuitState.wireHeat);
@@ -226,6 +229,29 @@ function SingleCircuitSVG({
             </g>
           )}
         </g>
+      )}
+
+      {/* Crimp terminal icon at NFB bottom connection point */}
+      {crimpResult && isWired && (
+        (() => {
+          const termColor =
+            crimpResult.quality === 'excellent' ? '#22c55e' :
+            crimpResult.quality === 'good' ? '#84cc16' :
+            crimpResult.quality === 'poor' ? '#f97316' :
+            '#ef4444';
+          const ty = 53; // just below NFB body
+          return crimpResult.terminalType === 'o-ring' ? (
+            <g>
+              <circle cx={cx} cy={ty} r={5} fill="none" stroke={termColor} strokeWidth={1.5} />
+              <circle cx={cx} cy={ty} r={2} fill="none" stroke={termColor} strokeWidth={1} opacity={0.6} />
+            </g>
+          ) : (
+            <g>
+              <line x1={cx - 4} y1={ty + 4} x2={cx} y2={ty - 3} stroke={termColor} strokeWidth={1.5} strokeLinecap="round" />
+              <line x1={cx + 4} y1={ty + 4} x2={cx} y2={ty - 3} stroke={termColor} strokeWidth={1.5} strokeLinecap="round" />
+            </g>
+          );
+        })()
       )}
 
       {/* === Wiring states === */}
@@ -502,7 +528,7 @@ function SingleCircuitSVG({
   );
 }
 
-export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase }: CircuitDiagramProps) {
+export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase, circuitCrimps }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
@@ -699,6 +725,7 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
               phase={phases?.[cId]}
               phaseMode={phaseMode}
               onTogglePhase={onTogglePhase ? () => onTogglePhase(cId) : undefined}
+              crimpResult={circuitCrimps?.[cId]}
             />
           );
         })}

@@ -181,4 +181,27 @@ export const LEVELS: readonly Level[] = [
       { id: 'c4', label: 'IH 爐', voltage: 220, breaker: BREAKER_30A, availableAppliances: [ihStove] },
     ],
   },
+  {
+    name: 'L16 壓接端子入門',
+    description: '首次體驗壓接端子！接好線後要壓接才能送電。這關壓接品質不影響安全。',
+    requiredAppliances: [hairDryer, fridge],
+    budget: 80,
+    survivalTime: 8,
+    requiresCrimp: true,
+    circuitConfigs: [
+      { id: 'c1', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge] },
+    ],
+  },
+  {
+    name: 'L17 端子品質大考驗',
+    description: '壓接品質差的話，接觸電阻會讓線材加速過熱！廚房迴路 23.6A，good 以上才安全。',
+    requiredAppliances: [kettle, microwave, ihStove],
+    budget: 180,
+    survivalTime: 12,
+    requiresCrimp: true,
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
+      { id: 'c2', label: 'IH 爐', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [ihStove] },
+    ],
+  },
 ] as const;
