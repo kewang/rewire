@@ -220,6 +220,8 @@ export interface Level {
   readonly requiresCrimp?: boolean;
   /** 是否要求整線（true 時送電前須完成整線流程） */
   readonly requiresRouting?: boolean;
+  /** 整線起始車道排列（有交叉的謎題起點，省略時用 config 順序） */
+  readonly initialLanes?: readonly CircuitId[];
   /** 第三星獎勵目標條件 */
   readonly bonusCondition?: BonusCondition;
   /** 老屋模式配置 */

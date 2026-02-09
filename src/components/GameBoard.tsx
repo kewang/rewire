@@ -403,7 +403,7 @@ export default function GameBoard() {
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
     setMultiState(createInitialMultiState(circuitIds));
-    setCircuitLanes(circuitIds);
+    setCircuitLanes(currentLevel?.initialLanes ? [...currentLevel.initialLanes] : circuitIds);
     setCableTies(new Set());
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
@@ -563,7 +563,7 @@ export default function GameBoard() {
     setResult('none');
 
     // Initialize routing state
-    setCircuitLanes(ids);
+    setCircuitLanes(level.initialLanes ? [...level.initialLanes] : ids);
     setCableTies(new Set());
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);

@@ -307,9 +307,10 @@ export const LEVELS: readonly Level[] = [
     bonusCondition: { type: 'aesthetics-score', minScore: 90 },
     circuitConfigs: [
       { id: 'c1', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer], phase: 'R' },
-      { id: 'c2', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [underSinkHeater], phase: 'T' },
-      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'R' },
+      { id: 'c2', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'R' },
+      { id: 'c3', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [underSinkHeater], phase: 'T' },
     ],
+    initialLanes: ['c1', 'c3', 'c2'],
   },
   {
     name: 'L22 交叉迷宮',
@@ -323,11 +324,12 @@ export const LEVELS: readonly Level[] = [
     bonusCondition: { type: 'aesthetics-score', minScore: 80 },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave], phase: 'R' },
-      { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer], phase: 'T' },
-      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'R' },
-      { id: 'c4', label: '陽台', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [dryer] },
+      { id: 'c2', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'R' },
+      { id: 'c3', label: '陽台', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [dryer] },
+      { id: 'c4', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer], phase: 'T' },
       { id: 'c5', label: '備用', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
     ],
+    initialLanes: ['c1', 'c4', 'c2', 'c3', 'c5'],
   },
   {
     name: 'L23 完美配電箱',
@@ -343,10 +345,11 @@ export const LEVELS: readonly Level[] = [
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave], phase: 'R' },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer], phase: 'R' },
-      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
-      { id: 'c4', label: '客廳冷氣', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
-      { id: 'c5', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c3', label: '客廳冷氣', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
+      { id: 'c4', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c5', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
       { id: 'c6', label: '備用', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
     ],
+    initialLanes: ['c1', 'c2', 'c5', 'c3', 'c4', 'c6'],
   },
 ] as const;

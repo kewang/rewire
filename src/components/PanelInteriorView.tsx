@@ -1,6 +1,6 @@
 import { useRef, useCallback, useState, useMemo } from 'react';
 import type { CircuitId, CircuitConfig, Wire } from '../types/game';
-import { detectCrossings, getCrossingPairIndices } from '../engine/aesthetics';
+import { detectCrossings, getCrossingPairIndices, countUnbundledPairs } from '../engine/aesthetics';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 
 /** Map wire cross-section to a distinct color */
@@ -74,6 +74,7 @@ export default function PanelInteriorView({
   aestheticsScore,
 }: PanelInteriorViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [hasDragged, setHasDragged] = useState(false);
   const [dragState, setDragState] = useState<{
     circuitId: CircuitId;
     originSlot: number;
@@ -144,6 +145,12 @@ export default function PanelInteriorView({
   // Cable tie stats for score bar
   const totalPairs = Math.max(0, n - 1);
   const bundledCount = cableTies.size;
+  const unbundledCount = countUnbundledPairs(effectiveLanes, cableTies, crossingPairIndices);
+
+  // Step bar state
+  const step1Done = crossings.length === 0;
+  const step2Done = step1Done && unbundledCount === 0;
+  const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3;
 
   // ── Pointer handlers ──────────────────────────────────────────
   const handlePointerDown = useCallback((circuitId: CircuitId, e: React.PointerEvent) => {
@@ -175,6 +182,7 @@ export default function PanelInteriorView({
     try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* ok */ }
     if (dragState.active) {
       onLanesChange(effectiveLanes);
+      setHasDragged(true);
     }
     setDragState(null);
   }, [dragState, effectiveLanes, onLanesChange]);
@@ -240,6 +248,36 @@ export default function PanelInteriorView({
               <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
+        </div>
+
+        {/* Step bar */}
+        <div className="panel-step-bar">
+          {[
+            { num: 1, label: '消除交叉', desc: '拖曳線材左右移動' },
+            { num: 2, label: '放置束帶', desc: '點擊線材之間的放置點' },
+            { num: 3, label: '完成整線', desc: '按下完成按鈕' },
+          ].map(({ num, label, desc }) => {
+            const isDone = num < activeStep;
+            const isActive = num === activeStep;
+            return (
+              <div key={num} className={`panel-step ${isDone ? 'step-done' : isActive ? 'step-active' : 'step-pending'}`}>
+                <div className="panel-step-indicator">
+                  {isDone ? (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <span className="panel-step-num">{num}</span>
+                  )}
+                </div>
+                <div className="panel-step-text">
+                  <span className="panel-step-label">{label}</span>
+                  <span className="panel-step-desc">{desc}</span>
+                </div>
+                {num < 3 && <div className="panel-step-connector" />}
+              </div>
+            );
+          })}
         </div>
 
         {/* Score bar */}
@@ -429,6 +467,8 @@ export default function PanelInteriorView({
                   onClick={() => { if (!isCrossing) onToggleCableTie(i); }}
                   style={{ cursor: isCrossing ? 'not-allowed' : 'pointer' }}
                 >
+                  {/* Tooltip */}
+                  <title>{isCrossing ? '有交叉，無法束帶' : hasTie ? '點擊移除束帶' : '點擊綁束帶'}</title>
                   {/* Hit area */}
                   <rect x={cx - 14} y={cy - 14} width={28} height={28}
                     fill="transparent" />
@@ -524,6 +564,69 @@ export default function PanelInteriorView({
                 </g>
               );
             })}
+
+            {/* ── Area labels (right edge, rotated) ── */}
+            <text
+              x={totalWidth - 10} y={busbarRowY(1)}
+              textAnchor="middle" fill="#3a4555" fontSize={7}
+              fontFamily="var(--font-mono)" fontWeight={600}
+              letterSpacing="0.15em"
+              transform={`rotate(-90, ${totalWidth - 10}, ${busbarRowY(1)})`}
+              className="panel-area-label"
+            >匯流排</text>
+            <text
+              x={totalWidth - 10} y={ROUTING_TOP + ROUTING_HEIGHT / 2}
+              textAnchor="middle" fill="#3a4555" fontSize={7}
+              fontFamily="var(--font-mono)" fontWeight={600}
+              letterSpacing="0.15em"
+              transform={`rotate(-90, ${totalWidth - 10}, ${ROUTING_TOP + ROUTING_HEIGHT / 2})`}
+              className="panel-area-label"
+            >走線區</text>
+            <text
+              x={totalWidth - 10} y={NFB_ZONE_Y + NFB_H / 2}
+              textAnchor="middle" fill="#3a4555" fontSize={7}
+              fontFamily="var(--font-mono)" fontWeight={600}
+              letterSpacing="0.15em"
+              transform={`rotate(-90, ${totalWidth - 10}, ${NFB_ZONE_Y + NFB_H / 2})`}
+              className="panel-area-label"
+            >NFB</text>
+
+            {/* ── Wire labels (mid-route, on each wire) ── */}
+            {effectiveLanes.map((cId, slot) => {
+              const config = circuitConfigs[configIndex[cId]];
+              if (!config) return null;
+              const lx = laneX(slot);
+              const ly = ROUTING_TOP + ROUTING_HEIGHT / 2 + 4;
+              const labelText = config.label;
+              const labelWidth = labelText.length * 7 + 10;
+              return (
+                <g key={`wire-label-${cId}`}>
+                  <rect
+                    x={lx - labelWidth / 2} y={ly - 8}
+                    width={labelWidth} height={16} rx={3}
+                    fill="rgba(10, 12, 15, 0.85)" stroke="#2e3a4a" strokeWidth={0.5}
+                  />
+                  <text x={lx} y={ly + 3} textAnchor="middle"
+                    fill="#c0c8d4" fontSize={7.5}
+                    fontFamily="var(--font-mono)" fontWeight={600}>
+                    {labelText}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* ── Drag hint (disappears after first drag) ── */}
+            {!hasDragged && (
+              <text
+                x={PANEL_PADDING + (n * LANE_WIDTH) / 2}
+                y={ROUTING_TOP + 10}
+                textAnchor="middle"
+                fill="#5a6878" fontSize={9}
+                fontFamily="var(--font-mono)" fontWeight={600}
+                opacity={0.7}
+                className="panel-drag-hint"
+              >← 拖曳調整順序 →</text>
+            )}
 
             {/* ── Drag handle zones (invisible, on top) ── */}
             {effectiveLanes.map((cId, slot) => (

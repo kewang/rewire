@@ -1318,6 +1318,125 @@ h3, h4 {
   border-color: #4a5a6a;
 }
 
+/* Step bar — industrial process indicator */
+.panel-step-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: var(--space-sm) var(--space-xl);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.panel-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  position: relative;
+}
+
+.panel-step-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.step-pending .panel-step-indicator {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid #2e3a4a;
+  color: #3a4555;
+}
+
+.step-active .panel-step-indicator {
+  background: rgba(217, 119, 6, 0.2);
+  border: 1.5px solid var(--color-accent-copper);
+  color: var(--color-accent-copper);
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.3);
+  animation: step-pulse 2s ease-in-out infinite;
+}
+
+.step-done .panel-step-indicator {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1.5px solid var(--color-accent-green);
+  color: var(--color-accent-green);
+}
+
+@keyframes step-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(217, 119, 6, 0.3); }
+  50% { box-shadow: 0 0 14px rgba(217, 119, 6, 0.5); }
+}
+
+.panel-step-num {
+  line-height: 1;
+}
+
+.panel-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.panel-step-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.step-pending .panel-step-label { color: #3a4555; }
+.step-active .panel-step-label { color: var(--color-accent-copper); }
+.step-done .panel-step-label { color: var(--color-accent-green); }
+
+.panel-step-desc {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+.step-pending .panel-step-desc { color: #2a3444; }
+.step-active .panel-step-desc { color: var(--color-text-muted); }
+.step-done .panel-step-desc { color: #3a5a3a; }
+
+.panel-step-connector {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+
+.step-done .panel-step-connector {
+  background: var(--color-accent-green);
+  opacity: 0.5;
+}
+
+.step-active .panel-step-connector,
+.step-pending .panel-step-connector {
+  background: #2e3a4a;
+}
+
+/* Drag hint animation */
+.panel-drag-hint {
+  animation: drag-hint-bob 2s ease-in-out infinite;
+}
+
+@keyframes drag-hint-bob {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.35; }
+}
+
 /* Score bar */
 .panel-score-bar {
   display: flex;
@@ -1629,6 +1748,19 @@ h3, h4 {
 
   .panel-title {
     font-size: 1rem;
+  }
+
+  .panel-step-bar {
+    padding: var(--space-sm) var(--space-md);
+    gap: 0;
+  }
+
+  .panel-step-desc {
+    display: none;
+  }
+
+  .panel-area-label {
+    display: none;
   }
 
   .panel-score-bar {
