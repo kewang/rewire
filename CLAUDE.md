@@ -22,7 +22,7 @@
   - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局 + 相位標籤/切換
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
-  - `LevelSelect.tsx` — 關卡選擇
+  - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列）
 - `src/types/` — TypeScript 型別定義
   - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage)
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel
@@ -61,6 +61,7 @@
 - 電器運轉音：每種電器各有不同 Oscillator 音色，音量壓低 0.03-0.06
 - 工業深色主題：CSS variable 系統（`:root` 定義 30+ variables），背景 #0a0c0f/#0f1318
 - 響應式 layout：mobile ≤640px 單欄+水平滾動線材、tablet 641-1024px 兩欄、desktop ≥1025px 三欄 grid
+- 關卡選擇 grid 排列：`auto-fill` + `minmax(260px, 1fr)`，容器 max-width 1200px，桌面 4 欄/平板 2 欄/手機 1 欄
 - ResultPanel 自動 scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 - 電路圖 SVG 響應式：width="100%" maxWidth=260（單迴路），多迴路 maxWidth = n × 260
 - 多迴路架構：CircuitDiagram 內 SingleCircuitSVG 子元件 + 水平並列（CIRCUIT_WIDTH=200）

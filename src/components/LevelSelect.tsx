@@ -20,7 +20,7 @@ export default function LevelSelect({ levels, onSelect }: LevelSelectProps) {
           >
             <div className="card-title">{level.name}</div>
             <div className="card-detail">{level.description}</div>
-            <div className="card-detail">
+            <div className="card-detail card-detail-ellipsis">
               電器：{level.requiredAppliances.map((a) => a.name).join('、')}
             </div>
             <div className="card-detail">

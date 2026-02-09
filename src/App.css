@@ -5,7 +5,7 @@
 /* ── Level Select ─────────────────────────────────────────────── */
 
 .level-select {
-  max-width: 640px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-2xl) var(--space-lg);
   text-align: center;
@@ -41,8 +41,8 @@
 }
 
 .level-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-md);
 }
 
@@ -322,6 +322,12 @@
 .card-detail {
   font-size: 0.82rem;
   color: var(--color-text-secondary);
+}
+
+.card-detail-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-hint {
