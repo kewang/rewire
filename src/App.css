@@ -1194,6 +1194,25 @@ h3, h4 {
   transform: translateY(0);
 }
 
+/* ── Old House Mode ────────────────────────────────────────────── */
+
+.old-house-problem-border {
+  animation: old-house-flash 1.2s ease-in-out infinite;
+}
+
+@keyframes old-house-flash {
+  0%, 100% { opacity: 0.4; stroke-width: 2; }
+  50% { opacity: 1; stroke-width: 3; }
+}
+
+.unwire-btn rect:hover {
+  fill: rgba(239, 68, 68, 0.3);
+}
+
+.unwire-btn {
+  cursor: pointer;
+}
+
 /* ── Responsive: Tablet (641px – 1024px) ──────────────────────── */
 
 @media (max-width: 1024px) {

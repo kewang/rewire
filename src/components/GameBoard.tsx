@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult } from '../types/game';
-import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND } from '../data/constants';
+import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { calcStars, saveBestStars } from '../engine/scoring';
@@ -57,6 +57,9 @@ export default function GameBoard() {
   const [pendingCrimpCircuitId, setPendingCrimpCircuitId] = useState<CircuitId | null>(null);
   const [pendingCrimpWire, setPendingCrimpWire] = useState<Wire | null>(null);
   const [starResult, setStarResult] = useState<{ stars: number; details: StarDetail[] } | null>(null);
+  const [problemCircuits, setProblemCircuits] = useState<Set<CircuitId>>(new Set());
+  const [preWiredCircuitIds, setPreWiredCircuitIds] = useState<Set<CircuitId>>(new Set());
+  const preWiredCircuitIdsRef = useRef<Set<CircuitId>>(new Set());
 
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
@@ -69,6 +72,10 @@ export default function GameBoard() {
   useEffect(() => {
     multiStateRef.current = multiState;
   }, [multiState]);
+
+  useEffect(() => {
+    preWiredCircuitIdsRef.current = preWiredCircuitIds;
+  }, [preWiredCircuitIds]);
 
   // Derive circuitIds from current level
   const circuitConfigs = currentLevel?.circuitConfigs ?? EMPTY_CONFIGS;
@@ -106,15 +113,16 @@ export default function GameBoard() {
   const circuitCrimpsRef = useRef(circuitCrimps);
   useEffect(() => { circuitCrimpsRef.current = circuitCrimps; }, [circuitCrimps]);
 
-  // Total cost: sum of all circuits' wire costs + ELCB costs
+  // Total cost: sum of all circuits' wire costs + ELCB costs (skip pre-wired circuits in old house mode)
   const totalCost = useMemo(() => {
     return circuitIds.reduce((sum, id) => {
+      const elcbCost = circuitElcb[id] ? ELCB_COST : 0;
+      if (preWiredCircuitIds.has(id)) return sum + elcbCost;
       const wire = circuitWires[id] ?? DEFAULT_WIRES[0];
       const wireCost = wire.costPerMeter * DEFAULT_WIRE_LENGTH;
-      const elcbCost = circuitElcb[id] ? ELCB_COST : 0;
       return sum + wireCost + elcbCost;
     }, 0);
-  }, [circuitIds, circuitWires, circuitElcb]);
+  }, [circuitIds, circuitWires, circuitElcb, preWiredCircuitIds]);
 
   // All appliances across all circuits (for sound)
   const allAppliances = useMemo(() => {
@@ -132,7 +140,8 @@ export default function GameBoard() {
 
   // Crimp check: requiresCrimp levels need all circuits crimped
   const crimpMissing = currentLevel?.requiresCrimp === true && !circuitIds.every(id => circuitCrimps[id]);
-  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb && !crimpMissing;
+  const problemsRemaining = problemCircuits.size > 0;
+  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb && !crimpMissing && !problemsRemaining;
 
   // Track which scripted leakage events have fired
   const firedLeakageEventsRef = useRef<Set<number>>(new Set());
@@ -264,11 +273,15 @@ export default function GameBoard() {
     if (level && newMultiState.elapsed >= level.survivalTime) {
       setIsPowered(false);
       stopApplianceSounds();
-      // Sum wire + ELCB costs from all circuits at this moment
+      // Sum wire + ELCB costs from all circuits at this moment (skip pre-wired)
       const wires = circuitWiresRef.current;
       const elcbs = circuitElcbRef.current;
       const finalCost = Object.entries(wires).reduce(
-        (sum, [id, w]) => sum + w.costPerMeter * DEFAULT_WIRE_LENGTH + (elcbs[id] ? ELCB_COST : 0), 0
+        (sum, [id, w]) => {
+          const elcbCost = elcbs[id] ? ELCB_COST : 0;
+          if (preWiredCircuitIdsRef.current.has(id)) return sum + elcbCost;
+          return sum + w.costPerMeter * DEFAULT_WIRE_LENGTH + elcbCost;
+        }, 0
       );
       const gameResult = finalCost > level.budget ? 'over-budget' : 'won';
       setResult(gameResult);
@@ -344,14 +357,54 @@ export default function GameBoard() {
     hasTripRef.current = false;
     firedLeakageEventsRef.current = new Set();
     setIsPowered(false);
-    setMultiState(createInitialMultiState(circuitIds));
     setResult('none');
     setStarResult(null);
-    setWiring(createInitialWiring(circuitIds));
-    setCircuitCrimps({});
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
-  }, [circuitIds]);
+    setMultiState(createInitialMultiState(circuitIds));
+
+    if (currentLevel?.oldHouse) {
+      // Re-initialize old house pre-wired state
+      const oh = currentLevel.oldHouse;
+      const ids = currentLevel.circuitConfigs.map(c => c.id);
+      const preWires: Record<CircuitId, Wire> = {};
+      for (const [id, pw] of Object.entries(oh.preWiredCircuits)) {
+        preWires[id] = pw.wire;
+      }
+      setCircuitWires(preWires);
+      const preAppls: Record<CircuitId, Appliance[]> = {};
+      for (const config of currentLevel.circuitConfigs) {
+        const pw = oh.preWiredCircuits[config.id];
+        preAppls[config.id] = pw ? [...pw.appliances] : [];
+      }
+      setCircuitAppliances(preAppls);
+      const preCrimps: Record<CircuitId, CrimpResult> = {};
+      for (const [id, pw] of Object.entries(oh.preWiredCircuits)) {
+        const isOxidized = oh.problems.some(p => p.circuitId === id && p.type === 'oxidized-splice');
+        preCrimps[id] = {
+          terminalType: 'o-ring',
+          quality: pw.crimpQuality,
+          contactResistance: isOxidized ? OXIDIZED_CONTACT_RESISTANCE : CRIMP_QUALITY_MAP[pw.crimpQuality],
+        };
+      }
+      setCircuitCrimps(preCrimps);
+      const wiringCircuits: WiringState['circuits'] = {};
+      for (const id of ids) {
+        wiringCircuits[id] = { isWired: true, connectedWire: preWires[id] ?? null };
+      }
+      setWiring({
+        isDragging: false, dragWire: null, cursorPos: null,
+        isWired: true, connectedWire: null, circuits: wiringCircuits, targetCircuitId: null,
+      });
+      setProblemCircuits(new Set(oh.problems.map(p => p.circuitId)));
+      setPreWiredCircuitIds(new Set(ids));
+      preWiredCircuitIdsRef.current = new Set(ids);
+      setCircuitElcb({});
+    } else {
+      setWiring(createInitialWiring(circuitIds));
+      setCircuitCrimps({});
+    }
+  }, [circuitIds, currentLevel]);
 
   const handleBackToLevels = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -372,6 +425,9 @@ export default function GameBoard() {
     setCircuitCrimps({});
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
+    setProblemCircuits(new Set());
+    setPreWiredCircuitIds(new Set());
+    preWiredCircuitIdsRef.current = new Set();
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -379,25 +435,73 @@ export default function GameBoard() {
   const handleSelectLevel = useCallback((level: Level) => {
     const ids = level.circuitConfigs.map(c => c.id);
     setCurrentLevel(level);
-    // Auto-assign appliances that belong to exactly one circuit's availableAppliances
-    const appls: Record<CircuitId, Appliance[]> = {};
-    for (const config of level.circuitConfigs) {
-      appls[config.id] = [];
-    }
-    for (const appliance of level.requiredAppliances) {
-      const candidates = level.circuitConfigs.filter(
-        config => config.availableAppliances.includes(appliance)
-      );
-      if (candidates.length === 1) {
-        appls[candidates[0].id].push(appliance);
-      }
-    }
-    setCircuitAppliances(appls);
-    setCircuitWires(createInitialCircuitWires(ids));
     setCircuitElcb({});
-    setCircuitCrimps({});
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
+    setStarResult(null);
+
+    if (level.oldHouse) {
+      // Old house mode: initialize pre-wired state
+      const oh = level.oldHouse;
+      const preWires: Record<CircuitId, Wire> = {};
+      for (const [id, pw] of Object.entries(oh.preWiredCircuits)) {
+        preWires[id] = pw.wire;
+      }
+      setCircuitWires(preWires);
+
+      const preAppls: Record<CircuitId, Appliance[]> = {};
+      for (const config of level.circuitConfigs) {
+        const pw = oh.preWiredCircuits[config.id];
+        preAppls[config.id] = pw ? [...pw.appliances] : [];
+      }
+      setCircuitAppliances(preAppls);
+
+      const preCrimps: Record<CircuitId, CrimpResult> = {};
+      for (const [id, pw] of Object.entries(oh.preWiredCircuits)) {
+        const isOxidized = oh.problems.some(p => p.circuitId === id && p.type === 'oxidized-splice');
+        preCrimps[id] = {
+          terminalType: 'o-ring',
+          quality: pw.crimpQuality,
+          contactResistance: isOxidized ? OXIDIZED_CONTACT_RESISTANCE : CRIMP_QUALITY_MAP[pw.crimpQuality],
+        };
+      }
+      setCircuitCrimps(preCrimps);
+
+      const wiringCircuits: WiringState['circuits'] = {};
+      for (const id of ids) {
+        wiringCircuits[id] = { isWired: true, connectedWire: preWires[id] ?? null };
+      }
+      setWiring({
+        isDragging: false, dragWire: null, cursorPos: null,
+        isWired: true, connectedWire: null, circuits: wiringCircuits, targetCircuitId: null,
+      });
+
+      setProblemCircuits(new Set(oh.problems.map(p => p.circuitId)));
+      setPreWiredCircuitIds(new Set(ids));
+      preWiredCircuitIdsRef.current = new Set(ids);
+    } else {
+      // Normal mode: auto-assign appliances
+      const appls: Record<CircuitId, Appliance[]> = {};
+      for (const config of level.circuitConfigs) {
+        appls[config.id] = [];
+      }
+      for (const appliance of level.requiredAppliances) {
+        const candidates = level.circuitConfigs.filter(
+          config => config.availableAppliances.includes(appliance)
+        );
+        if (candidates.length === 1) {
+          appls[candidates[0].id].push(appliance);
+        }
+      }
+      setCircuitAppliances(appls);
+      setCircuitWires(createInitialCircuitWires(ids));
+      setCircuitCrimps({});
+      setWiring(createInitialWiring(ids));
+      setProblemCircuits(new Set());
+      setPreWiredCircuitIds(new Set());
+    preWiredCircuitIdsRef.current = new Set();
+    }
+
     // Initialize phase assignments from CircuitConfig.phase
     const phases: Record<CircuitId, 'R' | 'T'> = {};
     for (const config of level.circuitConfigs) {
@@ -406,7 +510,6 @@ export default function GameBoard() {
     setCircuitPhases(phases);
     setMultiState(createInitialMultiState(ids));
     setResult('none');
-    setWiring(createInitialWiring(ids));
   }, []);
 
   // Wiring drag callbacks
@@ -480,6 +583,15 @@ export default function GameBoard() {
         circuits: newCircuits,
       };
     });
+    // Check if this repairs a problem circuit (must have been unwired first = not in preWiredCircuitIds)
+    setProblemCircuits(prev => {
+      if (prev.has(cid) && !preWiredCircuitIdsRef.current.has(cid)) {
+        const next = new Set(prev);
+        next.delete(cid);
+        return next;
+      }
+      return prev;
+    });
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
   }, [pendingCrimpCircuitId, pendingCrimpWire]);
@@ -519,6 +631,29 @@ export default function GameBoard() {
       [circuitId]: prev[circuitId] === 'R' ? 'T' : 'R',
     }));
   }, [isPowered, currentLevel?.phaseMode]);
+
+  // Old house mode: unwire a circuit
+  const handleUnwire = useCallback((circuitId: CircuitId) => {
+    if (!window.confirm('確定要拆除此迴路的線材嗎？舊線材將被丟棄。')) return;
+    setCircuitWires(prev => ({ ...prev, [circuitId]: DEFAULT_WIRES[0] }));
+    setCircuitCrimps(prev => {
+      const next = { ...prev };
+      delete next[circuitId];
+      return next;
+    });
+    setCircuitAppliances(prev => ({ ...prev, [circuitId]: [] }));
+    setWiring(prev => {
+      const newCircuits = { ...prev.circuits };
+      newCircuits[circuitId] = { isWired: false, connectedWire: null };
+      const allWired = Object.values(newCircuits).every(c => c.isWired);
+      return { ...prev, isWired: allWired, circuits: newCircuits };
+    });
+    const updated = new Set(
+      [...preWiredCircuitIdsRef.current].filter(id => id !== circuitId)
+    );
+    setPreWiredCircuitIds(updated);
+    preWiredCircuitIdsRef.current = updated;
+  }, []);
 
   const handleAddAppliance = useCallback((circuitId: CircuitId, a: Appliance) => {
     setCircuitAppliances(prev => ({
@@ -577,12 +712,17 @@ export default function GameBoard() {
             wiring={wiring}
             onPowerToggle={handlePowerToggle}
             leverDisabled={!canPowerOn && !isPowered}
-            leverTooltip={!isPowered && !canPowerOn ? (wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : crimpMissing ? '請先完成所有迴路壓接' : '請先分配電器') : undefined}
+            leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? '請先修復所有問題迴路' : wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : crimpMissing ? '請先完成所有迴路壓接' : '請先分配電器') : undefined}
             onTargetCircuitChange={handleTargetCircuitChange}
             phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
             phaseMode={currentLevel?.phaseMode}
             onTogglePhase={handleTogglePhase}
             circuitCrimps={Object.keys(circuitCrimps).length > 0 ? circuitCrimps : undefined}
+            problemCircuits={problemCircuits}
+            preWiredCircuitIds={preWiredCircuitIds}
+            onUnwire={handleUnwire}
+            isOldHouse={!!currentLevel?.oldHouse}
+            oldHouseProblems={currentLevel?.oldHouse?.problems}
           />
         </section>
 

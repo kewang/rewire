@@ -165,6 +165,28 @@ export interface LeakageEvent {
   readonly circuitId: CircuitId;
 }
 
+/** 老屋問題類型 */
+export type OldHouseProblemType = 'bare-wire' | 'wrong-wire-gauge' | 'oxidized-splice';
+
+/** 老屋問題 */
+export interface OldHouseProblem {
+  readonly circuitId: CircuitId;
+  readonly type: OldHouseProblemType;
+}
+
+/** 預接線迴路 */
+export interface PreWiredCircuit {
+  readonly wire: Wire;
+  readonly crimpQuality: CrimpQuality;
+  readonly appliances: readonly Appliance[];
+}
+
+/** 老屋配置 */
+export interface OldHouseConfig {
+  readonly problems: readonly OldHouseProblem[];
+  readonly preWiredCircuits: Record<CircuitId, PreWiredCircuit>;
+}
+
 /** 獎勵目標條件（三星） */
 export type BonusCondition =
   | { readonly type: 'no-warning' }
@@ -197,4 +219,6 @@ export interface Level {
   readonly requiresCrimp?: boolean;
   /** 第三星獎勵目標條件 */
   readonly bonusCondition?: BonusCondition;
+  /** 老屋模式配置 */
+  readonly oldHouse?: OldHouseConfig;
 }

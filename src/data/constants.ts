@@ -54,6 +54,9 @@ export const CRIMP_TERMINALS = [
   { type: 'y-fork' as const, name: 'Y 型叉', compatibleCrossSections: [1.6, 2.0, 3.5, 5.5, 8, 14] },
 ] as const;
 
+/** 氧化老鼠尾接法的接觸電阻倍率 */
+export const OXIDIZED_CONTACT_RESISTANCE = 2.0;
+
 /** 壓接品質 → 接觸電阻倍率對照 */
 export const CRIMP_QUALITY_MAP = {
   excellent: 1.00,

@@ -1,7 +1,8 @@
 import type { Level } from '../types/game';
-import { DEFAULT_APPLIANCES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
+import { DEFAULT_APPLIANCES, DEFAULT_WIRES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
 
 const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, bathHeater, fridge] = DEFAULT_APPLIANCES;
+const [wire16, wire20] = DEFAULT_WIRES;
 
 /** 關卡定義（L01-L05 單迴路, L06-L09 多迴路） */
 export const LEVELS: readonly Level[] = [
@@ -220,5 +221,78 @@ export const LEVELS: readonly Level[] = [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
       { id: 'c2', label: 'IH 爐', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [ihStove] },
     ],
+  },
+  {
+    name: 'L18 老屋驚魂：初診',
+    description: '打開老配電箱，c1 活線沒壓端子！拆掉問題線路重新接線再送電。',
+    requiredAppliances: [hairDryer, fridge, fridge],
+    budget: 100,
+    survivalTime: 10,
+    requiresCrimp: true,
+    bonusCondition: { type: 'no-warning' },
+    circuitConfigs: [
+      { id: 'c1', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge] },
+      { id: 'c2', label: '臥室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+    ],
+    oldHouse: {
+      problems: [{ circuitId: 'c1', type: 'bare-wire' }],
+      preWiredCircuits: {
+        c1: { wire: wire20, crimpQuality: 'none', appliances: [hairDryer, fridge] },
+        c2: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
+      },
+    },
+  },
+  {
+    name: 'L19 老屋驚魂：全面檢修',
+    description: '廚房線太細、客廳沒壓端子。兩條問題迴路等你修復！',
+    requiredAppliances: [kettle, microwave, hairDryer],
+    budget: 180,
+    survivalTime: 12,
+    requiresCrimp: true,
+    bonusCondition: { type: 'no-warning' },
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
+      { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [microwave] },
+    ],
+    oldHouse: {
+      problems: [
+        { circuitId: 'c1', type: 'wrong-wire-gauge' },
+        { circuitId: 'c2', type: 'bare-wire' },
+      ],
+      preWiredCircuits: {
+        c1: { wire: wire16, crimpQuality: 'poor', appliances: [kettle, microwave] },
+        c2: { wire: wire20, crimpQuality: 'none', appliances: [hairDryer] },
+        c3: { wire: wire16, crimpQuality: 'good', appliances: [] },
+      },
+    },
+  },
+  {
+    name: 'L20 老屋驚魂：危機四伏',
+    description: 'v0.5 畢業考！氧化接點、裸線、線太細 — 三個問題加上潮濕浴室和相位平衡。',
+    requiredAppliances: [kettle, hairDryer, fridge],
+    budget: 250,
+    survivalTime: 15,
+    requiresCrimp: true,
+    phaseMode: 'manual',
+    leakageMode: 'random',
+    bonusCondition: { type: 'no-warning' },
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, fridge], phase: 'R' },
+      { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge], phase: 'R' },
+      { id: 'c3', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+    ],
+    oldHouse: {
+      problems: [
+        { circuitId: 'c1', type: 'oxidized-splice' },
+        { circuitId: 'c2', type: 'bare-wire' },
+        { circuitId: 'c3', type: 'wrong-wire-gauge' },
+      ],
+      preWiredCircuits: {
+        c1: { wire: wire20, crimpQuality: 'none', appliances: [kettle] },
+        c2: { wire: wire16, crimpQuality: 'none', appliances: [hairDryer] },
+        c3: { wire: wire16, crimpQuality: 'poor', appliances: [bathHeater] },
+      },
+    },
   },
 ] as const;

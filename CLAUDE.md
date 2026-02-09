@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 進行中（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。**
 
 ## Tech Stack
 
@@ -16,23 +16,23 @@
 ## Project Structure
 
 - `src/components/` — React 元件
-  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）
+  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示）
-  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局 + 相位標籤/切換
+  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局 + 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕）
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage), BonusCondition
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage), BonusCondition, OldHouseProblemType, OldHouseProblem, PreWiredCircuit, OldHouseConfig
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L15 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB）
-  - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND
+  - `levels.ts` — L01-L20 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂）
+  - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
@@ -95,6 +95,15 @@
 - 星等計算為純函式（scoring.ts），GameBoard 結果判定時呼叫
 - warning/trip 追蹤用 useRef flag，rAF loop 中累積偵測
 - 星等 localStorage 持久化：key=`rewire-stars`，value=`Record<number, 0|1|2|3>`
+- 老屋模式：Level.oldHouse 可選擴展，GameBoard handleSelectLevel 偵測後初始化預接線
+- 老屋 3 種問題：bare-wire（無端子）、wrong-wire-gauge（線太細）、oxidized-splice（氧化接點 contactResistance=2.0）
+- 老屋預接線：preWiredCircuits 定義每迴路的 wire/crimpQuality/appliances，進入時自動初始化
+- 拆線操作：window.confirm 確認後清除 wire/crimp/appliances，從 preWiredCircuitIds 移除
+- 老屋成本規則：保留原線（preWiredCircuitIds 中）免費，僅替換的新線計成本
+- 問題修復判定：拆線 → 重新接線 → 壓接後從 problemCircuits 移除
+- 老屋送電前置：problemCircuits 為空才能送電
+- 問題迴路視覺：閃爍橘色邊框 + ⚠️ 圖示，oxidized-splice 暗褐色(#6b4423)線材
+- 拆線按鈕：僅 preWiredCircuitIds 中的迴路顯示（修復後不再出現）
 
 ## Testing Workflow
 

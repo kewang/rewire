@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
-import type { Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult } from '../types/game';
+import type { Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult, OldHouseProblem, OldHouseProblemType } from '../types/game';
 
 interface CircuitDiagramProps {
   circuits: readonly Circuit[];
@@ -14,6 +14,11 @@ interface CircuitDiagramProps {
   phaseMode?: 'auto' | 'manual';
   onTogglePhase?: (circuitId: CircuitId) => void;
   circuitCrimps?: Record<CircuitId, CrimpResult>;
+  problemCircuits?: Set<CircuitId>;
+  preWiredCircuitIds?: Set<CircuitId>;
+  onUnwire?: (circuitId: CircuitId) => void;
+  isOldHouse?: boolean;
+  oldHouseProblems?: readonly OldHouseProblem[];
 }
 
 /** wireHeat 0→1 對應 白→黃→紅→黑 */
@@ -93,6 +98,11 @@ function SingleCircuitSVG({
   phaseMode,
   onTogglePhase,
   crimpResult,
+  isProblem,
+  problemType,
+  isOldHouse,
+  isPreWired,
+  onUnwire,
 }: {
   circuit: Circuit;
   circuitState: CircuitState;
@@ -112,6 +122,11 @@ function SingleCircuitSVG({
   phaseMode?: 'auto' | 'manual';
   onTogglePhase?: () => void;
   crimpResult?: CrimpResult;
+  isProblem?: boolean;
+  problemType?: OldHouseProblemType;
+  isOldHouse?: boolean;
+  isPreWired?: boolean;
+  onUnwire?: () => void;
 }) {
   const cx = xOffset + 100; // center x of this circuit
   const wireColor = heatToColor(circuitState.wireHeat);
@@ -129,7 +144,9 @@ function SingleCircuitSVG({
   const showPreviewLine = isDragging && isOverDropZone && showPreview;
 
   const previewColor = dragWire ? wireGaugeColor(dragWire.crossSection) : '#888';
-  const connectedColor = connectedWire ? wireGaugeColor(connectedWire.crossSection) : '#888';
+  const connectedColor = (isProblem && problemType === 'oxidized-splice' && connectedWire)
+    ? '#6b4423' // dark brown for oxidized splice
+    : (connectedWire ? wireGaugeColor(connectedWire.crossSection) : '#888');
 
   // NFB layout for this circuit
   const leverTrackX = xOffset + 138;
@@ -146,6 +163,26 @@ function SingleCircuitSVG({
 
   return (
     <g>
+      {/* Problem circuit: flashing orange border + ⚠️ icon */}
+      {isProblem && (
+        <>
+          <rect x={xOffset + 4} y={4} width={CIRCUIT_WIDTH - 8} height={CIRCUIT_HEIGHT - 16} rx={8}
+            fill="none" stroke="#f97316" strokeWidth={2}
+            className="old-house-problem-border" />
+          <text x={xOffset + 18} y={78} fill="#f97316" fontSize={16}>⚠️</text>
+        </>
+      )}
+
+      {/* Old house unwire button (visible only for pre-wired circuits, not powered) */}
+      {isOldHouse && isPreWired && isWired && !isPowered && onUnwire && (
+        <g className="unwire-btn" onClick={onUnwire} style={{ cursor: 'pointer' }}>
+          <rect x={xOffset + 140} y={262} width={46} height={18} rx={3}
+            fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth={1} />
+          <text x={xOffset + 163} y={274} textAnchor="middle" fill="#ef4444"
+            fontSize={9} fontFamily="var(--font-mono)">拆線</text>
+        </g>
+      )}
+
       {/* Circuit label + voltage tag */}
       {showLabel && (
         <text x={cx} y={286} textAnchor="middle" fontSize="9"
@@ -528,7 +565,7 @@ function SingleCircuitSVG({
   );
 }
 
-export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase, circuitCrimps }: CircuitDiagramProps) {
+export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase, circuitCrimps, problemCircuits, preWiredCircuitIds, onUnwire, isOldHouse, oldHouseProblems }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
@@ -705,6 +742,9 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
           const connectedWire = cw?.connectedWire ?? null;
           const isOver = overCircuitId === cId;
 
+          const isProblem = problemCircuits?.has(cId) ?? false;
+          const problem = oldHouseProblems?.find(p => p.circuitId === cId);
+
           return (
             <SingleCircuitSVG
               key={cId}
@@ -726,6 +766,11 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
               phaseMode={phaseMode}
               onTogglePhase={onTogglePhase ? () => onTogglePhase(cId) : undefined}
               crimpResult={circuitCrimps?.[cId]}
+              isProblem={isProblem}
+              problemType={isProblem ? problem?.type : undefined}
+              isOldHouse={isOldHouse}
+              isPreWired={preWiredCircuitIds?.has(cId)}
+              onUnwire={onUnwire ? () => onUnwire(cId) : undefined}
             />
           );
         })}

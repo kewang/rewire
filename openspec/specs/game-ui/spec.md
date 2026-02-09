@@ -48,7 +48,7 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 
 ### Requirement: Power control
 
-玩家 MUST 能透過 CircuitDiagram 內的 NFB 撥桿控制送電與斷電，但 MUST 先完成接線。
+玩家 MUST 能透過 CircuitDiagram 內的 NFB 撥桿控制送電與斷電，但 MUST 先完成接線。老屋模式下額外需修復所有問題迴路。
 
 #### Scenario: 未接線時禁用送電
 
@@ -67,6 +67,12 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 - **WHEN** 玩家透過撥桿操作（拖曳下扳或點擊）觸發斷電
 - **THEN** 模擬迴圈 MUST 停止
 - **AND** 模擬狀態 MUST 重置為初始狀態
+
+#### Scenario: 老屋模式未修復不可送電
+
+- **WHEN** 老屋關卡中仍有問題迴路未修復
+- **THEN** NFB 撥桿 MUST 處於禁用狀態
+- **AND** MUST 顯示提示「請先修復所有問題迴路」
 
 ### Requirement: Real-time status display
 
