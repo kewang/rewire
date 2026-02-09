@@ -19,7 +19,7 @@
   - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示）
-  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局 + 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕）
+  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路多行排列佈局（MAX_CIRCUITS_PER_ROW=4）+ 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕）
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
@@ -64,10 +64,11 @@
 - 響應式 layout：mobile ≤640px 單欄+水平滾動線材、tablet 641-1024px 兩欄、desktop ≥1025px 三欄 grid
 - 關卡選擇 grid 排列：`auto-fill` + `minmax(260px, 1fr)`，容器 max-width 1200px，桌面 4 欄/平板 2 欄/手機 1 欄
 - ResultPanel 自動 scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-- 電路圖 SVG 響應式：width="100%" maxWidth=260（單迴路），多迴路 maxWidth = n × 260
-- 多迴路架構：CircuitDiagram 內 SingleCircuitSVG 子元件 + 水平並列（CIRCUIT_WIDTH=200）
+- 電路圖 SVG 響應式：width="100%" maxWidth=260（單迴路），多迴路 maxWidth = min(n, MAX_CIRCUITS_PER_ROW) × 260
+- 多迴路架構：CircuitDiagram 內 SingleCircuitSVG 子元件，一排最多 MAX_CIRCUITS_PER_ROW=4 個，超過自動換行（CIRCUIT_WIDTH=200, ROW_GAP=20）
+- 4+ 迴路桌面版：game-board max-width 加寬至 1500px，維持三欄佈局
 - 拖曳接線：Pointer Events API（非 HTML5 DnD），WiringState 集中管理於 GameBoard
-- 拖曳 drop zone：SVG 座標判定 circuitIndex = floor(svgX / CIRCUIT_WIDTH)，onTargetCircuitChange 回調
+- 拖曳 drop zone：SVG 座標判定 row+col→circuitIndex（支援多行），onTargetCircuitChange 回調
 - 拖曳流程：pointerdown 設 capture → 移動超閾值啟動拖曳 → releaseCapture + global listeners → elementFromPoint 偵測 drop zone
 - 觸控長按 150ms 啟動拖曳，移動 >10px 取消長按（避免與捲動衝突）
 - 電路圖三態：未接線（灰色虛線+提示文字）→ 拖曳中預覽（彩色虛線跟隨游標）→ 已接線（實線+閃光動畫）

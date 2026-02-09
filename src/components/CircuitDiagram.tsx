@@ -72,6 +72,8 @@ function clientToSvg(svgEl: SVGSVGElement, clientX: number, clientY: number): { 
 // Layout constants
 const CIRCUIT_WIDTH = 200;
 const CIRCUIT_HEIGHT = 300;
+const MAX_CIRCUITS_PER_ROW = 4;
+const ROW_GAP = 20;
 const LEVER_TRACK_W = 18;
 const LEVER_TRACK_H = 32;
 const LEVER_HANDLE_W = 14;
@@ -92,6 +94,7 @@ function SingleCircuitSVG({
   dragWire,
   flashActive,
   xOffset,
+  yOffset,
   showLabel,
   showVoltageLabel,
   phase,
@@ -116,6 +119,7 @@ function SingleCircuitSVG({
   dragWire: Circuit['wire'] | null;
   flashActive: boolean;
   xOffset: number;
+  yOffset: number;
   showLabel: boolean;
   showVoltageLabel: boolean;
   phase?: 'R' | 'T';
@@ -162,7 +166,7 @@ function SingleCircuitSVG({
   const poleLabel = is220V ? '2P' : '1P';
 
   return (
-    <g>
+    <g transform={yOffset ? `translate(0,${yOffset})` : undefined}>
       {/* Problem circuit: flashing orange border + ⚠️ icon */}
       {isProblem && (
         <>
@@ -574,8 +578,11 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
   const [prevWiringCircuits, setPrevWiringCircuits] = useState(wiring.circuits);
 
   const n = circuits.length;
-  const svgWidth = n * CIRCUIT_WIDTH;
   const isSingle = n === 1;
+  const cols = Math.min(n, MAX_CIRCUITS_PER_ROW);
+  const rows = Math.ceil(n / MAX_CIRCUITS_PER_ROW);
+  const svgWidth = cols * CIRCUIT_WIDTH;
+  const svgHeight = rows * CIRCUIT_HEIGHT + (rows - 1) * ROW_GAP;
 
   // Show voltage labels only when there are mixed voltages
   const hasMixedVoltage = n > 1 && new Set(circuits.map(c => c.voltage)).size > 1;
@@ -624,9 +631,12 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
     let newPreviewY = 120;
     if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
       const svgPt = clientToSvg(svgRef.current, cx, cy);
-      newPreviewY = Math.max(50, Math.min(250, svgPt.y));
-      const circuitIndex = Math.floor(svgPt.x / CIRCUIT_WIDTH);
-      if (circuitIndex >= 0 && circuitIndex < n) {
+      const row = Math.floor(svgPt.y / (CIRCUIT_HEIGHT + ROW_GAP));
+      const localY = svgPt.y - row * (CIRCUIT_HEIGHT + ROW_GAP);
+      newPreviewY = Math.max(50, Math.min(250, localY));
+      const col = Math.floor(svgPt.x / CIRCUIT_WIDTH);
+      const circuitIndex = row * MAX_CIRCUITS_PER_ROW + col;
+      if (col >= 0 && col < cols && circuitIndex >= 0 && circuitIndex < n) {
         newOverId = circuits[circuitIndex].id;
       }
     }
@@ -637,7 +647,7 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
       onTargetCircuitChange?.(newOverId);
     });
     return () => cancelAnimationFrame(rafId);
-  }, [wiring.isDragging, wiring.cursorPos, n, circuits, onTargetCircuitChange]);
+  }, [wiring.isDragging, wiring.cursorPos, n, cols, circuits, onTargetCircuitChange]);
 
   const handlePointerEnter = useCallback(() => {
     // handled by effect
@@ -701,7 +711,7 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
-      <svg ref={svgRef} viewBox={`0 0 ${svgWidth} ${CIRCUIT_HEIGHT}`} width="100%" style={{ maxWidth: isSingle ? 260 : n * 260 }}>
+      <svg ref={svgRef} viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%" style={{ maxWidth: isSingle ? 260 : cols * 260 }}>
         <defs>
           <filter id="glow-warning">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -759,7 +769,8 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
               previewY={previewY}
               dragWire={wiring.dragWire}
               flashActive={flashCircuitId === cId}
-              xOffset={i * CIRCUIT_WIDTH}
+              xOffset={(i % MAX_CIRCUITS_PER_ROW) * CIRCUIT_WIDTH}
+              yOffset={Math.floor(i / MAX_CIRCUITS_PER_ROW) * (CIRCUIT_HEIGHT + ROW_GAP)}
               showLabel={!isSingle}
               showVoltageLabel={hasMixedVoltage}
               phase={phases?.[cId]}
@@ -776,11 +787,13 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
         })}
 
         {/* Global power lever - interactive overlays on all circuits' NFBs (all toggle the same global power) */}
-        {circuits.map((_, i) => (
-          <rect
+        {circuits.map((_, i) => {
+          const rowY = Math.floor(i / MAX_CIRCUITS_PER_ROW) * (CIRCUIT_HEIGHT + ROW_GAP);
+          const colX = (i % MAX_CIRCUITS_PER_ROW) * CIRCUIT_WIDTH;
+          return <rect
             key={`lever-${i}`}
-            x={i * CIRCUIT_WIDTH + 138 + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2}
-            y={isPowered ? 14 + 2 : 14 + LEVER_TRACK_H - LEVER_HANDLE_H - 2}
+            x={colX + 138 + (LEVER_TRACK_W - LEVER_HANDLE_W) / 2}
+            y={rowY + (isPowered ? 14 + 2 : 14 + LEVER_TRACK_H - LEVER_HANDLE_H - 2)}
             width={LEVER_HANDLE_W} height={LEVER_HANDLE_H}
             rx={2}
             fill="transparent"
@@ -789,12 +802,12 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
             onPointerDown={handleLeverPointerDown}
             onPointerMove={handleLeverPointerMove}
             onPointerUp={handleLeverPointerUp}
-          />
-        ))}
+          />;
+        })}
 
         {/* Lever disabled tooltip */}
         {leverDisabled && leverTooltip && (
-          <text x={svgWidth / 2} y={CIRCUIT_HEIGHT - 8} textAnchor="middle"
+          <text x={svgWidth / 2} y={svgHeight - 8} textAnchor="middle"
             fill="#eab308" fontSize={10} fontFamily="var(--font-mono)">
             {leverTooltip}
           </text>

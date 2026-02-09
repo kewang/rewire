@@ -762,7 +762,7 @@ export default function GameBoard() {
   }
 
   return (
-    <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}`}>
+    <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}${circuitConfigs.length >= 4 ? ' many-circuits' : ''}`}>
       <header className="game-header">
         <div className="header-top">
           <button className="back-button" onClick={handleBackToLevels}>← 返回</button>
