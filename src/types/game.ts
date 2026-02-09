@@ -193,7 +193,8 @@ export type BonusCondition =
   | { readonly type: 'under-budget-ratio'; readonly ratio: number }
   | { readonly type: 'time-margin'; readonly margin: number }
   | { readonly type: 'crimp-quality'; readonly minQuality: CrimpQuality }
-  | { readonly type: 'no-trip' };
+  | { readonly type: 'no-trip' }
+  | { readonly type: 'aesthetics-score'; readonly minScore: number };
 
 /** 關卡定義 */
 export interface Level {

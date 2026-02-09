@@ -46,6 +46,8 @@ function checkBonus(input: CalcStarsInput): boolean {
     }
     case 'no-trip':
       return !input.hadTrip;
+    case 'aesthetics-score':
+      return input.aestheticsScore != null && input.aestheticsScore >= bonusCondition.minScore;
   }
 }
 
@@ -61,6 +63,8 @@ function bonusLabel(condition: BonusCondition): string {
       return `壓接品質達 ${condition.minQuality}`;
     case 'no-trip':
       return '全程無跳脫';
+    case 'aesthetics-score':
+      return `整線分數 ≥ ${condition.minScore}`;
   }
 }
 
