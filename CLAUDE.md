@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 PRD 已完成。**
 
 ## Tech Stack
 
@@ -31,7 +31,7 @@
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L20 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂）
+  - `levels.ts` — L01-L23 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理）
   - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
@@ -46,7 +46,7 @@
 
 - 語言：程式碼用英文，註解與文件可用繁體中文
 - OpenSpec 工作流程管理所有 change
-- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`
+- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
 - **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
 
