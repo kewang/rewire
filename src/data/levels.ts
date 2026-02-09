@@ -11,6 +11,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer],
     budget: 50,
     survivalTime: 5,
+    bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
     ],
@@ -21,6 +22,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer, kettle],
     budget: 120,
     survivalTime: 5,
+    bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
     ],
@@ -31,6 +33,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [hairDryer, kettle],
     budget: 55,
     survivalTime: 5,
+    bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
     ],
@@ -41,6 +44,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [underSinkHeater, kettle],
     budget: 85,
     survivalTime: 8,
+    bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [underSinkHeater, kettle] },
     ],
@@ -51,6 +55,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [dryer, kettle],
     budget: 85,
     survivalTime: 15,
+    bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [dryer, kettle] },
     ],
@@ -61,6 +66,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [kettle, microwave, hairDryer],
     budget: 120,
     survivalTime: 8,
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.8 },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
@@ -72,6 +78,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [kettle, underSinkHeater, hairDryer, dryer],
     budget: 130,
     survivalTime: 10,
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.8 },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, underSinkHeater] },
       { id: 'c2', label: '臥室', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
@@ -84,6 +91,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [kettle, microwave, underSinkHeater, hairDryer, dryer],
     budget: 180,
     survivalTime: 15,
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.8 },
     circuitConfigs: [
       { id: 'c1', label: '廚房A', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, underSinkHeater, hairDryer] },
       { id: 'c2', label: '廚房B', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, underSinkHeater, hairDryer] },
@@ -96,6 +104,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [kettle, underSinkHeater, waterHeater, dryer],
     budget: 130,
     survivalTime: 10,
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.8 },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, underSinkHeater] },
       { id: 'c2', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [waterHeater] },
@@ -108,6 +117,7 @@ export const LEVELS: readonly Level[] = [
     requiredAppliances: [ihStove, fridge, microwave],
     budget: 150,
     survivalTime: 10,
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.8 },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [fridge, microwave] },
       { id: 'c2', label: 'IH 爐', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [ihStove] },
@@ -120,6 +130,7 @@ export const LEVELS: readonly Level[] = [
     budget: 200,
     survivalTime: 12,
     phaseMode: 'auto',
+    bonusCondition: { type: 'time-margin', margin: 3 },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, fridge], phase: 'R' },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge], phase: 'T' },
@@ -133,6 +144,7 @@ export const LEVELS: readonly Level[] = [
     budget: 250,
     survivalTime: 15,
     phaseMode: 'manual',
+    bonusCondition: { type: 'time-margin', margin: 3 },
     circuitConfigs: [
       { id: 'c1', label: '廚房A', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, underSinkHeater], phase: 'R' },
       { id: 'c2', label: '廚房B', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [microwave, underSinkHeater, hairDryer], phase: 'R' },
@@ -147,6 +159,7 @@ export const LEVELS: readonly Level[] = [
     budget: 200,
     survivalTime: 10,
     leakageMode: 'scripted',
+    bonusCondition: { type: 'no-trip' },
     leakageEvents: [{ time: 5, circuitId: 'c1' }],
     circuitConfigs: [
       { id: 'c1', label: '浴室', voltage: 220, breaker: BREAKER_30A, availableAppliances: [bathHeater, waterHeater], wetArea: true, elcbAvailable: true },
@@ -160,6 +173,7 @@ export const LEVELS: readonly Level[] = [
     budget: 185,
     survivalTime: 12,
     leakageMode: 'random',
+    bonusCondition: { type: 'no-trip' },
     circuitConfigs: [
       { id: 'c1', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
       { id: 'c2', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, fridge] },
@@ -174,6 +188,7 @@ export const LEVELS: readonly Level[] = [
     survivalTime: 20,
     phaseMode: 'manual',
     leakageMode: 'random',
+    bonusCondition: { type: 'no-trip' },
     circuitConfigs: [
       { id: 'c1', label: '廚房A', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, fridge], phase: 'R' },
       { id: 'c2', label: '廚房B', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [microwave, hairDryer, fridge], phase: 'R' },
@@ -188,6 +203,7 @@ export const LEVELS: readonly Level[] = [
     budget: 80,
     survivalTime: 8,
     requiresCrimp: true,
+    bonusCondition: { type: 'crimp-quality', minQuality: 'good' },
     circuitConfigs: [
       { id: 'c1', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge] },
     ],
@@ -199,6 +215,7 @@ export const LEVELS: readonly Level[] = [
     budget: 180,
     survivalTime: 12,
     requiresCrimp: true,
+    bonusCondition: { type: 'crimp-quality', minQuality: 'good' },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
       { id: 'c2', label: 'IH 爐', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [ihStove] },

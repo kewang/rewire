@@ -3,6 +3,8 @@ import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, C
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
+import { calcStars, saveBestStars } from '../engine/scoring';
+import type { StarDetail } from '../engine/scoring';
 import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing, startApplianceSounds, stopApplianceSounds } from '../engine/audio';
 import WireSelector from './WireSelector';
 import AppliancePanel from './AppliancePanel';
@@ -54,8 +56,11 @@ export default function GameBoard() {
   const [circuitCrimps, setCircuitCrimps] = useState<Record<CircuitId, CrimpResult>>({});
   const [pendingCrimpCircuitId, setPendingCrimpCircuitId] = useState<CircuitId | null>(null);
   const [pendingCrimpWire, setPendingCrimpWire] = useState<Wire | null>(null);
+  const [starResult, setStarResult] = useState<{ stars: number; details: StarDetail[] } | null>(null);
 
   const rafRef = useRef<number>(0);
+  const hasWarningRef = useRef(false);
+  const hasTripRef = useRef(false);
   const prevTimeRef = useRef<number>(0);
   const multiStateRef = useRef<MultiCircuitState>(multiState);
   const buzzingRef = useRef(false);
@@ -97,6 +102,9 @@ export default function GameBoard() {
 
   const circuitPhasesRef = useRef(circuitPhases);
   useEffect(() => { circuitPhasesRef.current = circuitPhases; }, [circuitPhases]);
+
+  const circuitCrimpsRef = useRef(circuitCrimps);
+  useEffect(() => { circuitCrimpsRef.current = circuitCrimps; }, [circuitCrimps]);
 
   // Total cost: sum of all circuits' wire costs + ELCB costs
   const totalCost = useMemo(() => {
@@ -222,6 +230,7 @@ export default function GameBoard() {
     }
 
     if (hasWarning) {
+      hasWarningRef.current = true;
       if (!buzzingRef.current) {
         startBuzzing();
         buzzingRef.current = true;
@@ -230,6 +239,14 @@ export default function GameBoard() {
     } else if (buzzingRef.current) {
       stopBuzzing();
       buzzingRef.current = false;
+    }
+
+    // Track trip events for star rating
+    for (const cs of Object.values(newMultiState.circuitStates)) {
+      if (cs.status === 'tripped' || cs.status === 'elcb-tripped') {
+        hasTripRef.current = true;
+        break;
+      }
     }
 
     // Terminal state: tripped, burned, neutral-burned, or leakage (use overallStatus)
@@ -255,6 +272,28 @@ export default function GameBoard() {
       );
       const gameResult = finalCost > level.budget ? 'over-budget' : 'won';
       setResult(gameResult);
+
+      // Calculate star rating
+      const passed = gameResult === 'won' || gameResult === 'over-budget';
+      const sr = calcStars({
+        passed,
+        finalCost,
+        budget: level.budget,
+        bonusCondition: level.bonusCondition,
+        hadWarning: hasWarningRef.current,
+        hadTrip: hasTripRef.current,
+        remainingTime: level.survivalTime - newMultiState.elapsed,
+        circuitCrimps: circuitCrimpsRef.current,
+        requiresCrimp: level.requiresCrimp === true,
+      });
+      setStarResult(sr);
+
+      // Save best stars to localStorage
+      const levelIndex = LEVELS.indexOf(level);
+      if (levelIndex >= 0 && sr.stars > 0) {
+        saveBestStars(levelIndex, sr.stars);
+      }
+
       if (gameResult === 'won') playWin();
       return;
     }
@@ -274,11 +313,15 @@ export default function GameBoard() {
       setIsPowered(false);
       setMultiState(createInitialMultiState(circuitIds));
       setResult('none');
+      setStarResult(null);
     } else {
       if (!canPowerOn) return;
       setMultiState(createInitialMultiState(circuitIds));
       setResult('none');
+      setStarResult(null);
       prevTimeRef.current = 0;
+      hasWarningRef.current = false;
+      hasTripRef.current = false;
       firedLeakageEventsRef.current = new Set();
       setIsPowered(true);
       playPowerOn();
@@ -297,10 +340,13 @@ export default function GameBoard() {
     stopBuzzing();
     stopApplianceSounds();
     buzzingRef.current = false;
+    hasWarningRef.current = false;
+    hasTripRef.current = false;
     firedLeakageEventsRef.current = new Set();
     setIsPowered(false);
     setMultiState(createInitialMultiState(circuitIds));
     setResult('none');
+    setStarResult(null);
     setWiring(createInitialWiring(circuitIds));
     setCircuitCrimps({});
     setPendingCrimpCircuitId(null);
@@ -313,9 +359,12 @@ export default function GameBoard() {
     stopBuzzing();
     stopApplianceSounds();
     buzzingRef.current = false;
+    hasWarningRef.current = false;
+    hasTripRef.current = false;
     setIsPowered(false);
     setMultiState(createInitialMultiState([]));
     setResult('none');
+    setStarResult(null);
     setCircuitAppliances({});
     setCircuitWires({});
     setCircuitElcb({});
@@ -573,6 +622,7 @@ export default function GameBoard() {
         budget={currentLevel.budget}
         onRetry={handleRetry}
         onBackToLevels={handleBackToLevels}
+        starResult={starResult}
       />
 
       {pendingCrimpCircuitId && pendingCrimpWire && (

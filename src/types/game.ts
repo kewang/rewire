@@ -165,6 +165,14 @@ export interface LeakageEvent {
   readonly circuitId: CircuitId;
 }
 
+/** 獎勵目標條件（三星） */
+export type BonusCondition =
+  | { readonly type: 'no-warning' }
+  | { readonly type: 'under-budget-ratio'; readonly ratio: number }
+  | { readonly type: 'time-margin'; readonly margin: number }
+  | { readonly type: 'crimp-quality'; readonly minQuality: CrimpQuality }
+  | { readonly type: 'no-trip' };
+
 /** 關卡定義 */
 export interface Level {
   /** 關卡名稱 */
@@ -187,4 +195,6 @@ export interface Level {
   readonly leakageEvents?: readonly LeakageEvent[];
   /** 是否要求壓接端子（true 時所有迴路接線後必須完成壓接才能送電） */
   readonly requiresCrimp?: boolean;
+  /** 第三星獎勵目標條件 */
+  readonly bonusCondition?: BonusCondition;
 }

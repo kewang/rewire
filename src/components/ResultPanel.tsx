@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import type { Circuit, MultiCircuitState } from '../types/game';
+import type { StarDetail } from '../engine/scoring';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
 
@@ -11,9 +12,10 @@ interface ResultPanelProps {
   budget: number;
   onRetry: () => void;
   onBackToLevels: () => void;
+  starResult?: { stars: number; details: StarDetail[] } | null;
 }
 
-export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels }: ResultPanelProps) {
+export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels, starResult }: ResultPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +43,22 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
       {result === 'won' && (
         <>
           <h2 className="result-title" style={{ color: '#22c55e' }}>過關！</h2>
+          {starResult && starResult.stars > 0 && (
+            <div className="star-rating-section">
+              <div className="star-icons">
+                {[1, 2, 3].map(i => (
+                  <span key={i} className={`star-icon ${i <= starResult.stars ? 'star-lit' : 'star-dim'}`}>&#9733;</span>
+                ))}
+              </div>
+              <ul className="star-conditions">
+                {starResult.details.map(d => (
+                  <li key={d.star} className={d.achieved ? 'star-achieved' : 'star-missed'}>
+                    <span className="star-check">{d.achieved ? '\u2714' : '\u2716'}</span> {d.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="result-details">
             <p><strong>通電時間：</strong>{multiState.elapsed.toFixed(1)}秒</p>
             <p><strong>線材成本：</strong>${cost}</p>
@@ -56,6 +74,22 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
       {result === 'over-budget' && (
         <>
           <h2 className="result-title" style={{ color: '#eab308' }}>超預算！</h2>
+          {starResult && starResult.stars > 0 && (
+            <div className="star-rating-section">
+              <div className="star-icons">
+                {[1, 2, 3].map(i => (
+                  <span key={i} className={`star-icon ${i <= starResult.stars ? 'star-lit' : 'star-dim'}`}>&#9733;</span>
+                ))}
+              </div>
+              <ul className="star-conditions">
+                {starResult.details.map(d => (
+                  <li key={d.star} className={d.achieved ? 'star-achieved' : 'star-missed'}>
+                    <span className="star-check">{d.achieved ? '\u2714' : '\u2716'}</span> {d.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="result-details">
             <p><strong>線材成本：</strong>${cost}</p>
             <p><strong>預算：</strong>${budget}</p>

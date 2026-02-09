@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 PRD 已建立。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 進行中（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓）。**
 
 ## Tech Stack
 
@@ -18,16 +18,17 @@
 - `src/components/` — React 元件
   - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器）
-  - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示）
+  - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示）
   - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路水平並列佈局 + 相位標籤/切換
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
-  - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列）
+  - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage)
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage), BonusCondition
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases), calcTotalCurrent）
+  - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
   - `levels.ts` — L01-L15 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB）
@@ -89,6 +90,11 @@
 - 無 ELCB 漏電 = leakage（severity=3，同 burned），即時觸電失敗
 - 漏電事件由 GameBoard rAF loop 驅動（非 simulation engine），保持純函式語義
 - 乾燥迴路永不觸發漏電事件
+- 三星評分：1星=安全通關、2星=成本達標(≤budget)、3星=bonusCondition達成（累進制）
+- BonusCondition 5 種類型：no-warning / under-budget-ratio / time-margin / crimp-quality / no-trip
+- 星等計算為純函式（scoring.ts），GameBoard 結果判定時呼叫
+- warning/trip 追蹤用 useRef flag，rAF loop 中累積偵測
+- 星等 localStorage 持久化：key=`rewire-stars`，value=`Record<number, 0|1|2|3>`
 
 ## Testing Workflow
 

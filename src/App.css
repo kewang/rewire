@@ -517,6 +517,85 @@ h3, h4 {
   margin-top: var(--space-md);
 }
 
+/* ── Star Rating (ResultPanel) ─────────────────────────────────── */
+
+.star-rating-section {
+  margin-bottom: var(--space-lg);
+}
+
+.star-icons {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.star-icon {
+  font-size: 2rem;
+  line-height: 1;
+  transition: all 0.3s;
+}
+
+.star-lit {
+  color: var(--color-accent-amber);
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.star-dim {
+  color: var(--color-border);
+  opacity: 0.4;
+}
+
+.star-conditions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.star-conditions li {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: var(--space-xs) 0;
+}
+
+.star-achieved {
+  color: #22c55e;
+}
+
+.star-missed {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.star-check {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+}
+
+/* ── Star Rating (LevelSelect) ─────────────────────────────────── */
+
+.level-stars-row {
+  display: flex;
+  gap: 2px;
+  margin-bottom: var(--space-xs);
+}
+
+.level-star {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.level-star-lit {
+  color: var(--color-accent-amber);
+}
+
+.level-star-dim {
+  color: var(--color-border);
+  opacity: 0.3;
+}
+
 .result-actions {
   display: flex;
   gap: var(--space-md);
