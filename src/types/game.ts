@@ -47,6 +47,9 @@ export interface Circuit {
 /** 壓接品質 */
 export type CrimpQuality = 'excellent' | 'good' | 'poor' | 'none';
 
+/** 束帶拉緊品質 */
+export type CableTieQuality = 'tight' | 'good' | 'loose' | 'over-tight';
+
 /** 壓接端子類型 */
 export type CrimpTerminalType = 'o-ring' | 'y-fork';
 

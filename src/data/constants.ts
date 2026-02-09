@@ -63,6 +63,15 @@ export const CROSSING_PENALTY = 20;
 /** 未束帶相鄰線對扣分（每對 -5 分） */
 export const UNBUNDLED_PENALTY = 5;
 
+/** 束帶品質「良好」扣分（每對 -2 分） */
+export const CABLE_TIE_GOOD_PENALTY = 2;
+
+/** 束帶品質「太鬆/過緊」扣分（每對 -5 分，等同未束帶） */
+export const CABLE_TIE_POOR_PENALTY = 5;
+
+/** 束帶小遊戲進度條速度 (units/sec) */
+export const CABLE_TIE_BAR_SPEED = 1.0;
+
 /** 壓接品質 → 接觸電阻倍率對照 */
 export const CRIMP_QUALITY_MAP = {
   excellent: 1.00,

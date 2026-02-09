@@ -1,5 +1,5 @@
-import type { CircuitId } from '../types/game';
-import { CROSSING_PENALTY, UNBUNDLED_PENALTY } from '../data/constants';
+import type { CircuitId, CableTieQuality } from '../types/game';
+import { CROSSING_PENALTY, UNBUNDLED_PENALTY, CABLE_TIE_GOOD_PENALTY, CABLE_TIE_POOR_PENALTY } from '../data/constants';
 
 /** Crossing pair info */
 export interface CrossingPair {
@@ -97,7 +97,7 @@ export function getCrossingPairIndices(
  */
 export function countUnbundledPairs(
   lanes: CircuitId[],
-  cableTies: Set<number>,
+  cableTies: ReadonlyMap<number, unknown> | ReadonlySet<number>,
   crossingPairIndices: Set<number>,
 ): number {
   let count = 0;
@@ -109,11 +109,23 @@ export function countUnbundledPairs(
 
 /**
  * Calculate aesthetics score (0-100).
- * score = clamp(0, 100, 100 - crossings × CROSSING_PENALTY - unbundledPairs × UNBUNDLED_PENALTY)
+ * Accounts for crossings, unbundled pairs, and cable tie quality.
  */
-export function calcAestheticsScore(crossings: number, unbundledPairs: number): number {
+export function calcAestheticsScore(
+  crossings: number,
+  unbundledPairs: number,
+  cableTies?: ReadonlyMap<number, CableTieQuality>,
+): number {
+  let tiePenalty = 0;
+  if (cableTies) {
+    cableTies.forEach((quality) => {
+      if (quality === 'good') tiePenalty += CABLE_TIE_GOOD_PENALTY;
+      else if (quality === 'loose' || quality === 'over-tight') tiePenalty += CABLE_TIE_POOR_PENALTY;
+      // 'tight' = 0 penalty
+    });
+  }
   return Math.max(0, Math.min(100,
-    100 - crossings * CROSSING_PENALTY - unbundledPairs * UNBUNDLED_PENALTY,
+    100 - crossings * CROSSING_PENALTY - unbundledPairs * UNBUNDLED_PENALTY - tiePenalty,
   ));
 }
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult } from '../types/game';
+import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
@@ -64,7 +64,7 @@ export default function GameBoard() {
   const [preWiredCircuitIds, setPreWiredCircuitIds] = useState<Set<CircuitId>>(new Set());
   const preWiredCircuitIdsRef = useRef<Set<CircuitId>>(new Set());
   const [circuitLanes, setCircuitLanes] = useState<CircuitId[]>([]);
-  const [cableTies, setCableTies] = useState<Set<number>>(new Set());
+  const [cableTies, setCableTies] = useState<Map<number, CableTieQuality>>(new Map());
   const [routingCompleted, setRoutingCompleted] = useState(false);
   const [showRoutingOverlay, setShowRoutingOverlay] = useState(false);
   const [finalAestheticsScore, setFinalAestheticsScore] = useState<number | undefined>(undefined);
@@ -180,7 +180,7 @@ export default function GameBoard() {
     const crossingPairs = detectCrossings(circuitLanes, configIndex, startXMap, PANEL_PADDING, LANE_WIDTH, ROUTING_TOP, ROUTING_HEIGHT);
     const crossingPairIndices = getCrossingPairIndices(circuitLanes, configIndex, startXMap, PANEL_PADDING, LANE_WIDTH);
     const unbundled = countUnbundledPairs(circuitLanes, cableTies, crossingPairIndices);
-    return calcAestheticsScore(crossingPairs.length, unbundled);
+    return calcAestheticsScore(crossingPairs.length, unbundled, cableTies);
   }, [currentLevel?.requiresRouting, circuitLanes, configIndex, startXMap, cableTies]);
 
   // Track which scripted leakage events have fired
@@ -404,7 +404,7 @@ export default function GameBoard() {
     setPendingCrimpWire(null);
     setMultiState(createInitialMultiState(circuitIds));
     setCircuitLanes(currentLevel?.initialLanes ? [...currentLevel.initialLanes] : circuitIds);
-    setCableTies(new Set());
+    setCableTies(new Map());
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
@@ -475,7 +475,7 @@ export default function GameBoard() {
     setPreWiredCircuitIds(new Set());
     preWiredCircuitIdsRef.current = new Set();
     setCircuitLanes([]);
-    setCableTies(new Set());
+    setCableTies(new Map());
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
@@ -564,7 +564,7 @@ export default function GameBoard() {
 
     // Initialize routing state
     setCircuitLanes(level.initialLanes ? [...level.initialLanes] : ids);
-    setCableTies(new Set());
+    setCableTies(new Map());
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
@@ -716,17 +716,19 @@ export default function GameBoard() {
   // Routing: lane reorder callback
   const handleLanesChange = useCallback((newLanes: CircuitId[]) => {
     setCircuitLanes(newLanes);
-    setCableTies(new Set()); // clear cable ties on reorder
+    setCableTies(new Map()); // clear cable ties on reorder
   }, []);
 
   // Routing: cable tie toggle callback
-  const handleToggleCableTie = useCallback((pairIndex: number) => {
+  const handleToggleCableTie = useCallback((pairIndex: number, quality?: CableTieQuality) => {
     setCableTies(prev => {
-      const next = new Set(prev);
-      if (next.has(pairIndex)) {
+      const next = new Map(prev);
+      if (next.has(pairIndex) && !quality) {
+        // Remove existing tie
         next.delete(pairIndex);
-      } else {
-        next.add(pairIndex);
+      } else if (quality) {
+        // Place with quality from mini-game
+        next.set(pairIndex, quality);
       }
       return next;
     });

@@ -1,7 +1,8 @@
-import { useRef, useCallback, useState, useMemo } from 'react';
-import type { CircuitId, CircuitConfig, Wire } from '../types/game';
+import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
+import type { CircuitId, CircuitConfig, Wire, CableTieQuality } from '../types/game';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs } from '../engine/aesthetics';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
+import { CABLE_TIE_BAR_SPEED } from '../data/constants';
 
 /** Map wire cross-section to a distinct color */
 function wireGaugeColor(crossSection: number): string {
@@ -10,7 +11,37 @@ function wireGaugeColor(crossSection: number): string {
   if (crossSection <= 3.5) return '#fde047';
   if (crossSection <= 5.5) return '#fdba74';
   if (crossSection <= 8) return '#f87171';
-  return '#a855f7';
+  return '#c084fc'; // 14mm² — shifted to avoid clash with 220V purple
+}
+
+/** Map circuit phase/voltage to phase display color */
+function phaseColor(voltage: number, phase?: 'R' | 'T'): string {
+  if (voltage === 220) return '#a855f7';
+  return (phase ?? 'R') === 'R' ? '#ef4444' : '#60a5fa';
+}
+
+/** Determine cable tie quality from bar position (0-1) */
+function getCableTieQuality(pos: number): CableTieQuality {
+  if (pos >= 0.45 && pos <= 0.55) return 'tight';
+  if (pos >= 0.30 && pos <= 0.70) return 'good';
+  if (pos < 0.30) return 'loose';
+  return 'over-tight';
+}
+
+const TIE_QUALITY_LABELS: Record<CableTieQuality, string> = {
+  tight: '完美固定',
+  good: '良好固定',
+  loose: '太鬆',
+  'over-tight': '過緊',
+};
+
+function tieQualityColor(quality: CableTieQuality): string {
+  switch (quality) {
+    case 'tight': return '#22c55e';
+    case 'good': return '#84cc16';
+    case 'loose': return '#f97316';
+    case 'over-tight': return '#ef4444';
+  }
 }
 
 // ── Layout constants (derived from shared) ────────────────────
@@ -42,8 +73,13 @@ function busbarRowY(row: number): number {
 
 interface WirePathData {
   cId: CircuitId;
-  d: string;
-  color: string;
+  dFull: string;     // full path for shadow
+  dUpper: string;    // busbar → routing top (phase color)
+  dMiddle: string;   // routing zone (gradient)
+  dLower: string;    // routing bottom → NFB (gauge color)
+  phaseCol: string;
+  gaugeCol: string;
+  gradientId: string;
   strokeWidth: number;
   isCrossing: boolean;
   isDragging: boolean;
@@ -57,8 +93,8 @@ export interface PanelInteriorViewProps {
   lanes: CircuitId[];
   onLanesChange: (newLanes: CircuitId[]) => void;
   onClose: () => void;
-  cableTies: Set<number>;
-  onToggleCableTie: (pairIndex: number) => void;
+  cableTies: Map<number, CableTieQuality>;
+  onToggleCableTie: (pairIndex: number, quality?: CableTieQuality) => void;
   aestheticsScore: number;
 }
 
@@ -75,6 +111,18 @@ export default function PanelInteriorView({
 }: PanelInteriorViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hasDragged, setHasDragged] = useState(false);
+
+  // Cable tie mini-game state
+  const [tieGame, setTieGame] = useState<{
+    pairIndex: number;
+    phase: 'playing' | 'result';
+    quality: CableTieQuality | null;
+  } | null>(null);
+  const [tieBarPosition, setTieBarPosition] = useState(0);
+  const tieRafRef = useRef(0);
+  const tiePrevTimeRef = useRef(0);
+  const tieBarRef = useRef(0);
+  const tieDirRef = useRef(1);
   const [dragState, setDragState] = useState<{
     circuitId: CircuitId;
     originSlot: number;
@@ -152,6 +200,57 @@ export default function PanelInteriorView({
   const step2Done = step1Done && unbundledCount === 0;
   const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3;
 
+  // ── Cable tie mini-game animation ───────────────────────────
+  const tieGamePhase = tieGame?.phase ?? null;
+  const tieGamePair = tieGame?.pairIndex ?? -1;
+  useEffect(() => {
+    if (tieGamePhase !== 'playing') return;
+
+    const animate = (timestamp: number) => {
+      if (tiePrevTimeRef.current === 0) tiePrevTimeRef.current = timestamp;
+      const dt = (timestamp - tiePrevTimeRef.current) / 1000;
+      tiePrevTimeRef.current = timestamp;
+
+      let pos = tieBarRef.current + tieDirRef.current * CABLE_TIE_BAR_SPEED * dt;
+      if (pos >= 1) { pos = 1; tieDirRef.current = -1; }
+      else if (pos <= 0) { pos = 0; tieDirRef.current = 1; }
+      tieBarRef.current = pos;
+      setTieBarPosition(pos);
+      tieRafRef.current = requestAnimationFrame(animate);
+    };
+
+    tieBarRef.current = 0;
+    tiePrevTimeRef.current = 0;
+    tieDirRef.current = 1;
+    tieRafRef.current = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(tieRafRef.current);
+  }, [tieGamePhase, tieGamePair]);
+
+  const handleTiePointClick = useCallback((pairIndex: number) => {
+    if (tieGame) return; // ignore while game is active
+    if (cableTies.has(pairIndex)) {
+      onToggleCableTie(pairIndex); // remove existing tie
+      return;
+    }
+    setTieGame({ pairIndex, phase: 'playing', quality: null });
+  }, [tieGame, cableTies, onToggleCableTie]);
+
+  const handleTieStop = useCallback(() => {
+    if (!tieGame || tieGame.phase !== 'playing') return;
+    cancelAnimationFrame(tieRafRef.current);
+    const pos = tieBarRef.current;
+    const quality = getCableTieQuality(pos);
+    const pairIndex = tieGame.pairIndex;
+
+    setTieGame({ pairIndex, phase: 'result', quality });
+
+    setTimeout(() => {
+      onToggleCableTie(pairIndex, quality);
+      setTieGame(null);
+    }, 800);
+  }, [tieGame, onToggleCableTie]);
+
   // ── Pointer handlers ──────────────────────────────────────────
   const handlePointerDown = useCallback((circuitId: CircuitId, e: React.PointerEvent) => {
     e.preventDefault();
@@ -187,7 +286,7 @@ export default function PanelInteriorView({
     setDragState(null);
   }, [dragState, effectiveLanes, onLanesChange]);
 
-  // ── Build wire paths ────────────────────────────────────────
+  // ── Build wire paths (3 segments: upper/middle/lower) ──────
   const wirePaths = useMemo(() => {
     return effectiveLanes.map((cId, slot) => {
       const config = circuitConfigs[configIndex[cId]];
@@ -212,7 +311,7 @@ export default function PanelInteriorView({
       const routeTop = ROUTING_TOP;
       const routeBottom = ROUTING_TOP + ROUTING_HEIGHT;
 
-      const d = [
+      const dFull = [
         `M ${sx} ${tapY + BUSBAR_H / 2}`,
         `L ${sx} ${routeTop}`,
         `L ${lx} ${routeTop + 15}`,
@@ -221,10 +320,24 @@ export default function PanelInteriorView({
         `L ${ex} ${NFB_ZONE_Y}`,
       ].join(' ');
 
+      const dUpper = `M ${sx} ${tapY + BUSBAR_H / 2} L ${sx} ${routeTop}`;
+
+      const dMiddle = `M ${sx} ${routeTop} L ${lx} ${routeTop + 15} L ${lx} ${routeBottom - 10}`;
+
+      const dLower = `M ${lx} ${routeBottom - 10} L ${ex} ${routeBottom} L ${ex} ${NFB_ZONE_Y}`;
+
+      const pCol = phaseColor(config.voltage, phase as 'R' | 'T' | undefined);
+      const gCol = wireGaugeColor(wire.crossSection);
+
       return {
         cId,
-        d,
-        color: wireGaugeColor(wire.crossSection),
+        dFull,
+        dUpper,
+        dMiddle,
+        dLower,
+        phaseCol: pCol,
+        gaugeCol: gCol,
+        gradientId: `phase-grad-${cId}`,
         strokeWidth: is220 ? 6 : 4,
         isCrossing: crossingIds.has(cId),
         isDragging: !!(dragState?.active && dragState.circuitId === cId),
@@ -393,23 +506,54 @@ export default function PanelInteriorView({
               textAnchor="end" fill="#8a96a6" fontSize={9} fontWeight={700}
               fontFamily="var(--font-mono)">N</text>
 
-            {/* Tap points on busbars */}
+            {/* Tap points on busbars — phase-colored, enlarged */}
             {circuitConfigs.map(c => {
               const sx = startXMap[c.id];
               const is220 = c.voltage === 220;
               const phase = phases[c.id] ?? c.phase;
+              const nfbXPos = nfbX(configIndex[c.id]);
               return (
                 <g key={`tap-${c.id}`}>
+                  {/* R busbar tap */}
                   {(phase === 'R' || is220) && (
-                    <circle cx={sx} cy={busbarRowY(0) + BUSBAR_H / 2} r={3}
-                      fill="#fbbf24" stroke="#b45309" strokeWidth={0.8} />
+                    <>
+                      <circle cx={sx} cy={busbarRowY(0) + BUSBAR_H / 2} r={5}
+                        fill={is220 ? '#a855f7' : '#ef4444'} stroke="rgba(255,255,255,0.6)" strokeWidth={0.8} />
+                      {!is220 && (
+                        <text x={sx} y={busbarRowY(0) - 2}
+                          textAnchor="middle" fill="#ef4444" fontSize={7} fontWeight={700}
+                          fontFamily="var(--font-mono)">R</text>
+                      )}
+                    </>
                   )}
+                  {/* T busbar tap */}
                   {(phase === 'T' || is220) && (
-                    <circle cx={is220 ? sx : sx} cy={busbarRowY(1) + BUSBAR_H / 2} r={3}
-                      fill="#fbbf24" stroke="#b45309" strokeWidth={0.8} />
+                    <>
+                      <circle cx={sx} cy={busbarRowY(1) + BUSBAR_H / 2} r={5}
+                        fill={is220 ? '#a855f7' : '#60a5fa'} stroke="rgba(255,255,255,0.6)" strokeWidth={0.8} />
+                      {!is220 && (
+                        <text x={sx} y={busbarRowY(1) - 2}
+                          textAnchor="middle" fill="#60a5fa" fontSize={7} fontWeight={700}
+                          fontFamily="var(--font-mono)">T</text>
+                      )}
+                    </>
                   )}
-                  <circle cx={nfbX(configIndex[c.id])} cy={busbarRowY(2) + BUSBAR_H / 2} r={2.5}
-                    fill="#fbbf24" stroke="#b45309" strokeWidth={0.6} opacity={0.6} />
+                  {/* 220V: dashed line between R and T taps + label */}
+                  {is220 && (
+                    <>
+                      <line x1={sx} y1={busbarRowY(0) + BUSBAR_H / 2}
+                        x2={sx} y2={busbarRowY(1) + BUSBAR_H / 2}
+                        stroke="#a855f7" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
+                      <text x={sx + 9} y={(busbarRowY(0) + busbarRowY(1)) / 2 + BUSBAR_H / 2 + 3}
+                        fill="#a855f7" fontSize={6} fontWeight={700}
+                        fontFamily="var(--font-mono)">220V</text>
+                    </>
+                  )}
+                  {/* N busbar tap (110V only) */}
+                  {!is220 && (
+                    <circle cx={nfbXPos} cy={busbarRowY(2) + BUSBAR_H / 2} r={4}
+                      fill="#8a96a6" stroke="rgba(255,255,255,0.4)" strokeWidth={0.6} opacity={0.6} />
+                  )}
                 </g>
               );
             })}
@@ -427,24 +571,50 @@ export default function PanelInteriorView({
                 stroke="#1e2630" strokeWidth={1} strokeDasharray="4 8" />
             ))}
 
-            {/* ── Wire routing paths ── */}
+            {/* ── Phase gradients (dynamic per wire) ── */}
+            <defs>
+              {wirePaths.map(wp => (
+                <linearGradient key={`grad-${wp.cId}`} id={wp.gradientId}
+                  gradientUnits="userSpaceOnUse" x1="0" y1={ROUTING_TOP} x2="0" y2={ROUTING_TOP + ROUTING_HEIGHT - 10}>
+                  <stop offset="0%" stopColor={wp.phaseCol} />
+                  <stop offset="100%" stopColor={wp.gaugeCol} />
+                </linearGradient>
+              ))}
+            </defs>
+
+            {/* ── Wire routing paths (3-segment: phase → gradient → gauge) ── */}
             {wirePaths.map(wp => (
               <g key={`wire-${wp.cId}`}
                 className={`panel-wire-group ${wp.isDragging ? 'dragging' : ''}`}
                 style={{ transition: wp.isDragging ? 'none' : 'transform 150ms ease' }}
               >
-                <path d={wp.d} fill="none"
+                {/* Shadow (full path) */}
+                <path d={wp.dFull} fill="none"
                   stroke="rgba(0,0,0,0.5)" strokeWidth={wp.strokeWidth + 2}
                   strokeLinecap="round" strokeLinejoin="round" />
-                <path d={wp.d} fill="none"
-                  stroke={wp.isCrossing ? '#ef4444' : wp.color}
+                {/* Upper segment: phase color */}
+                <path d={wp.dUpper} fill="none"
+                  stroke={wp.isCrossing ? '#ef4444' : wp.phaseCol}
+                  strokeWidth={wp.strokeWidth}
+                  strokeLinecap="round" strokeLinejoin="round"
+                  opacity={wp.isDragging ? 0.9 : (wp.isCrossing ? 0.7 : 0.85)} />
+                {/* Middle segment: phase→gauge gradient */}
+                <path d={wp.dMiddle} fill="none"
+                  stroke={wp.isCrossing ? '#ef4444' : `url(#${wp.gradientId})`}
                   strokeWidth={wp.strokeWidth}
                   strokeLinecap="round" strokeLinejoin="round"
                   opacity={wp.isDragging ? 0.9 : (wp.isCrossing ? 0.7 : 0.85)}
                   filter={wp.isDragging ? 'url(#wire-drag-glow)' : 'none'}
                   className="panel-wire-path" />
+                {/* Lower segment: gauge color */}
+                <path d={wp.dLower} fill="none"
+                  stroke={wp.isCrossing ? '#ef4444' : wp.gaugeCol}
+                  strokeWidth={wp.strokeWidth}
+                  strokeLinecap="round" strokeLinejoin="round"
+                  opacity={wp.isDragging ? 0.9 : (wp.isCrossing ? 0.7 : 0.85)} />
+                {/* Crossing glow (middle segment only) */}
                 {wp.isCrossing && (
-                  <path d={wp.d} fill="none"
+                  <path d={wp.dMiddle} fill="none"
                     stroke="#ef4444" strokeWidth={wp.strokeWidth + 1}
                     strokeLinecap="round" strokeLinejoin="round"
                     opacity={0.15} />
@@ -464,7 +634,7 @@ export default function PanelInteriorView({
               return (
                 <g key={`cable-tie-${i}`}
                   className={`cable-tie-point ${isCrossing ? 'cable-tie-disabled' : hasTie ? 'cable-tie-placed' : 'cable-tie-available'}`}
-                  onClick={() => { if (!isCrossing) onToggleCableTie(i); }}
+                  onClick={() => { if (!isCrossing) handleTiePointClick(i); }}
                   style={{ cursor: isCrossing ? 'not-allowed' : 'pointer' }}
                 >
                   {/* Tooltip */}
@@ -565,6 +735,20 @@ export default function PanelInteriorView({
               );
             })}
 
+            {/* ── Neutral return paths (110V only, ghost dashed lines) ── */}
+            {circuitConfigs.map((config, i) => {
+              if (config.voltage === 220) return null;
+              const cx = nfbX(i);
+              const nTapY = busbarRowY(2) + BUSBAR_H / 2;
+              return (
+                <line key={`n-return-${config.id}`}
+                  x1={cx + 8} y1={NFB_ZONE_Y}
+                  x2={cx + 8} y2={nTapY}
+                  stroke="#8a96a6" strokeWidth={1.5} strokeDasharray="4 4"
+                  opacity={0.25} />
+              );
+            })}
+
             {/* ── Area labels (right edge, rotated) ── */}
             <text
               x={totalWidth - 10} y={busbarRowY(1)}
@@ -641,6 +825,55 @@ export default function PanelInteriorView({
               />
             ))}
           </svg>
+
+          {/* ── Cable tie mini-game (inline tension gauge) ── */}
+          {tieGame && (
+            <div
+              className={`cable-tie-game ${tieGame.phase}`}
+              onClick={tieGame.phase === 'playing' ? handleTieStop : undefined}
+            >
+              <div className="cable-tie-game-header">
+                <span className="cable-tie-game-tag">CABLE TIE</span>
+                <span className="cable-tie-game-label">束帶拉緊</span>
+              </div>
+
+              {tieGame.phase === 'playing' && (
+                <>
+                  <div className="cable-tie-gauge">
+                    <div className="cable-tie-gauge-zones">
+                      <div className="cable-tie-zone zone-loose" />
+                      <div className="cable-tie-zone zone-good-l" />
+                      <div className="cable-tie-zone zone-tight" />
+                      <div className="cable-tie-zone zone-good-r" />
+                      <div className="cable-tie-zone zone-overtight" />
+                    </div>
+                    <div className="cable-tie-gauge-track">
+                      <div className="cable-tie-needle" style={{ left: `${tieBarPosition * 100}%` }} />
+                    </div>
+                    <div className="cable-tie-gauge-labels">
+                      <span className="tie-label-loose">LOOSE</span>
+                      <span className="tie-label-good">GOOD</span>
+                      <span className="tie-label-tight">TIGHT</span>
+                      <span className="tie-label-good">GOOD</span>
+                      <span className="tie-label-overtight">OVER</span>
+                    </div>
+                  </div>
+                  <div className="cable-tie-tap-hint">TAP TO LOCK</div>
+                </>
+              )}
+
+              {tieGame.phase === 'result' && tieGame.quality && (
+                <div
+                  className="cable-tie-result"
+                  style={{ '--tie-quality-color': tieQualityColor(tieGame.quality) } as React.CSSProperties}
+                >
+                  <div className="cable-tie-quality-badge">
+                    {TIE_QUALITY_LABELS[tieGame.quality]}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

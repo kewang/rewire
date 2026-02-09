@@ -1537,6 +1537,145 @@ h3, h4 {
   opacity: 0.6 !important;
 }
 
+/* ── Cable Tie Mini-Game (inline tension gauge) ─────────────── */
+.cable-tie-game {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: #12151a;
+  border: 1px solid #2e3a4a;
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 200px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  cursor: pointer;
+  user-select: none;
+  animation: cable-tie-game-in 0.2s ease-out;
+}
+
+@keyframes cable-tie-game-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.cable-tie-game-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cable-tie-game-tag {
+  background: #d97706;
+  color: #000;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.1em;
+  font-family: var(--font-mono);
+}
+
+.cable-tie-game-label {
+  color: #8a96a6;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.cable-tie-gauge {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.cable-tie-gauge-zones {
+  display: flex;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #1e2630;
+}
+
+.cable-tie-zone { height: 100%; }
+.zone-loose { flex: 0 0 30%; background: rgba(249, 115, 22, 0.15); }
+.zone-good-l { flex: 0 0 15%; background: rgba(132, 204, 22, 0.12); }
+.zone-tight { flex: 0 0 10%; background: rgba(34, 197, 94, 0.25); box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.2); }
+.zone-good-r { flex: 0 0 15%; background: rgba(132, 204, 22, 0.12); }
+.zone-overtight { flex: 0 0 30%; background: rgba(239, 68, 68, 0.15); }
+
+.cable-tie-gauge-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  pointer-events: none;
+}
+
+.cable-tie-needle {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 28px;
+  background: #fbbf24;
+  border-radius: 1.5px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6), 0 0 16px rgba(251, 191, 36, 0.2);
+}
+
+.cable-tie-gauge-labels {
+  display: flex;
+  margin-top: 3px;
+  font-size: 6.5px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tie-label-loose { width: 30%; text-align: center; color: #f97316; }
+.tie-label-good { width: 15%; text-align: center; color: #84cc16; }
+.tie-label-tight { width: 10%; text-align: center; color: #22c55e; }
+.tie-label-overtight { width: 30%; text-align: center; color: #ef4444; }
+
+.cable-tie-tap-hint {
+  text-align: center;
+  color: #5a6878;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  animation: cable-tie-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cable-tie-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.cable-tie-result {
+  text-align: center;
+  padding: 6px 0;
+}
+
+.cable-tie-quality-badge {
+  display: inline-block;
+  padding: 5px 20px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--tie-quality-color);
+  border: 1px solid var(--tie-quality-color);
+  background: color-mix(in srgb, var(--tie-quality-color) 10%, transparent);
+  animation: cable-tie-result-pop 0.3s ease-out;
+}
+
+@keyframes cable-tie-result-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .cable-tie-placed {
   filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.4));
 }
