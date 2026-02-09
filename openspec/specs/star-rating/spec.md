@@ -227,3 +227,18 @@ LevelSelect 關卡卡片 MUST 顯示歷史最佳星等。
 
 - **WHEN** 玩家通關獲得新星等後返回 LevelSelect
 - **THEN** 該關卡卡片的星等 MUST 立即反映最新紀錄
+
+### Requirement: CalcStarsInput Aesthetics Score Parameter
+CalcStarsInput 介面 SHALL 新增可選欄位 `aestheticsScore?: number`。目前不影響計算邏輯，為 `aesthetics-score` BonusCondition 預留介面。
+
+#### Scenario: Existing behavior unchanged
+- **WHEN** calcStars 被呼叫且未提供 aestheticsScore
+- **THEN** 計算結果與原本完全相同
+
+#### Scenario: Aesthetics score passed but unused
+- **WHEN** calcStars 被呼叫且 aestheticsScore = 85
+- **THEN** 計算結果與未提供 aestheticsScore 時相同（啟用 aesthetics-score BonusCondition 後才使用）
+
+#### Scenario: Interface compatibility
+- **WHEN** GameBoard 呼叫 calcStars 並傳入 aestheticsScore
+- **THEN** TypeScript 型別檢查通過，無編譯錯誤

@@ -217,6 +217,8 @@ export interface Level {
   readonly leakageEvents?: readonly LeakageEvent[];
   /** 是否要求壓接端子（true 時所有迴路接線後必須完成壓接才能送電） */
   readonly requiresCrimp?: boolean;
+  /** 是否要求整線（true 時送電前須完成整線流程） */
+  readonly requiresRouting?: boolean;
   /** 第三星獎勵目標條件 */
   readonly bonusCondition?: BonusCondition;
   /** 老屋模式配置 */

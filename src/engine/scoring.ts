@@ -16,6 +16,7 @@ export interface CalcStarsInput {
   readonly remainingTime: number;
   readonly circuitCrimps: Record<CircuitId, CrimpResult>;
   readonly requiresCrimp: boolean;
+  readonly aestheticsScore?: number;
 }
 
 const CRIMP_QUALITY_ORDER: Record<CrimpQuality, number> = {

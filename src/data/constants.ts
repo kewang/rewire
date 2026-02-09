@@ -57,6 +57,12 @@ export const CRIMP_TERMINALS = [
 /** 氧化老鼠尾接法的接觸電阻倍率 */
 export const OXIDIZED_CONTACT_RESISTANCE = 2.0;
 
+/** 整線交叉扣分（每個交叉 -20 分） */
+export const CROSSING_PENALTY = 20;
+
+/** 未束帶相鄰線對扣分（每對 -5 分） */
+export const UNBUNDLED_PENALTY = 5;
+
 /** 壓接品質 → 接觸電阻倍率對照 */
 export const CRIMP_QUALITY_MAP = {
   excellent: 1.00,

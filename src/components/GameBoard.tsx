@@ -13,6 +13,9 @@ import ResultPanel from './ResultPanel';
 import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
 import CrimpMiniGame from './CrimpMiniGame';
+import PanelInteriorView from './PanelInteriorView';
+import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
+import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
 
@@ -60,6 +63,12 @@ export default function GameBoard() {
   const [problemCircuits, setProblemCircuits] = useState<Set<CircuitId>>(new Set());
   const [preWiredCircuitIds, setPreWiredCircuitIds] = useState<Set<CircuitId>>(new Set());
   const preWiredCircuitIdsRef = useRef<Set<CircuitId>>(new Set());
+  const [circuitLanes, setCircuitLanes] = useState<CircuitId[]>([]);
+  const [cableTies, setCableTies] = useState<Set<number>>(new Set());
+  const [routingCompleted, setRoutingCompleted] = useState(false);
+  const [showRoutingOverlay, setShowRoutingOverlay] = useState(false);
+  const [finalAestheticsScore, setFinalAestheticsScore] = useState<number | undefined>(undefined);
+  const aestheticsScoreRef = useRef<number | undefined>(undefined);
 
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
@@ -141,7 +150,38 @@ export default function GameBoard() {
   // Crimp check: requiresCrimp levels need all circuits crimped
   const crimpMissing = currentLevel?.requiresCrimp === true && !circuitIds.every(id => circuitCrimps[id]);
   const problemsRemaining = problemCircuits.size > 0;
-  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb && !crimpMissing && !problemsRemaining;
+  const routingMissing = currentLevel?.requiresRouting === true && !routingCompleted;
+  const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb && !crimpMissing && !problemsRemaining && !routingMissing;
+
+  // Routing readiness: all wired + crimped (if requiresCrimp) → show routing button
+  const routingReady = currentLevel?.requiresRouting === true && allWired && !crimpMissing;
+
+  // Aesthetics score computation for routing overlay
+  const configIndex = useMemo(() => {
+    const map: Record<CircuitId, number> = {};
+    circuitConfigs.forEach((c, i) => { map[c.id] = i; });
+    return map;
+  }, [circuitConfigs]);
+
+  const routingTotalWidth = PANEL_PADDING * 2 + circuitConfigs.length * LANE_WIDTH;
+  const routingBusbarLeft = PANEL_PADDING + 8;
+  const routingBusbarRight = routingTotalWidth - PANEL_PADDING - 8;
+
+  const startXMap = useMemo(() => {
+    const map: Record<CircuitId, number> = {};
+    circuitConfigs.forEach(c => {
+      map[c.id] = wireStartX(c, circuitPhases[c.id], routingBusbarLeft, routingBusbarRight);
+    });
+    return map;
+  }, [circuitConfigs, circuitPhases, routingBusbarLeft, routingBusbarRight]);
+
+  const currentAestheticsScore = useMemo(() => {
+    if (!currentLevel?.requiresRouting || circuitLanes.length === 0) return 100;
+    const crossingPairs = detectCrossings(circuitLanes, configIndex, startXMap, PANEL_PADDING, LANE_WIDTH, ROUTING_TOP, ROUTING_HEIGHT);
+    const crossingPairIndices = getCrossingPairIndices(circuitLanes, configIndex, startXMap, PANEL_PADDING, LANE_WIDTH);
+    const unbundled = countUnbundledPairs(circuitLanes, cableTies, crossingPairIndices);
+    return calcAestheticsScore(crossingPairs.length, unbundled);
+  }, [currentLevel?.requiresRouting, circuitLanes, configIndex, startXMap, cableTies]);
 
   // Track which scripted leakage events have fired
   const firedLeakageEventsRef = useRef<Set<number>>(new Set());
@@ -298,6 +338,7 @@ export default function GameBoard() {
         remainingTime: level.survivalTime - newMultiState.elapsed,
         circuitCrimps: circuitCrimpsRef.current,
         requiresCrimp: level.requiresCrimp === true,
+        aestheticsScore: aestheticsScoreRef.current,
       });
       setStarResult(sr);
 
@@ -362,6 +403,11 @@ export default function GameBoard() {
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
     setMultiState(createInitialMultiState(circuitIds));
+    setCircuitLanes(circuitIds);
+    setCableTies(new Set());
+    setRoutingCompleted(false);
+    setShowRoutingOverlay(false);
+    setFinalAestheticsScore(undefined);
 
     if (currentLevel?.oldHouse) {
       // Re-initialize old house pre-wired state
@@ -428,6 +474,11 @@ export default function GameBoard() {
     setProblemCircuits(new Set());
     setPreWiredCircuitIds(new Set());
     preWiredCircuitIdsRef.current = new Set();
+    setCircuitLanes([]);
+    setCableTies(new Set());
+    setRoutingCompleted(false);
+    setShowRoutingOverlay(false);
+    setFinalAestheticsScore(undefined);
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -510,6 +561,13 @@ export default function GameBoard() {
     setCircuitPhases(phases);
     setMultiState(createInitialMultiState(ids));
     setResult('none');
+
+    // Initialize routing state
+    setCircuitLanes(ids);
+    setCableTies(new Set());
+    setRoutingCompleted(false);
+    setShowRoutingOverlay(false);
+    setFinalAestheticsScore(undefined);
   }, []);
 
   // Wiring drag callbacks
@@ -655,6 +713,33 @@ export default function GameBoard() {
     preWiredCircuitIdsRef.current = updated;
   }, []);
 
+  // Routing: lane reorder callback
+  const handleLanesChange = useCallback((newLanes: CircuitId[]) => {
+    setCircuitLanes(newLanes);
+    setCableTies(new Set()); // clear cable ties on reorder
+  }, []);
+
+  // Routing: cable tie toggle callback
+  const handleToggleCableTie = useCallback((pairIndex: number) => {
+    setCableTies(prev => {
+      const next = new Set(prev);
+      if (next.has(pairIndex)) {
+        next.delete(pairIndex);
+      } else {
+        next.add(pairIndex);
+      }
+      return next;
+    });
+  }, []);
+
+  // Routing: close overlay and mark completed
+  const handleRoutingDone = useCallback(() => {
+    setShowRoutingOverlay(false);
+    setRoutingCompleted(true);
+    setFinalAestheticsScore(currentAestheticsScore);
+    aestheticsScoreRef.current = currentAestheticsScore;
+  }, [currentAestheticsScore]);
+
   const handleAddAppliance = useCallback((circuitId: CircuitId, a: Appliance) => {
     setCircuitAppliances(prev => ({
       ...prev,
@@ -712,7 +797,7 @@ export default function GameBoard() {
             wiring={wiring}
             onPowerToggle={handlePowerToggle}
             leverDisabled={!canPowerOn && !isPowered}
-            leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? '請先修復所有問題迴路' : wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : crimpMissing ? '請先完成所有迴路壓接' : '請先分配電器') : undefined}
+            leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? '請先修復所有問題迴路' : wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : crimpMissing ? '請先完成所有迴路壓接' : routingMissing ? '請先完成整線' : '請先分配電器') : undefined}
             onTargetCircuitChange={handleTargetCircuitChange}
             phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
             phaseMode={currentLevel?.phaseMode}
@@ -724,6 +809,14 @@ export default function GameBoard() {
             isOldHouse={!!currentLevel?.oldHouse}
             oldHouseProblems={currentLevel?.oldHouse?.problems}
           />
+          {routingReady && !isPowered && (
+            <button
+              className="routing-button"
+              onClick={() => setShowRoutingOverlay(true)}
+            >
+              {routingCompleted ? '重新整線' : '整線'}
+            </button>
+          )}
         </section>
 
         <section className="panel-right">
@@ -763,7 +856,22 @@ export default function GameBoard() {
         onRetry={handleRetry}
         onBackToLevels={handleBackToLevels}
         starResult={starResult}
+        aestheticsScore={finalAestheticsScore}
       />
+
+      {showRoutingOverlay && (
+        <PanelInteriorView
+          circuitConfigs={circuitConfigs}
+          circuitWires={circuitWires}
+          phases={circuitPhases}
+          lanes={circuitLanes}
+          onLanesChange={handleLanesChange}
+          onClose={handleRoutingDone}
+          cableTies={cableTies}
+          onToggleCableTie={handleToggleCableTie}
+          aestheticsScore={currentAestheticsScore}
+        />
+      )}
 
       {pendingCrimpCircuitId && pendingCrimpWire && (
         <CrimpMiniGame

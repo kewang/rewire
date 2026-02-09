@@ -13,9 +13,10 @@ interface ResultPanelProps {
   onRetry: () => void;
   onBackToLevels: () => void;
   starResult?: { stars: number; details: StarDetail[] } | null;
+  aestheticsScore?: number;
 }
 
-export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels, starResult }: ResultPanelProps) {
+export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels, starResult, aestheticsScore }: ResultPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,6 +68,14 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
             <p className="result-hint">
               成功在預算內完成配電！
             </p>
+            {aestheticsScore != null && (
+              <p className="aesthetics-score-line">
+                <strong>整線分數：</strong>
+                <span className={`aesthetics-score-value ${aestheticsScore >= 80 ? 'score-green' : aestheticsScore >= 50 ? 'score-yellow' : 'score-red'}`}>
+                  {aestheticsScore} / 100
+                </span>
+              </p>
+            )}
           </div>
         </>
       )}
