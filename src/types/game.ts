@@ -92,6 +92,8 @@ export interface MultiCircuitState {
   readonly neutralHeat: number;
   /** 主開關跳脫計時器 (秒) */
   readonly mainBreakerTripTimer: number;
+  /** 配電箱總電流 (A)，所有非終態迴路的 totalCurrent 之和 */
+  readonly totalPanelCurrent: number;
 }
 
 /** 模擬動態狀態（單迴路，向後相容） */

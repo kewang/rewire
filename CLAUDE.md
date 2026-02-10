@@ -17,17 +17,17 @@
 
 - `src/components/` — React 元件
   - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）
-  - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器）
-  - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示）
+  - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器 + 主開關負載指示器）
+  - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示 + main-tripped）
   - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路多行排列佈局（MAX_CIRCUITS_PER_ROW=4）+ 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕）
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage), BonusCondition, OldHouseProblemType, OldHouseProblem, PreWiredCircuit, OldHouseConfig
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType, OldHouseProblem, PreWiredCircuit, OldHouseConfig
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel
 - `src/engine/` — 模擬引擎邏輯
-  - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases), calcTotalCurrent）
+  - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
@@ -83,6 +83,8 @@
 - 自由配迴路：玩家自建迴路（選電壓/NFB/相位）→ 指派電器 → 選線 → 壓接/走線 → 送電
 - 自由配迴路約束：配電箱插槽上限 + 主開關額定容量（跳脫=遊戲失敗）
 - 主開關跳脫：totalPanelCurrent > mainBreakerRating × 1.25 累積 1.5s → main-tripped（severity=3）
+- totalPanelCurrent = Σ 非終態迴路的 totalCurrent，存於 MultiCircuitState
+- 主開關負載指示器：StatusDisplay 顯示「主開關：XA / YA」，≥80% 橘色、≥100% 紅色，僅 FreeCircuitLevel 顯示
 - Level union type：FixedCircuitLevel（有 circuitConfigs）| FreeCircuitLevel（有 rooms + panel）
 - L01-L05 / L18-L20 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
 - buzzing 音效：任一迴路 warning 時觸發，音量 = max wireHeat across all circuits

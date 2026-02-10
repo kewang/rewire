@@ -209,7 +209,9 @@ export default function GameBoard() {
     prevTimeRef.current = timestamp;
 
     const phases = Object.keys(circuitPhasesRef.current).length > 0 ? circuitPhasesRef.current : undefined;
-    let newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt, phases);
+    const curLevelForBreaker = currentLevelRef.current;
+    const mainBreakerRating = curLevelForBreaker && isFreeCircuitLevel(curLevelForBreaker) ? curLevelForBreaker.panel.mainBreakerRating : undefined;
+    let newMultiState = stepMulti(circuitsRef.current, multiStateRef.current, dt, phases, mainBreakerRating);
 
     // Leakage event processing
     const curLevel = currentLevelRef.current;
@@ -1016,6 +1018,7 @@ export default function GameBoard() {
           budget={currentLevel.budget}
           survivalTime={currentLevel.survivalTime}
           phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
+          mainBreakerRating={isFreeLevel && isFreeCircuitLevel(currentLevel) ? currentLevel.panel.mainBreakerRating : undefined}
         />
       </header>
 

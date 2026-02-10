@@ -154,6 +154,18 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
         </>
       )}
 
+      {result === 'main-tripped' && (
+        <>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>主開關跳脫！</h2>
+          <div className="result-details">
+            <p><strong>失敗類型：</strong>主開關過載跳脫</p>
+            <p className="result-hint">
+              配電箱總電流超過主開關額定容量，觸發跳脫保護。所有迴路斷電！請重新規劃迴路配置，降低同時運行的總負載。
+            </p>
+          </div>
+        </>
+      )}
+
       {result === 'leakage' && failedCircuit && (
         <>
           <h2 className="result-title" style={{ color: '#ef4444' }}>漏電觸電！</h2>

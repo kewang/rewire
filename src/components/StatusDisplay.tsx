@@ -8,6 +8,7 @@ interface StatusDisplayProps {
   budget: number;
   survivalTime: number;
   phases?: Record<CircuitId, 'R' | 'T'>;
+  mainBreakerRating?: number;
 }
 
 const STATUS_LABELS: Record<SimulationStatus, string> = {
@@ -32,7 +33,7 @@ const STATUS_COLORS: Record<SimulationStatus, string> = {
   'main-tripped': '#ef4444',
 };
 
-export default function StatusDisplay({ circuits, multiState, cost, budget, survivalTime, phases }: StatusDisplayProps) {
+export default function StatusDisplay({ circuits, multiState, cost, budget, survivalTime, phases, mainBreakerRating }: StatusDisplayProps) {
   const overBudget = cost > budget;
   const remainingTime = Math.max(0, survivalTime - multiState.elapsed);
   const isSingle = circuits.length === 1;
@@ -164,6 +165,18 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
           </div>
         </div>
       )}
+      {mainBreakerRating != null && (() => {
+        const loadRatio = multiState.totalPanelCurrent / mainBreakerRating;
+        const loadColor = loadRatio >= 1.0 ? '#ef4444' : loadRatio >= 0.8 ? '#f97316' : '#22c55e';
+        return (
+          <div className="status-row main-breaker-row">
+            <span className="status-label">主開關</span>
+            <span className="status-value" style={{ color: loadColor }}>
+              {multiState.totalPanelCurrent.toFixed(1)}A / {mainBreakerRating}A
+            </span>
+          </div>
+        );
+      })()}
       <div className="status-row">
         <span className="status-label">剩餘時間</span>
         <span className="status-value">{remainingTime.toFixed(1)}s</span>

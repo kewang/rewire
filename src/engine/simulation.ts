@@ -59,6 +59,7 @@ export function createInitialMultiState(circuitIds: CircuitId[]): MultiCircuitSt
     neutralCurrent: 0,
     neutralHeat: 0,
     mainBreakerTripTimer: 0,
+    totalPanelCurrent: 0,
   };
 }
 
@@ -144,6 +145,7 @@ export function stepMulti(
   state: MultiCircuitState,
   dt: number,
   phases?: Record<CircuitId, 'R' | 'T'>,
+  mainBreakerRating?: number,
   config: SimulationConfig = DEFAULT_CONFIG,
 ): MultiCircuitState {
   // 致命終態保護
@@ -199,7 +201,40 @@ export function stepMulti(
       neutralCurrent,
       neutralHeat: 1,
       mainBreakerTripTimer: state.mainBreakerTripTimer,
+      totalPanelCurrent: 0,
     };
+  }
+
+  // 計算配電箱總電流（排除終態迴路）
+  const terminalStatuses = new Set(['burned', 'tripped', 'elcb-tripped', 'main-tripped', 'neutral-burned', 'leakage']);
+  let totalPanelCurrent = 0;
+  for (const circuit of circuits) {
+    const cs = newCircuitStates[circuit.id];
+    if (cs && !terminalStatuses.has(cs.status)) {
+      totalPanelCurrent += cs.totalCurrent;
+    }
+  }
+
+  // 主開關跳脫邏輯
+  let mainBreakerTripTimer = state.mainBreakerTripTimer;
+  if (mainBreakerRating != null) {
+    const tripThreshold = mainBreakerRating * 1.25;
+    if (totalPanelCurrent > tripThreshold) {
+      mainBreakerTripTimer += dt;
+      if (mainBreakerTripTimer >= 1.5) {
+        return {
+          circuitStates: newCircuitStates,
+          elapsed: newElapsed,
+          overallStatus: 'main-tripped',
+          neutralCurrent,
+          neutralHeat,
+          mainBreakerTripTimer,
+          totalPanelCurrent,
+        };
+      }
+    } else {
+      mainBreakerTripTimer = 0;
+    }
   }
 
   return {
@@ -208,6 +243,7 @@ export function stepMulti(
     overallStatus: worstStatus(newCircuitStates),
     neutralCurrent,
     neutralHeat,
-    mainBreakerTripTimer: state.mainBreakerTripTimer,
+    mainBreakerTripTimer,
+    totalPanelCurrent,
   };
 }
