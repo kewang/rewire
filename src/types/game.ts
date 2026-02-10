@@ -196,6 +196,21 @@ export interface OldHouseConfig {
   readonly preWiredCircuits: Record<CircuitId, PreWiredCircuit>;
 }
 
+/** 老屋單迴路快照（修復前狀態） */
+export interface CircuitSnapshot {
+  readonly wire: Wire;
+  readonly breaker: Breaker;
+  readonly crimpQuality: CrimpQuality;
+  readonly elcbEnabled: boolean;
+  readonly appliances: readonly Appliance[];
+}
+
+/** 老屋修復前快照 */
+export interface OldHouseSnapshot {
+  readonly problems: readonly OldHouseProblem[];
+  readonly circuits: Record<CircuitId, CircuitSnapshot>;
+}
+
 /** 房間定義 */
 export interface Room {
   /** 房間唯一識別符 */

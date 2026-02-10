@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
-import type { Circuit, MultiCircuitState } from '../types/game';
+import type { Circuit, MultiCircuitState, OldHouseSnapshot, CircuitId, CircuitConfig, Wire, Breaker } from '../types/game';
 import type { StarDetail } from '../engine/scoring';
+import BeforeAfterView from './BeforeAfterView';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
@@ -14,9 +15,14 @@ interface ResultPanelProps {
   onBackToLevels: () => void;
   starResult?: { stars: number; details: StarDetail[] } | null;
   aestheticsScore?: number;
+  oldHouseSnapshot?: OldHouseSnapshot | null;
+  circuitConfigs?: readonly CircuitConfig[];
+  currentWires?: Record<CircuitId, Wire>;
+  currentBreakers?: Record<CircuitId, Breaker>;
+  currentElcb?: Record<CircuitId, boolean>;
 }
 
-export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels, starResult, aestheticsScore }: ResultPanelProps) {
+export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels, starResult, aestheticsScore, oldHouseSnapshot, circuitConfigs, currentWires, currentBreakers, currentElcb }: ResultPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +40,9 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
   });
   const failedState = failedCircuit ? multiState.circuitStates[failedCircuit.id] : null;
   const isSingle = circuits.length === 1;
+
+  const showBeforeAfter = (result === 'won' || result === 'over-budget')
+    && oldHouseSnapshot && circuitConfigs && currentWires && currentBreakers && currentElcb;
 
   return (
     <div
@@ -177,6 +186,15 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
             </p>
           </div>
         </>
+      )}
+
+      {showBeforeAfter && (
+        <BeforeAfterView
+          snapshot={oldHouseSnapshot}
+          circuitConfigs={circuitConfigs}
+          currentWires={currentWires}
+          currentBreakers={currentBreakers}
+        />
       )}
 
       <div className="result-actions">

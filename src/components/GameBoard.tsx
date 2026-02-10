@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment } from '../types/game';
+import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment, OldHouseSnapshot } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE, BREAKER_20A, NFB_COSTS } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { isFixedCircuitLevel, isFreeCircuitLevel, isProblemResolved } from '../types/helpers';
@@ -78,6 +78,7 @@ export default function GameBoard() {
   const aestheticsScoreRef = useRef<number | undefined>(undefined);
   const [selectedPlannerCircuitId, setSelectedPlannerCircuitId] = useState<string | null>(null);
   const [circuitBreakers, setCircuitBreakers] = useState<Record<CircuitId, Breaker>>({});
+  const [oldHouseSnapshot, setOldHouseSnapshot] = useState<OldHouseSnapshot | null>(null);
 
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
@@ -452,6 +453,7 @@ export default function GameBoard() {
       setProblemCircuits(new Set());
       setPreWiredCircuitIds(new Set());
       preWiredCircuitIdsRef.current = new Set();
+      setOldHouseSnapshot(null);
     } else if (currentLevel && isFixedCircuitLevel(currentLevel) && currentLevel.oldHouse) {
       // Re-initialize old house pre-wired state
       const oh = currentLevel.oldHouse;
@@ -504,6 +506,19 @@ export default function GameBoard() {
         }
       }
       setCircuitElcb(initElcb);
+      // Re-capture Before snapshot on retry
+      const snapshotCircuits: Record<CircuitId, import('../types/game').CircuitSnapshot> = {};
+      for (const config of currentLevel.circuitConfigs) {
+        const pw = oh.preWiredCircuits[config.id];
+        snapshotCircuits[config.id] = {
+          wire: preWires[config.id] ?? DEFAULT_WIRES[0],
+          breaker: preBreakers[config.id],
+          crimpQuality: pw?.crimpQuality ?? 'none',
+          elcbEnabled: !!initElcb[config.id],
+          appliances: preAppls[config.id] ?? [],
+        };
+      }
+      setOldHouseSnapshot({ problems: oh.problems, circuits: snapshotCircuits });
     } else {
       setWiring(createInitialWiring(circuitIds));
       setCircuitCrimps({});
@@ -543,6 +558,7 @@ export default function GameBoard() {
     setPlannerCircuits([]);
     setPlannerNextId(1);
     setCircuitBreakers({});
+    setOldHouseSnapshot(null);
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -575,6 +591,7 @@ export default function GameBoard() {
       setRoutingCompleted(false);
       setShowRoutingOverlay(false);
       setFinalAestheticsScore(undefined);
+      setOldHouseSnapshot(null);
       return;
     }
 
@@ -640,6 +657,20 @@ export default function GameBoard() {
       setProblemCircuits(new Set(oh.problems.map(p => p.circuitId)));
       setPreWiredCircuitIds(new Set(ids));
       preWiredCircuitIdsRef.current = new Set(ids);
+
+      // Capture Before snapshot for Before/After view
+      const snapshotCircuits: Record<CircuitId, import('../types/game').CircuitSnapshot> = {};
+      for (const config of level.circuitConfigs) {
+        const pw = oh.preWiredCircuits[config.id];
+        snapshotCircuits[config.id] = {
+          wire: preWires[config.id] ?? DEFAULT_WIRES[0],
+          breaker: preBreakers[config.id],
+          crimpQuality: pw?.crimpQuality ?? 'none',
+          elcbEnabled: !!initElcb[config.id],
+          appliances: preAppls[config.id] ?? [],
+        };
+      }
+      setOldHouseSnapshot({ problems: oh.problems, circuits: snapshotCircuits });
     } else {
       // Normal mode: auto-assign appliances
       const appls: Record<CircuitId, Appliance[]> = {};
@@ -661,6 +692,7 @@ export default function GameBoard() {
       setProblemCircuits(new Set());
       setPreWiredCircuitIds(new Set());
       preWiredCircuitIdsRef.current = new Set();
+      setOldHouseSnapshot(null);
     }
 
     // Initialize phase assignments from CircuitConfig.phase
@@ -1274,6 +1306,11 @@ export default function GameBoard() {
         onBackToLevels={handleBackToLevels}
         starResult={starResult}
         aestheticsScore={finalAestheticsScore}
+        oldHouseSnapshot={oldHouseSnapshot}
+        circuitConfigs={circuitConfigs}
+        currentWires={circuitWires}
+        currentBreakers={circuitBreakers}
+        currentElcb={circuitElcb}
       />
 
       {showRoutingOverlay && (

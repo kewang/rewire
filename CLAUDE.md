@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 進行中（new-old-house-problems ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 進行中（new-old-house-problems ✓ → before-after-view ✓）。**
 
 ## Tech Stack
 
@@ -23,12 +23,13 @@
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器 + 主開關負載指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示 + main-tripped）
   - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路多行排列佈局（MAX_CIRCUITS_PER_ROW=4）+ 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕/NFB 紅框+提示/💧⚠️+提示）+ BreakerSelector popup
+  - `BeforeAfterView.tsx` — 老屋修復前後對比視圖（Before/After 並排面板 + 修復摘要文字 + 入場動畫）
   - `BreakerSelector.tsx` — NFB 更換彈出選擇器（15A/20A/30A 卡片、相容性標示、當前規格 disabled）
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
@@ -53,6 +54,12 @@
 - PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
 - **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
+- **Change 實作完成後 MUST 提供人工測試指引**：每個 change 的所有 task 完成後，MUST 輸出一份簡明的手動測試步驟清單，包含：
+  1. 啟動方式（`npm run dev`）
+  2. **正向測試**：列出具體關卡編號 + 操作步驟 + 預期結果（看到什麼）
+  3. **反向測試**：列出不應出現新功能的場景（確認沒有回歸）
+  4. **響應式**：桌面 vs 手機版應有的差異
+  5. **動畫/視覺**：需要肉眼確認的動畫效果描述
 
 ## Key Design Decisions
 
@@ -129,6 +136,10 @@
 - 問題迴路視覺：閃爍橘色邊框 + ⚠️ 圖示，oxidized-splice 暗褐色(#6b4423)線材
 - 拆線按鈕：僅 preWiredCircuitIds 中的迴路顯示（修復後不再出現）
 - 電器指派迴路選取：點選 CircuitCard 高亮為「選取中」（琥珀色邊框），電器指派優先到選取迴路（驗證電壓匹配），未選取+單一匹配自動指派，未選取+多匹配不指派
+- Before/After 對比：老屋關卡通關時顯示修復前後對比（ResultPanel 下方），OldHouseSnapshot useState 擷取初始狀態
+- Before/After 佈局：CSS Grid 兩欄（>640px 並排、≤640px 堆疊），Before 紅色系 / After 綠色系
+- Before/After 動畫：整體 fadeIn 0.5s + After 側 ✓ 逐項 popIn（staggered delay 0.15s）
+- 修復摘要：generateRepairItems 純函式，依 5 種問題類型生成 before 描述和 after 修復描述
 
 ## Testing Workflow
 
