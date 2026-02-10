@@ -1,7 +1,7 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, DEFAULT_WIRES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
 
-const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, bathHeater, fridge] = DEFAULT_APPLIANCES;
+const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, bathHeater, fridge, heater] = DEFAULT_APPLIANCES;
 const [wire16, wire20] = DEFAULT_WIRES;
 
 /** 關卡定義（L01-L05 單迴路, L06-L09 多迴路） */
@@ -52,13 +52,13 @@ export const LEVELS: readonly Level[] = [
   },
   {
     name: 'L05 長時間耐久',
-    description: '烘衣機 + 快煮壺，合計 23.6A。2.0mm² 撐得過 15 秒嗎？',
-    requiredAppliances: [dryer, kettle],
-    budget: 85,
+    description: '電暖器 + 快煮壺，合計 30A。需要粗線才撐得住！',
+    requiredAppliances: [heater, kettle],
+    budget: 130,
     survivalTime: 15,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
-      { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [dryer, kettle] },
+      { id: 'c1', label: '主迴路', voltage: 110, breaker: BREAKER_30A, availableAppliances: [heater, kettle] },
     ],
   },
   {

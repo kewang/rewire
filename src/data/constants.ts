@@ -22,6 +22,9 @@ export const DEFAULT_APPLIANCES = [
   { name: '冷氣', power: 2800, voltage: 220 },
   { name: '浴室暖風機', power: 1650, voltage: 220 },
   { name: '冰箱', power: 200, voltage: 110 },
+  { name: '電暖器', power: 1800, voltage: 110 },
+  { name: '烤箱', power: 1500, voltage: 110 },
+  { name: '除濕機', power: 600, voltage: 110 },
 ] as const satisfies readonly Appliance[];
 
 /** NFB 15A（照明/低功率迴路） */
@@ -35,6 +38,22 @@ export const BREAKER_30A: Breaker = { ratedCurrent: 30, tripDelay: 1.5 } as cons
 
 /** 預設 NFB（向後相容，等同 BREAKER_20A） */
 export const DEFAULT_BREAKER: Breaker = BREAKER_20A;
+
+/** NFB 15A 單價（自由配迴路） */
+export const NFB_COST_15A = 10;
+
+/** NFB 20A 單價（自由配迴路） */
+export const NFB_COST_20A = 15;
+
+/** NFB 30A 單價（自由配迴路） */
+export const NFB_COST_30A = 20;
+
+/** NFB 成本查詢表（以 ratedCurrent 為 key） */
+export const NFB_COSTS: Record<number, number> = {
+  15: NFB_COST_15A,
+  20: NFB_COST_20A,
+  30: NFB_COST_30A,
+};
 
 /** ELCB 漏電斷路器每迴路成本 */
 export const ELCB_COST = 35;

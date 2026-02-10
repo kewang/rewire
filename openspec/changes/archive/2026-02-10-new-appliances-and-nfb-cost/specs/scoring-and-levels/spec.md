@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Level definition
 
 系統 MUST 提供二十三個關卡。L01-L05 單迴路，L06-L10 多迴路，L11-L12 相位平衡，L13-L15 ELCB，L16-L17 壓接端子，L18-L20 老屋驚魂，L21-L23 走線整理。
@@ -40,33 +42,3 @@
 - **AND** 預算 MUST 為 $180，survivalTime MUST 為 12 秒
 - **AND** requiresCrimp MUST 為 true
 - **AND** bonusCondition MUST 為 `{ type: 'crimp-quality', minQuality: 'good' }`
-
-#### Scenario: L01-L15 不受壓接影響
-
-- **WHEN** 載入 L01 至 L15 任一關卡
-- **THEN** requiresCrimp MUST 為 undefined 或 false
-- **AND** 遊戲行為 MUST 與 v0.4 完全一致
-- **AND** 每關 MUST 有對應的 bonusCondition 配置
-
-#### Scenario: L18-L20 老屋驚魂
-
-- **WHEN** 載入 L18 至 L20 任一關卡
-- **THEN** oldHouse MUST 存在且包含 problems 和 preWiredCircuits
-- **AND** requiresCrimp MUST 為 true
-- **AND** bonusCondition MUST 為 `{ type: 'no-warning' }`
-
-### Requirement: Power-on prerequisite with crimp
-
-requiresCrimp 關卡的送電前置條件 MUST 包含所有迴路壓接完成。
-
-#### Scenario: 壓接未完成不可送電
-
-- **WHEN** requiresCrimp 關卡中有迴路尚未完成壓接
-- **THEN** NFB 開關 MUST 為 disabled
-- **AND** MUST 顯示提示「請先完成所有迴路壓接」
-
-#### Scenario: 壓接完成可送電
-
-- **WHEN** requiresCrimp 關卡中所有迴路已完成接線 + 壓接
-- **AND** 已分配電器
-- **THEN** NFB 開關 MUST 為 enabled
