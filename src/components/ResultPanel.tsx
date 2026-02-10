@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import type { Circuit, MultiCircuitState } from '../types/game';
 import type { StarDetail } from '../engine/scoring';
 
-type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
+type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
 interface ResultPanelProps {
   result: GameResult;

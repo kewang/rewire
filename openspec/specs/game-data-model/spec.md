@@ -92,20 +92,32 @@
 
 ### Requirement: Level type definition
 
-系統 MUST 定義 Level 型別，描述關卡的目標電器、預算、過關條件，以及多迴路配置與壓接需求。
+系統 MUST 定義 `Level` 為 `FixedCircuitLevel | FreeCircuitLevel` union type，支援固定迴路和自由配迴路兩種關卡模式。
 
-#### Scenario: Level 型別包含多迴路配置
+#### Scenario: Level 為 discriminated union
 
-- **WHEN** 建立一個 Level 物件
-- **THEN** 該物件 MUST 包含 `name`（關卡名稱）、`description`（描述）、`requiredAppliances`（必要電器總清單）、`budget`（預算）、`survivalTime`（通電秒數目標）、`circuitConfigs`（CircuitConfig 陣列）屬性
+- **WHEN** 使用 Level 型別
+- **THEN** Level MUST 為 `FixedCircuitLevel | FreeCircuitLevel` 聯合型別
+- **AND** 可透過 `'rooms' in level` 判斷為 FreeCircuitLevel
+- **AND** 可透過 `'circuitConfigs' in level` 判斷為 FixedCircuitLevel
 
-#### Scenario: Level 型別包含可選 requiresCrimp
+#### Scenario: FixedCircuitLevel 保留原有 Level 所有欄位
 
-- **WHEN** 建立一個 Level 物件
-- **THEN** MUST 可包含 `requiresCrimp?: boolean` 可選欄位
-- **AND** 未指定時預設視為 false
+- **WHEN** 建立一個 FixedCircuitLevel 物件
+- **THEN** 該物件 MUST 包含 `name`、`description`、`requiredAppliances`、`budget`、`survivalTime`、`circuitConfigs` 屬性
+- **AND** MUST 可包含 `phaseMode`、`leakageMode`、`leakageEvents`、`requiresCrimp`、`requiresRouting`、`initialLanes`、`bonusCondition`、`oldHouse` 可選欄位
 
-#### Scenario: 單迴路關卡 circuitConfigs 只有一個元素
+#### Scenario: 既有關卡定義向後相容
 
-- **WHEN** 建立一個單迴路關卡（如 L01）
-- **THEN** `circuitConfigs` MUST 為只含一個 CircuitConfig 的陣列
+- **WHEN** 既有關卡（L01-L23）使用 FixedCircuitLevel 型別
+- **THEN** 所有關卡定義 MUST 保持相同結構，無需修改欄位值
+- **AND** MUST 可通過 TypeScript 編譯
+
+### Requirement: SimulationStatus includes main-tripped
+
+SimulationStatus MUST 包含 `'main-tripped'` 值。
+
+#### Scenario: SimulationStatus 包含所有狀態
+
+- **WHEN** 使用 SimulationStatus 型別
+- **THEN** 其值 MUST 可為 `'normal'`、`'warning'`、`'tripped'`、`'burned'`、`'neutral-burned'`、`'elcb-tripped'`、`'leakage'`、`'main-tripped'` 之一

@@ -74,6 +74,12 @@
   - `overallStatus`（SimulationStatus）— 整體狀態，由所有迴路最嚴重狀態決定
   - `neutralCurrent`（number）— 中性線電流 (A)
   - `neutralHeat`（number）— 中性線熱度 (0.0 ~ 1.0)
+  - `mainBreakerTripTimer`（number）— 主開關跳脫計時器 (秒)
+
+#### Scenario: mainBreakerTripTimer 初始值
+
+- **WHEN** 建立一個初始 MultiCircuitState
+- **THEN** `mainBreakerTripTimer` MUST 為 0
 
 #### Scenario: overallStatus 取最嚴重狀態
 
@@ -160,22 +166,32 @@ Level 型別 MUST 支援可選的 `phaseMode` 欄位。
 
 ### Requirement: SimulationStatus neutral-burned extension
 
-SimulationStatus MUST 支援 `'neutral-burned'`、`'elcb-tripped'`、`'leakage'` 值。
+SimulationStatus MUST 支援 `'neutral-burned'`、`'elcb-tripped'`、`'leakage'`、`'main-tripped'` 值。
 
 #### Scenario: SimulationStatus 包含所有狀態
 
 - **WHEN** 使用 SimulationStatus 型別
-- **THEN** 其值 MUST 可為 `'normal'`、`'warning'`、`'tripped'`、`'burned'`、`'neutral-burned'`、`'elcb-tripped'`、`'leakage'` 之一
+- **THEN** 其值 MUST 可為 `'normal'`、`'warning'`、`'tripped'`、`'burned'`、`'neutral-burned'`、`'elcb-tripped'`、`'leakage'`、`'main-tripped'` 之一
 
-#### Scenario: neutral-burned 與 burned 與 leakage 同權重
+#### Scenario: neutral-burned 與 burned 與 leakage 與 main-tripped 同權重
 
 - **WHEN** 比較嚴重度
-- **THEN** `'neutral-burned'`、`'burned'`、`'leakage'` MUST 同級（severity=3）
+- **THEN** `'neutral-burned'`、`'burned'`、`'leakage'`、`'main-tripped'` MUST 同級（severity=3）
 
 #### Scenario: elcb-tripped 與 tripped 同權重
 
 - **WHEN** 比較嚴重度
 - **THEN** `'elcb-tripped'` MUST 與 `'tripped'` 同級（severity=2）
+
+### Requirement: worstStatus 支援 main-tripped
+
+`worstStatus` helper 函式 MUST 能處理 `'main-tripped'` 狀態。
+
+#### Scenario: main-tripped 在嚴重度比較中正確排序
+
+- **WHEN** 呼叫 `worstStatus` 時輸入包含 `'main-tripped'` 的狀態
+- **THEN** MUST 將 `'main-tripped'` 視為 severity=3
+- **AND** 與 `'burned'` / `'neutral-burned'` / `'leakage'` 同級
 
 ### Requirement: Level leakage configuration
 

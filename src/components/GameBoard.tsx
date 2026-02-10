@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality } from '../types/game';
+import type { Wire, Appliance, Circuit, Level, FixedCircuitLevel, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE } from '../data/constants';
 import { LEVELS } from '../data/levels';
+import { isFixedCircuitLevel } from '../types/helpers';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { calcStars, saveBestStars } from '../engine/scoring';
 import type { StarDetail } from '../engine/scoring';
@@ -17,7 +18,7 @@ import PanelInteriorView from './PanelInteriorView';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
 
-type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'won' | 'over-budget';
+type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
 const EMPTY_CONFIGS: CircuitConfig[] = [];
 
@@ -47,7 +48,7 @@ function createInitialCircuitWires(circuitIds: CircuitId[]): Record<CircuitId, W
 
 
 export default function GameBoard() {
-  const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<FixedCircuitLevel | null>(null);
   const [circuitWires, setCircuitWires] = useState<Record<CircuitId, Wire>>({});
   const [circuitAppliances, setCircuitAppliances] = useState<Record<CircuitId, Appliance[]>>({});
   const [multiState, setMultiState] = useState<MultiCircuitState>(createInitialMultiState([]));
@@ -298,8 +299,8 @@ export default function GameBoard() {
       }
     }
 
-    // Terminal state: tripped, burned, neutral-burned, or leakage (use overallStatus)
-    if (newMultiState.overallStatus === 'tripped' || newMultiState.overallStatus === 'burned' || newMultiState.overallStatus === 'neutral-burned' || newMultiState.overallStatus === 'leakage') {
+    // Terminal state: tripped, burned, neutral-burned, leakage, or main-tripped (use overallStatus)
+    if (newMultiState.overallStatus === 'tripped' || newMultiState.overallStatus === 'burned' || newMultiState.overallStatus === 'neutral-burned' || newMultiState.overallStatus === 'leakage' || newMultiState.overallStatus === 'main-tripped') {
       setIsPowered(false);
       stopApplianceSounds();
       setResult(newMultiState.overallStatus);
@@ -484,6 +485,8 @@ export default function GameBoard() {
   }, []);
 
   const handleSelectLevel = useCallback((level: Level) => {
+    // TODO: FreeCircuitLevel support in circuit-planner-ui change
+    if (!isFixedCircuitLevel(level)) return;
     const ids = level.circuitConfigs.map(c => c.id);
     setCurrentLevel(level);
     setCircuitElcb({});

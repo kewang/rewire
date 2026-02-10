@@ -5,12 +5,24 @@ import type {
   CircuitConfig,
   CircuitId,
   CircuitState,
+  FixedCircuitLevel,
+  FreeCircuitLevel,
   Level,
   MultiCircuitState,
   SimulationState,
   Wire,
 } from './game';
 import { DEFAULT_BREAKER } from '../data/constants';
+
+/** 判斷是否為自由配迴路關卡 */
+export function isFreeCircuitLevel(level: Level): level is FreeCircuitLevel {
+  return 'rooms' in level;
+}
+
+/** 判斷是否為固定迴路關卡 */
+export function isFixedCircuitLevel(level: Level): level is FixedCircuitLevel {
+  return 'circuitConfigs' in level;
+}
 
 /** 建立單迴路關卡的簡化 helper */
 export function createSingleCircuitLevel(opts: {
@@ -20,7 +32,7 @@ export function createSingleCircuitLevel(opts: {
   budget: number;
   survivalTime: number;
   breaker?: Breaker;
-}): Level {
+}): FixedCircuitLevel {
   const breaker = opts.breaker ?? DEFAULT_BREAKER;
   return {
     name: opts.name,
@@ -71,7 +83,7 @@ export function toLegacyCircuit(
   };
 }
 
-/** 狀態嚴重度排序：burned/neutral-burned/leakage > tripped/elcb-tripped > warning > normal */
+/** 狀態嚴重度排序：burned/neutral-burned/leakage/main-tripped > tripped/elcb-tripped > warning > normal */
 const STATUS_SEVERITY: Record<CircuitState['status'], number> = {
   normal: 0,
   warning: 1,
@@ -80,6 +92,7 @@ const STATUS_SEVERITY: Record<CircuitState['status'], number> = {
   burned: 3,
   'neutral-burned': 3,
   leakage: 3,
+  'main-tripped': 3,
 };
 
 /** 計算所有迴路中最嚴重的狀態 */

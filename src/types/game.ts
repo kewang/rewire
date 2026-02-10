@@ -64,7 +64,7 @@ export interface CrimpResult {
 }
 
 /** 模擬狀態 */
-export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned' | 'neutral-burned' | 'elcb-tripped' | 'leakage';
+export type SimulationStatus = 'normal' | 'warning' | 'tripped' | 'burned' | 'neutral-burned' | 'elcb-tripped' | 'leakage' | 'main-tripped';
 
 /** 單迴路模擬動態狀態 */
 export interface CircuitState {
@@ -90,6 +90,8 @@ export interface MultiCircuitState {
   readonly neutralCurrent: number;
   /** 中性線熱度 (0.0 ~ 1.0) */
   readonly neutralHeat: number;
+  /** 主開關跳脫計時器 (秒) */
+  readonly mainBreakerTripTimer: number;
 }
 
 /** 模擬動態狀態（單迴路，向後相容） */
@@ -190,6 +192,26 @@ export interface OldHouseConfig {
   readonly preWiredCircuits: Record<CircuitId, PreWiredCircuit>;
 }
 
+/** 房間定義 */
+export interface Room {
+  /** 房間唯一識別符 */
+  readonly id: string;
+  /** 房間顯示名稱 */
+  readonly name: string;
+  /** 此房間需要供電的電器 */
+  readonly appliances: readonly Appliance[];
+  /** 是否為潮濕區域（觸發 ELCB 需求） */
+  readonly wetArea?: boolean;
+}
+
+/** 配電箱規格 */
+export interface PanelConfig {
+  /** 插槽上限（可建立迴路數量上限） */
+  readonly maxSlots: number;
+  /** 主開關額定電流 (A) */
+  readonly mainBreakerRating: number;
+}
+
 /** 獎勵目標條件（三星） */
 export type BonusCondition =
   | { readonly type: 'no-warning' }
@@ -199,8 +221,8 @@ export type BonusCondition =
   | { readonly type: 'no-trip' }
   | { readonly type: 'aesthetics-score'; readonly minScore: number };
 
-/** 關卡定義 */
-export interface Level {
+/** 固定迴路關卡定義（教學 L01-L05、老屋 L18-L20） */
+export interface FixedCircuitLevel {
   /** 關卡名稱 */
   readonly name: string;
   /** 關卡描述 */
@@ -230,3 +252,34 @@ export interface Level {
   /** 老屋模式配置 */
   readonly oldHouse?: OldHouseConfig;
 }
+
+/** 自由配迴路關卡定義（L06-L17, L21-L23） */
+export interface FreeCircuitLevel {
+  /** 關卡名稱 */
+  readonly name: string;
+  /** 關卡描述 */
+  readonly description: string;
+  /** 房間列表（含電器） */
+  readonly rooms: readonly Room[];
+  /** 配電箱規格 */
+  readonly panel: PanelConfig;
+  /** 預算 */
+  readonly budget: number;
+  /** 需通電維持的秒數 */
+  readonly survivalTime: number;
+  /** 相位分配模式：auto=固定不可切換，manual=玩家可切換 */
+  readonly phaseMode?: 'auto' | 'manual';
+  /** 漏電模式：scripted=腳本式（固定時間），random=隨機式（每秒機率） */
+  readonly leakageMode?: 'scripted' | 'random';
+  /** 腳本式漏電事件列表（leakageMode='scripted' 時使用） */
+  readonly leakageEvents?: readonly LeakageEvent[];
+  /** 是否要求壓接端子 */
+  readonly requiresCrimp?: boolean;
+  /** 是否要求走線整理 */
+  readonly requiresRouting?: boolean;
+  /** 第三星獎勵目標條件 */
+  readonly bonusCondition?: BonusCondition;
+}
+
+/** 關卡定義（固定迴路 | 自由配迴路） */
+export type Level = FixedCircuitLevel | FreeCircuitLevel;

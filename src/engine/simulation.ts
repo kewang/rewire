@@ -58,6 +58,7 @@ export function createInitialMultiState(circuitIds: CircuitId[]): MultiCircuitSt
     overallStatus: 'normal',
     neutralCurrent: 0,
     neutralHeat: 0,
+    mainBreakerTripTimer: 0,
   };
 }
 
@@ -146,7 +147,7 @@ export function stepMulti(
   config: SimulationConfig = DEFAULT_CONFIG,
 ): MultiCircuitState {
   // 致命終態保護
-  if (state.overallStatus === 'neutral-burned' || state.overallStatus === 'leakage') {
+  if (state.overallStatus === 'neutral-burned' || state.overallStatus === 'leakage' || state.overallStatus === 'main-tripped') {
     return state;
   }
 
@@ -197,6 +198,7 @@ export function stepMulti(
       overallStatus: 'neutral-burned',
       neutralCurrent,
       neutralHeat: 1,
+      mainBreakerTripTimer: state.mainBreakerTripTimer,
     };
   }
 
@@ -206,5 +208,6 @@ export function stepMulti(
     overallStatus: worstStatus(newCircuitStates),
     neutralCurrent,
     neutralHeat,
+    mainBreakerTripTimer: state.mainBreakerTripTimer,
   };
 }

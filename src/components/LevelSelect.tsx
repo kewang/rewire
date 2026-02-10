@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import type { Level } from '../types/game';
+import { isFreeCircuitLevel } from '../types/helpers';
 import { loadBestStars } from '../engine/scoring';
+
+function getLevelAppliances(level: Level): string {
+  if (isFreeCircuitLevel(level)) {
+    return level.rooms.flatMap(r => r.appliances).map(a => a.name).join('、');
+  }
+  return level.requiredAppliances.map(a => a.name).join('、');
+}
 
 interface LevelSelectProps {
   levels: readonly Level[];
@@ -30,7 +38,7 @@ export default function LevelSelect({ levels, onSelect }: LevelSelectProps) {
             </div>
             <div className="card-detail">{level.description}</div>
             <div className="card-detail card-detail-ellipsis">
-              電器：{level.requiredAppliances.map((a) => a.name).join('、')}
+              電器：{getLevelAppliances(level)}
             </div>
             <div className="card-detail">
               預算：${level.budget} ｜ 通電目標：{level.survivalTime}秒
