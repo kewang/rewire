@@ -333,14 +333,18 @@ export default function GameBoard() {
     if (level && newMultiState.elapsed >= level.survivalTime) {
       setIsPowered(false);
       stopApplianceSounds();
-      // Sum wire + ELCB costs from all circuits at this moment (skip pre-wired)
+      // Sum wire + NFB + ELCB costs from all circuits at this moment (skip pre-wired)
       const wires = circuitWiresRef.current;
       const elcbs = circuitElcbRef.current;
+      const configs = resolvedConfigsRef.current;
+      const isFreeLvl = level != null && isFreeCircuitLevel(level);
       const finalCost = Object.entries(wires).reduce(
         (sum, [id, w]) => {
           const elcbCost = elcbs[id] ? ELCB_COST : 0;
+          const config = configs.find(c => c.id === id);
+          const nfbCost = isFreeLvl && config ? (NFB_COSTS[config.breaker.ratedCurrent] ?? 0) : 0;
           if (preWiredCircuitIdsRef.current.has(id)) return sum + elcbCost;
-          return sum + w.costPerMeter * DEFAULT_WIRE_LENGTH + elcbCost;
+          return sum + w.costPerMeter * DEFAULT_WIRE_LENGTH + elcbCost + nfbCost;
         }, 0
       );
       const gameResult = finalCost > level.budget ? 'over-budget' : 'won';

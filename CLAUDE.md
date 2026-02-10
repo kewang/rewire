@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 實作中（6/7 完成：new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓）。v0.8 PRD 已完成（完整老屋驚魂模式，原 v0.7 內容順延）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 PRD 已完成（完整老屋驚魂模式，原 v0.7 內容順延）。**
 
 ## Tech Stack
 
