@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 PRD 已完成。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 PRD 已完成（自由配迴路 + 電器擴充）。v0.8 PRD 已完成（完整老屋驚魂模式，原 v0.7 內容順延）。**
 
 ## Tech Stack
 
@@ -31,8 +31,8 @@
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L23 關卡定義（L01-L05 單迴路, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理）
-  - `constants.ts` — 6 種線材、10 種電器、NFB 三規格（15A/20A/30A）、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
+  - `levels.ts` — L01-L23 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理）— v0.7 將 L06-L17/L21-L23 改為自由配迴路格式
+  - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
@@ -46,7 +46,7 @@
 
 - 語言：程式碼用英文，註解與文件可用繁體中文
 - OpenSpec 工作流程管理所有 change
-- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`
+- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
 - **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
 
@@ -76,9 +76,15 @@
 - 送電前置條件：所有迴路都已接線（isWired = 衍生值）才能啟用 NFB 開關
 - 全域送電開關（非獨立 per-circuit NFB），未來可擴展
 - AppliancePanel 多迴路：circuit-tabs 選擇目標迴路 + availableAppliances 過濾
-- 成本計算：totalCost = Σ(wire.costPerMeter × DEFAULT_WIRE_LENGTH) + Σ(hasElcb ? ELCB_COST : 0)
+- 成本計算（固定迴路）：totalCost = Σ(wire.costPerMeter × DEFAULT_WIRE_LENGTH) + Σ(hasElcb ? ELCB_COST : 0)
+- 成本計算（自由配迴路）：totalCost = Σ(wire cost + NFB cost + ELCB cost)，NFB 收費 15A=$10/20A=$15/30A=$20
 - ELCB 成本框架：CircuitConfig.elcbAvailable 控制顯示、per-circuit toggle、$35/迴路
 - NFB 多規格：BREAKER_15A/20A/30A 命名常數，DEFAULT_BREAKER = BREAKER_20A（向後相容）
+- 自由配迴路：玩家自建迴路（選電壓/NFB/相位）→ 指派電器 → 選線 → 壓接/走線 → 送電
+- 自由配迴路約束：配電箱插槽上限 + 主開關額定容量（跳脫=遊戲失敗）
+- 主開關跳脫：totalPanelCurrent > mainBreakerRating × 1.25 累積 1.5s → main-tripped（severity=3）
+- Level union type：FixedCircuitLevel（有 circuitConfigs）| FreeCircuitLevel（有 rooms + panel）
+- L01-L05 / L18-L20 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
 - buzzing 音效：任一迴路 warning 時觸發，音量 = max wireHeat across all circuits
 - 相位平衡：單相三線制 R-N(110V) / T-N(110V) / R-T(220V)，中性線電流 I_N = |Σ I_R − Σ I_T|
 - 中性線熱度：同 wire heat model（heatRate=0.4, coolRate=0.15），NEUTRAL_MAX_CURRENT=30A
@@ -133,3 +139,4 @@
 ## Known Issues / Notes
 
 - 電器音效目前用 Web Audio API 合成，未來可換真實音檔提升品質
+- L05/L07 bug：烘衣機(220V) 放在 110V 迴路，calcTotalCurrent 過濾掉不匹配電壓導致電流計算錯誤（v0.7 修復）
