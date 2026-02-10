@@ -1941,6 +1941,7 @@ h3, h4 {
   box-shadow: var(--shadow-card);
   position: relative;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .circuit-card.voltage-110 {
@@ -1949,6 +1950,11 @@ h3, h4 {
 
 .circuit-card.voltage-220 {
   border-left: 3px solid #a855f7;
+}
+
+.circuit-card-selected {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 1px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.3);
 }
 
 .circuit-card-header {

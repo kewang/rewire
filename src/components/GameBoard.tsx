@@ -75,6 +75,7 @@ export default function GameBoard() {
   const [showRoutingOverlay, setShowRoutingOverlay] = useState(false);
   const [finalAestheticsScore, setFinalAestheticsScore] = useState<number | undefined>(undefined);
   const aestheticsScoreRef = useRef<number | undefined>(undefined);
+  const [selectedPlannerCircuitId, setSelectedPlannerCircuitId] = useState<string | null>(null);
 
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
@@ -665,6 +666,7 @@ export default function GameBoard() {
 
   const handleDeletePlannerCircuit = useCallback((id: string) => {
     setPlannerCircuits(prev => prev.filter(c => c.id !== id));
+    setSelectedPlannerCircuitId(prev => prev === id ? null : prev);
   }, []);
 
   const handleChangePlannerVoltage = useCallback((id: string, voltage: 110 | 220) => {
@@ -696,15 +698,30 @@ export default function GameBoard() {
     // Find matching voltage circuits
     const matching = plannerCircuits.filter(c => c.voltage === appliance.voltage);
     if (matching.length === 0) return;
-    // Auto-assign to first matching circuit (single match) or first one
-    const targetId = matching[0].id;
+
+    // Determine target circuit
+    let targetId: string | null = null;
+    if (selectedPlannerCircuitId) {
+      // Selected circuit must match voltage
+      const selected = matching.find(c => c.id === selectedPlannerCircuitId);
+      if (selected) {
+        targetId = selected.id;
+      }
+      // If selected but voltage mismatch, don't assign
+    } else if (matching.length === 1) {
+      // Only one matching circuit: auto-assign
+      targetId = matching[0].id;
+    }
+    // If no target (multiple matches, none selected): skip
+
+    if (!targetId) return;
     const assignment: ApplianceAssignment = { appliance, roomId, roomApplianceIndex };
     setPlannerCircuits(prev => prev.map(c =>
       c.id === targetId
         ? { ...c, assignedAppliances: [...c.assignedAppliances, assignment] }
         : c
     ));
-  }, [plannerCircuits]);
+  }, [plannerCircuits, selectedPlannerCircuitId]);
 
   const handleUnassignPlannerAppliance = useCallback((circuitId: string, applianceIndex: number) => {
     setPlannerCircuits(prev => prev.map(c => {
@@ -1070,6 +1087,8 @@ export default function GameBoard() {
           totalCost={plannerTotalCost}
           canConfirm={plannerCanConfirm}
           confirmTooltip={plannerConfirmTooltip}
+          selectedCircuitId={selectedPlannerCircuitId}
+          onSelectCircuit={setSelectedPlannerCircuitId}
           onAddCircuit={handleAddPlannerCircuit}
           onDeleteCircuit={handleDeletePlannerCircuit}
           onChangeVoltage={handleChangePlannerVoltage}

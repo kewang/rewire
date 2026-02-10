@@ -6,6 +6,8 @@ interface CircuitCardProps {
   readonly index: number;
   readonly phaseMode?: 'auto' | 'manual';
   readonly hasWetAreaAppliance: boolean;
+  readonly isSelected: boolean;
+  readonly onSelect: () => void;
   readonly onDelete: (id: string) => void;
   readonly onChangeVoltage: (id: string, voltage: 110 | 220) => void;
   readonly onChangeBreaker: (id: string, breaker: Breaker) => void;
@@ -26,6 +28,8 @@ export default function CircuitCard({
   index,
   phaseMode,
   hasWetAreaAppliance,
+  isSelected,
+  onSelect,
   onDelete,
   onChangeVoltage,
   onChangeBreaker,
@@ -52,10 +56,10 @@ export default function CircuitCard({
   const phaseDisabled = phaseMode === 'auto';
 
   return (
-    <div className={`circuit-card voltage-${circuit.voltage}`}>
+    <div className={`circuit-card voltage-${circuit.voltage}${isSelected ? ' circuit-card-selected' : ''}`} onClick={onSelect}>
       <div className="circuit-card-header">
         <span className="circuit-card-number">迴路 {index + 1}</span>
-        <button className="circuit-card-delete" onClick={() => onDelete(circuit.id)} title="刪除迴路">✕</button>
+        <button className="circuit-card-delete" onClick={e => { e.stopPropagation(); onDelete(circuit.id); }} title="刪除迴路">✕</button>
       </div>
 
       <div className={`circuit-card-controls${showPhaseSelector ? ' has-phase' : ''}`}>

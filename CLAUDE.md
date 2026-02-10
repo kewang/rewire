@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 PRD 已完成（自由配迴路 + 電器擴充）。v0.8 PRD 已完成（完整老屋驚魂模式，原 v0.7 內容順延）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 實作中（6/7 完成：new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓）。v0.8 PRD 已完成（完整老屋驚魂模式，原 v0.7 內容順延）。**
 
 ## Tech Stack
 
@@ -16,9 +16,9 @@
 ## Project Structure
 
 - `src/components/` — React 元件
-  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents）
+  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents/selectedPlannerCircuitId）
   - `CircuitPlanner.tsx` — 迴路規劃主容器（RoomPanel + CircuitCard 列表 + 配電箱摘要 + 相位平衡預估面板）
-  - `CircuitCard.tsx` — 單條迴路卡片（電壓/NFB/線材選擇 + 相位 R/T toggle + ELCB toggle + 電器列表 + 成本）
+  - `CircuitCard.tsx` — 單條迴路卡片（電壓/NFB/線材選擇 + 相位 R/T toggle + ELCB toggle + 電器列表 + 成本 + 迴路選取高亮）
   - `RoomPanel.tsx` — 房間電器清單（未指派高亮 / 已指派灰化）
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器 + 主開關負載指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示 + main-tripped）
@@ -34,7 +34,7 @@
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L23 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理）— v0.7 將 L06-L17/L21-L23 改為自由配迴路格式
+  - `levels.ts` — L01-L23 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
   - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
@@ -123,6 +123,7 @@
 - 老屋送電前置：problemCircuits 為空才能送電
 - 問題迴路視覺：閃爍橘色邊框 + ⚠️ 圖示，oxidized-splice 暗褐色(#6b4423)線材
 - 拆線按鈕：僅 preWiredCircuitIds 中的迴路顯示（修復後不再出現）
+- 電器指派迴路選取：點選 CircuitCard 高亮為「選取中」（琥珀色邊框），電器指派優先到選取迴路（驗證電壓匹配），未選取+單一匹配自動指派，未選取+多匹配不指派
 
 ## Testing Workflow
 
@@ -151,4 +152,4 @@
 ## Known Issues / Notes
 
 - 電器音效目前用 Web Audio API 合成，未來可換真實音檔提升品質
-- L05/L07 bug：烘衣機(220V) 放在 110V 迴路，calcTotalCurrent 過濾掉不匹配電壓導致電流計算錯誤（v0.7 修復）
+- L05/L07 voltage bug 已於 v0.7 new-appliances-and-nfb-cost 修復

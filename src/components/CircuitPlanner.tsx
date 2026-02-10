@@ -19,6 +19,8 @@ interface CircuitPlannerProps {
   readonly onUnassignAppliance: (circuitId: string, applianceIndex: number) => void;
   readonly onChangePhase?: (id: string, phase: 'R' | 'T') => void;
   readonly onChangeElcb?: (id: string, enabled: boolean) => void;
+  readonly selectedCircuitId: string | null;
+  readonly onSelectCircuit: (id: string | null) => void;
   readonly onConfirm: () => void;
 }
 
@@ -37,6 +39,8 @@ export default function CircuitPlanner({
   onUnassignAppliance,
   onChangePhase,
   onChangeElcb,
+  selectedCircuitId,
+  onSelectCircuit,
   onConfirm,
 }: CircuitPlannerProps) {
   const slotsUsed = circuits.length;
@@ -117,6 +121,8 @@ export default function CircuitPlanner({
               index={index}
               phaseMode={level.phaseMode}
               hasWetAreaAppliance={circuitWetAreaMap[circuit.id] ?? false}
+              isSelected={selectedCircuitId === circuit.id}
+              onSelect={() => onSelectCircuit(selectedCircuitId === circuit.id ? null : circuit.id)}
               onDelete={onDeleteCircuit}
               onChangeVoltage={onChangeVoltage}
               onChangeBreaker={onChangeBreaker}
