@@ -1,0 +1,385 @@
+{
+  "app": {
+    "title": "Project Rewire",
+    "subtitle": "Circuit Panel Simulator"
+  },
+  "nav": {
+    "back": "Back",
+    "backToLevels": "Back to Levels",
+    "retry": "Retry"
+  },
+  "levelSelect": {
+    "selectLevel": "Select Level",
+    "appliances": "Appliances",
+    "budget": "Budget",
+    "powerGoal": "Power Goal",
+    "seconds": "s"
+  },
+  "game": {
+    "powerTime": "Power {{time}}s",
+    "powerTimeBudget": "Power {{time}}s / Budget ${{budget}}",
+    "powered": "Powered",
+    "wired": "Wired",
+    "unwired": "Not Wired",
+    "dragWire": "Drag wire",
+    "dropHere": "to connect here",
+    "unwireBtn": "Unwire",
+    "phaseR": "Phase R",
+    "phaseT": "Phase T",
+    "switchPhase": "Switch",
+    "routing": "Route",
+    "rerouting": "Re-route",
+    "unwireConfirm": "Are you sure you want to remove this circuit's wiring? The old wire will be discarded."
+  },
+  "status": {
+    "normal": "Normal",
+    "warning": "Overload Warning",
+    "tripped": "Tripped",
+    "burned": "Burned",
+    "neutralBurned": "Neutral Burned",
+    "elcbTripped": "ELCB Tripped",
+    "leakage": "Leakage!",
+    "mainTripped": "Main Breaker Tripped",
+    "overallStatus": "Overall Status",
+    "statusLabel": "Status",
+    "totalCurrent": "Total Current",
+    "wireLoad": "Wire Load",
+    "wireHeat": "Wire Heat",
+    "remainingTime": "Time Left",
+    "costBudget": "Cost/Budget",
+    "overBudget": "Over Budget!",
+    "mainBreaker": "Main Breaker",
+    "phaseRCurrent": "Phase R Current",
+    "phaseTCurrent": "Phase T Current",
+    "neutralCurrent": "Neutral Current",
+    "neutralHeat": "Neutral Heat"
+  },
+  "result": {
+    "passed": "Passed!",
+    "overBudget": "Over Budget!",
+    "tripped": "Tripped!",
+    "burned": "Wire Burned!",
+    "neutralBurned": "Neutral Burned!",
+    "mainTripped": "Main Breaker Tripped!",
+    "leakage": "Electrocution!",
+    "powerTime": "Power Time",
+    "wireCost": "Wire Cost",
+    "budgetLabel": "Budget",
+    "remaining": "Remaining",
+    "exceeded": "Exceeded",
+    "passedHint": "Successfully completed wiring within budget!",
+    "overBudgetHint": "Circuit works normally, but wire cost ${{cost}} exceeds budget ${{budget}}. Try cheaper wires?",
+    "failType": "Failure Type",
+    "failedCircuit": "Failed Circuit",
+    "nfbRating": "NFB Rating",
+    "wireMaxCurrent": "Wire Max Current",
+    "breakerTrip": "Breaker Trip",
+    "wireBurn": "Wire Burnout",
+    "neutralOverload": "Neutral Overload Burn",
+    "mainOverload": "Main Breaker Overload Trip",
+    "leakageDanger": "Leakage Electrocution",
+    "trippedHint": "{{prefix}}Total current {{current}}A exceeded NFB rating {{rated}}A, triggering breaker protection.",
+    "trippedHintPrefix": "{{label}}'s ",
+    "burnedHint": "{{prefix}}Total current {{current}}A exceeded {{crossSection}}mm² wire's max current {{maxCurrent}}A. Prolonged overload caused burnout. Try thicker wire?",
+    "neutralBurnedHint": "Phase R and Phase T loads are severely unbalanced. Neutral current exceeded 30A safe capacity causing burnout. Try balancing the load between phases!",
+    "mainTrippedHint": "Total panel current exceeded main breaker rating, triggering trip protection. All circuits lost power! Please redesign circuit layout to reduce total simultaneous load.",
+    "leakageHint": "{{label}} experienced leakage, but no ELCB was installed, causing electrocution danger! Always install ELCB for wet area circuits.",
+    "leakageHintDefault": "Circuit",
+    "neutralCapacity": "Neutral Capacity",
+    "aestheticsScore": "Aesthetics Score"
+  },
+  "star": {
+    "safePass": "Safe Pass",
+    "costMet": "Cost Met",
+    "bonusGoal": "Bonus Goal",
+    "noWarning": "Zero Warnings",
+    "underBudgetRatio": "Cost ≤ {{ratio}}% of Budget",
+    "timeMargin": "≥ {{margin}}s Remaining",
+    "crimpQuality": "Crimp Quality ≥ {{quality}}",
+    "noTrip": "Zero Trips",
+    "aestheticsScore": "Aesthetics ≥ {{score}}"
+  },
+  "wire": {
+    "title": "Wire Selection",
+    "maxCurrent": "Max Current",
+    "costPerMeter": "Cost",
+    "perMeter": "/m",
+    "dragHint": "Drag to circuit diagram"
+  },
+  "appliance": {
+    "title": "Appliances",
+    "pluggedIn": "Plugged In",
+    "pluggedInCircuit": "{{label}} Plugged In",
+    "clickToRemove": "Click to remove",
+    "requiresVoltage": "Requires {{voltage}}V circuit",
+    "hairDryer": "Hair Dryer",
+    "kettle": "Kettle",
+    "microwave": "Microwave",
+    "underSinkHeater": "Under-sink Heater",
+    "dryer": "Dryer",
+    "waterHeater": "Water Heater",
+    "ihStove": "IH Stove",
+    "airCon": "Air Conditioner",
+    "bathHeater": "Bath Heater",
+    "fridge": "Refrigerator",
+    "heater": "Space Heater",
+    "oven": "Oven",
+    "dehumidifier": "Dehumidifier"
+  },
+  "elcb": {
+    "title": "ELCB Leakage Breaker (${{cost}}/circuit)",
+    "label": "ELCB Leakage Breaker",
+    "costTag": "${{cost}}"
+  },
+  "crimp": {
+    "title": "Crimp Terminal",
+    "selectTerminal": "Select Terminal Type",
+    "crimpAction": "Crimp Action",
+    "stopAtSweet": "Stop at the sweet spot",
+    "tapAnywhere": "TAP ANYWHERE",
+    "crimpResult": "Crimp Result",
+    "excellent": "Excellent Crimp",
+    "good": "Good Crimp",
+    "poor": "Poor Crimp",
+    "none": "No Crimp",
+    "contactResistance": "Contact Resistance",
+    "effectiveCurrent": "Effective Current",
+    "confirm": "Confirm",
+    "incompatible": "Incompatible wire gauge",
+    "oRing": "O-Ring",
+    "yFork": "Y-Fork"
+  },
+  "planner": {
+    "title": "Circuit Planning",
+    "addCircuit": "+ Add Circuit",
+    "addCircuitTooltip": "Add Circuit",
+    "slotsFull": "Slots Full",
+    "empty": "No circuits yet. Click \"+ Add Circuit\" to start planning.",
+    "panelTitle": "Panel",
+    "slots": "Slots",
+    "mainBreaker": "Main Breaker",
+    "applianceAssign": "Appliance Assign",
+    "cost": "Cost",
+    "phaseEstimate": "Phase Estimate",
+    "nLine": "N Line",
+    "confirmConfig": "Confirm Config",
+    "assignAllAppliances": "Please assign all appliances to circuits",
+    "selectAllWires": "Please select wire for each circuit",
+    "wetAreaNeedElcb": "Wet area circuits require ELCB",
+    "circuitNum": "Circuit {{num}}",
+    "deleteCircuit": "Delete Circuit",
+    "voltage": "Voltage",
+    "phase": "Phase",
+    "nfb": "NFB",
+    "wireLabel": "Wire",
+    "selectWire": "Select Wire",
+    "assignedAppliances": "Assigned Appliances",
+    "removeHint": "Click to remove"
+  },
+  "room": {
+    "title": "Rooms / Appliances",
+    "wetArea": "Wet Area",
+    "circuitPrefix": "Circuit ",
+    "living": "Living Room",
+    "kitchen": "Kitchen",
+    "bedroom": "Bedroom",
+    "bathroom": "Bathroom",
+    "laundry": "Laundry",
+    "storage": "Storage",
+    "balcony": "Balcony",
+    "acRoom": "AC Room",
+    "mainCircuit": "Main Circuit",
+    "study": "Study",
+    "livingAc": "Living AC"
+  },
+  "panel": {
+    "title": "Panel Interior",
+    "subtitle": "Drag wires to rearrange lanes, eliminate crossings, place cable ties",
+    "step1Label": "Eliminate Crossings",
+    "step1Desc": "Drag wires left/right",
+    "step2Label": "Place Cable Ties",
+    "step2Desc": "Click between wires",
+    "step3Label": "Complete Routing",
+    "step3Desc": "Press Done button",
+    "crossings": "Crossings",
+    "cableTies": "Cable Ties",
+    "aestheticsScore": "Aesthetics",
+    "doneBtn": "Done Routing",
+    "dragHint": "← Drag to reorder →",
+    "busbar": "Busbar",
+    "routingZone": "Route Zone",
+    "circuits": "CIRCUITS",
+    "crossingNoTie": "Crossing - cannot tie",
+    "removeTie": "Click to remove tie",
+    "placeTie": "Click to place tie"
+  },
+  "cableTie": {
+    "title": "Cable Tie Tension",
+    "tight": "Perfect",
+    "good": "Good",
+    "loose": "Too Loose",
+    "overTight": "Over-tight",
+    "tapToLock": "TAP TO LOCK"
+  },
+  "breaker": {
+    "title": "NFB Replacement",
+    "wireMaxCurrent": "Wire Max Current",
+    "current": "Current",
+    "trip": "Trip"
+  },
+  "oldHouse": {
+    "nfbOverrated": "NFB {{breaker}}A > Wire {{wire}}A",
+    "missingElcb": "Wet area needs ELCB",
+    "problemsRemaining": "Fix all problem circuits first",
+    "wetAreaMissingElcb": "Wet area circuits need ELCB",
+    "allWiresNeeded": "Complete all circuit wiring first",
+    "crimpNeeded": "Complete all circuit crimping first",
+    "routingNeeded": "Complete wire routing first",
+    "appliancesNeeded": "Assign appliances first"
+  },
+  "beforeAfter": {
+    "title": "Repair Comparison",
+    "before": "Before",
+    "after": "After",
+    "bareWire": "No terminal",
+    "bareWireFixed": "Rewired + Crimped",
+    "oxidizedSplice": "Oxidized splice",
+    "oxidizedFixed": "Rewired + Crimped",
+    "wrongGauge": "Wire too thin ({{size}}mm²)",
+    "wrongGaugeFixed": "Replaced wire → {{size}}mm²",
+    "overratedBreaker": "NFB too large ({{rating}}A)",
+    "overratedFixed": "Replaced NFB {{old}}A → {{new}}A",
+    "missingElcb": "No leakage protection",
+    "missingElcbFixed": "Installed ELCB"
+  },
+  "level": {
+    "L01": {
+      "name": "L01 Basics",
+      "description": "Connect a hair dryer and power on. Understand P ÷ V = I."
+    },
+    "L02": {
+      "name": "L02 Wire Trap",
+      "description": "Use hair dryer and kettle together. Choose your wire carefully!"
+    },
+    "L03": {
+      "name": "L03 Cost Tradeoff",
+      "description": "Same appliances, tighter budget. Can't blindly pick the thickest wire."
+    },
+    "L04": {
+      "name": "L04 Low Power Trap",
+      "description": "Under-sink heater at 800W seems harmless? Add a kettle for 8 seconds."
+    },
+    "L05": {
+      "name": "L05 Endurance",
+      "description": "Heater + Kettle, total 30A. Need thick wire to survive!"
+    },
+    "L06": {
+      "name": "L06 Free Circuit Intro",
+      "description": "First free circuit experience! Two rooms, three appliances — you decide."
+    },
+    "L07": {
+      "name": "L07 High Power",
+      "description": "Space Heater 16.4A — first time 1.6mm² isn't enough!"
+    },
+    "L08": {
+      "name": "L08 Kitchen Circuits",
+      "description": "Kettle, microwave, heater — three high-power appliances, how to split?"
+    },
+    "L09": {
+      "name": "L09 Mixed Voltage",
+      "description": "Kitchen 110V + Laundry 220V. Different voltages need different circuits!"
+    },
+    "L10": {
+      "name": "L10 Full House",
+      "description": "Five rooms, seven appliances — your first full house design!"
+    },
+    "L11": {
+      "name": "L11 Phase Balance Intro",
+      "description": "Single-phase three-wire! Balance R and T phases or the neutral burns."
+    },
+    "L12": {
+      "name": "L12 Phase Balance Pro",
+      "description": "More appliances, manual phase switching. You choose R or T for each circuit."
+    },
+    "L13": {
+      "name": "L13 ELCB Intro",
+      "description": "Wet bathroom areas must have ELCB. No ELCB = electrocution!"
+    },
+    "L14": {
+      "name": "L14 ELCB Budget",
+      "description": "Bathroom ELCB required, plus high-power kitchen — budget is tight."
+    },
+    "L15": {
+      "name": "L15 Combined Challenge",
+      "description": "Phase balance + ELCB + multi-room. All v0.4 mechanics as free circuits!"
+    },
+    "L16": {
+      "name": "L16 Crimp Intro",
+      "description": "Must crimp after wiring to power on. Learn crimping in low-pressure."
+    },
+    "L17": {
+      "name": "L17 Crimp Quality Test",
+      "description": "Poor crimp = high resistance = faster overheating! Crimp well for high-power."
+    },
+    "L18": {
+      "name": "L18 Old House: Diagnosis",
+      "description": "Open the old panel — circuit c1 has no terminal! Rewire and fix."
+    },
+    "L19": {
+      "name": "L19 Old House: Full Check",
+      "description": "Kitchen wire too thin, living room has no terminal. Two problem circuits!"
+    },
+    "L20": {
+      "name": "L20 Old House: Danger",
+      "description": "Final exam! Oxidized splice, bare wire, wrong gauge — three problems plus wet bathroom and phase balance."
+    },
+    "L21": {
+      "name": "L21 Routing Intro",
+      "description": "Design circuits then organize the panel. Learn lane arrangement and cable ties."
+    },
+    "L22": {
+      "name": "L22 Crossing Maze",
+      "description": "5 rooms + mixed voltage + manual phase. Planning affects routing difficulty!"
+    },
+    "L23": {
+      "name": "L23 Perfect Panel",
+      "description": "Final exam! All mechanics — free circuits + phase + ELCB + crimp + routing."
+    },
+    "L24": {
+      "name": "L24 Old House: Protection Gap",
+      "description": "Kitchen's 30A NFB can't protect 20A wire! Replace NFB and fix bare wire."
+    },
+    "L25": {
+      "name": "L25 Old House: Wet Trap",
+      "description": "Bathroom circuit has no ELCB! Install ELCB for safety, fix oxidized splice."
+    },
+    "L26": {
+      "name": "L26 Old House: All Five",
+      "description": "All 5 problem types appear! Diagnose each circuit, fix them all, balance phases."
+    },
+    "L27": {
+      "name": "L27 Old House: Renovate + Route",
+      "description": "Fix problems then organize the panel. First full renovation + routing experience!"
+    },
+    "L28": {
+      "name": "L28 Old House: Ultimate",
+      "description": "Final exam! 5 circuits + 4 problems + phase + leakage + routing = ultimate challenge."
+    }
+  },
+  "random": {
+    "title": "Random Old House Challenge",
+    "beginner": "Beginner",
+    "beginnerDesc": "2-3 circuits, 1-2 problems (basic types)",
+    "intermediate": "Intermediate",
+    "intermediateDesc": "3-4 circuits, 2-3 problems (all 5 types + manual phase)",
+    "advanced": "Advanced",
+    "advancedDesc": "4-6 circuits, 3-5 problems (all mechanics + routing)",
+    "completions": "Completed {{count}} times",
+    "levelName": "Random Old House ({{difficulty}})",
+    "levelDesc": "Randomly generated old house — {{circuits}} circuits, {{problems}} problems"
+  },
+  "language": {
+    "zh-TW": "繁體中文",
+    "en": "English"
+  }
+}

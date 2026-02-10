@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Wire, CrimpResult, CrimpTerminalType, CrimpQuality } from '../types/game';
 import { CRIMP_TERMINALS, CRIMP_QUALITY_MAP } from '../data/constants';
+import { tCrimpQuality, tTerminalName } from '../i18nHelpers';
 
 interface CrimpMiniGameProps {
   wire: Wire;
@@ -17,13 +19,6 @@ const SWEET_SPOT_CENTER = 0.5;
 /** Sweet spot thresholds */
 const EXCELLENT_HALF_WIDTH = 0.05;
 const GOOD_HALF_WIDTH = 0.15;
-
-const QUALITY_LABELS: Record<CrimpQuality, string> = {
-  excellent: '完美壓接',
-  good: '良好壓接',
-  poor: '壓接不良',
-  none: '未壓接',
-};
 
 function getQualityFromPosition(pos: number): CrimpQuality {
   const dist = Math.abs(pos - SWEET_SPOT_CENTER);
@@ -42,6 +37,7 @@ function getQualityColor(quality: CrimpQuality): string {
 }
 
 export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpMiniGameProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'select' | 'crimp' | 'result'>('select');
   const [selectedTerminal, setSelectedTerminal] = useState<CrimpTerminalType | null>(null);
   const [barPosition, setBarPosition] = useState(0);
@@ -115,7 +111,7 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
         {/* Header */}
         <div className="crimp-header">
           <div className="crimp-header-tag">CRIMP</div>
-          <h2 className="crimp-title">壓接端子</h2>
+          <h2 className="crimp-title">{t('crimp.title')}</h2>
           <div className="crimp-circuit-label">{circuitLabel} — {wire.crossSection}mm²</div>
         </div>
 
@@ -124,7 +120,7 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
           <div className="crimp-step crimp-step-select">
             <div className="crimp-step-label">
               <span className="crimp-step-num">01</span>
-              選擇端子類型
+              {t('crimp.selectTerminal')}
             </div>
             <div className="crimp-terminal-options">
               {CRIMP_TERMINALS.map((terminal) => {
@@ -149,11 +145,11 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
                         </svg>
                       )}
                     </div>
-                    <div className="crimp-terminal-name">{terminal.name}</div>
+                    <div className="crimp-terminal-name">{tTerminalName(t, terminal.type)}</div>
                     <div className="crimp-terminal-compat">
                       {compatible
                         ? terminal.compatibleCrossSections.join(' / ') + ' mm²'
-                        : '不相容此線徑'
+                        : t('crimp.incompatible')
                       }
                     </div>
                   </button>
@@ -171,9 +167,9 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
           >
             <div className="crimp-step-label">
               <span className="crimp-step-num">02</span>
-              壓接操作
+              {t('crimp.crimpAction')}
             </div>
-            <div className="crimp-instruction">點擊甜蜜區停止</div>
+            <div className="crimp-instruction">{t('crimp.stopAtSweet')}</div>
 
             <div className="crimp-bar-container">
               {/* Zone markers */}
@@ -229,7 +225,7 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
               </div>
             </div>
 
-            <div className="crimp-tap-hint">TAP ANYWHERE</div>
+            <div className="crimp-tap-hint">{t('crimp.tapAnywhere')}</div>
           </div>
         )}
 
@@ -238,7 +234,7 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
           <div className="crimp-step crimp-step-result">
             <div className="crimp-step-label">
               <span className="crimp-step-num">03</span>
-              壓接結果
+              {t('crimp.crimpResult')}
             </div>
 
             <div
@@ -246,22 +242,22 @@ export default function CrimpMiniGame({ wire, circuitLabel, onComplete }: CrimpM
               style={{ '--crimp-quality-color': getQualityColor(crimpResult.quality) } as React.CSSProperties}
             >
               <div className="crimp-quality-badge">
-                {QUALITY_LABELS[crimpResult.quality]}
+                {tCrimpQuality(t, crimpResult.quality)}
               </div>
               <div className="crimp-result-stats">
                 <div className="crimp-stat">
-                  <span className="crimp-stat-label">接觸電阻倍率</span>
-                  <span className="crimp-stat-value">×{crimpResult.contactResistance.toFixed(2)}</span>
+                  <span className="crimp-stat-label">{t('crimp.contactResistance')}</span>
+                  <span className="crimp-stat-value">{'\u00D7'}{crimpResult.contactResistance.toFixed(2)}</span>
                 </div>
                 <div className="crimp-stat">
-                  <span className="crimp-stat-label">有效電流倍率</span>
-                  <span className="crimp-stat-value">×{Math.sqrt(crimpResult.contactResistance).toFixed(2)}</span>
+                  <span className="crimp-stat-label">{t('crimp.effectiveCurrent')}</span>
+                  <span className="crimp-stat-value">{'\u00D7'}{Math.sqrt(crimpResult.contactResistance).toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
             <button className="crimp-confirm-btn" onClick={handleConfirm}>
-              確認
+              {t('crimp.confirm')}
             </button>
           </div>
         )}

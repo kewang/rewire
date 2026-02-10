@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { OldHouseSnapshot, OldHouseProblem, CircuitId, CircuitConfig, Wire, Breaker } from '../types/game';
+import { tRoomName } from '../i18nHelpers';
 
 interface BeforeAfterViewProps {
   snapshot: OldHouseSnapshot;
@@ -16,6 +19,7 @@ interface RepairItem {
 }
 
 function generateRepairItems(
+  t: TFunction,
   snapshot: OldHouseSnapshot,
   circuitConfigs: readonly CircuitConfig[],
   currentWires: Record<CircuitId, Wire>,
@@ -25,7 +29,8 @@ function generateRepairItems(
 
   return snapshot.problems.map(problem => {
     const config = configMap.get(problem.circuitId);
-    const label = config?.label ?? problem.circuitId;
+    const rawLabel = config?.label ?? problem.circuitId;
+    const label = tRoomName(t, rawLabel);
     const snap = snapshot.circuits[problem.circuitId];
 
     let beforeText: string;
@@ -33,30 +38,30 @@ function generateRepairItems(
 
     switch (problem.type) {
       case 'bare-wire':
-        beforeText = '沒壓端子';
-        afterText = '重新接線 + 壓接';
+        beforeText = t('beforeAfter.bareWire');
+        afterText = t('beforeAfter.bareWireFixed');
         break;
       case 'oxidized-splice':
-        beforeText = '氧化接點';
-        afterText = '重新接線 + 壓接';
+        beforeText = t('beforeAfter.oxidizedSplice');
+        afterText = t('beforeAfter.oxidizedFixed');
         break;
       case 'wrong-wire-gauge': {
         const oldWire = snap?.wire.crossSection ?? '?';
         const newWire = currentWires[problem.circuitId]?.crossSection ?? '?';
-        beforeText = `線徑過小 (${oldWire}mm²)`;
-        afterText = `更換線材 → ${newWire}mm²`;
+        beforeText = t('beforeAfter.wrongGauge', { size: oldWire });
+        afterText = t('beforeAfter.wrongGaugeFixed', { size: newWire });
         break;
       }
       case 'overrated-breaker': {
         const oldBreaker = snap?.breaker.ratedCurrent ?? '?';
         const newBreaker = currentBreakers[problem.circuitId]?.ratedCurrent ?? '?';
-        beforeText = `NFB 過大 (${oldBreaker}A)`;
-        afterText = `更換 NFB ${oldBreaker}A → ${newBreaker}A`;
+        beforeText = t('beforeAfter.overratedBreaker', { rating: oldBreaker });
+        afterText = t('beforeAfter.overratedFixed', { old: oldBreaker, new: newBreaker });
         break;
       }
       case 'missing-elcb':
-        beforeText = '缺漏電保護';
-        afterText = '安裝漏電斷路器（ELCB）';
+        beforeText = t('beforeAfter.missingElcb');
+        afterText = t('beforeAfter.missingElcbFixed');
         break;
     }
 
@@ -65,17 +70,18 @@ function generateRepairItems(
 }
 
 export default function BeforeAfterView({ snapshot, circuitConfigs, currentWires, currentBreakers }: BeforeAfterViewProps) {
-  const items = generateRepairItems(snapshot, circuitConfigs, currentWires, currentBreakers);
+  const { t } = useTranslation();
+  const items = generateRepairItems(t, snapshot, circuitConfigs, currentWires, currentBreakers);
 
   if (items.length === 0) return null;
 
   return (
     <div className="before-after-view">
-      <h3 className="before-after-title">修復對比</h3>
+      <h3 className="before-after-title">{t('beforeAfter.title')}</h3>
       <div className="before-after-grid">
         {/* Before panel */}
         <div className="ba-panel ba-before">
-          <div className="ba-panel-header ba-header-before">修復前</div>
+          <div className="ba-panel-header ba-header-before">{t('beforeAfter.before')}</div>
           <ul className="ba-list">
             {items.map((item) => (
               <li key={`${item.circuitId}-${item.problem.type}`} className="ba-item ba-item-before">
@@ -89,7 +95,7 @@ export default function BeforeAfterView({ snapshot, circuitConfigs, currentWires
 
         {/* After panel */}
         <div className="ba-panel ba-after">
-          <div className="ba-panel-header ba-header-after">修復後</div>
+          <div className="ba-panel-header ba-header-after">{t('beforeAfter.after')}</div>
           <ul className="ba-list">
             {items.map((item, i) => (
               <li

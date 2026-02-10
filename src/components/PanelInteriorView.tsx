@@ -1,8 +1,10 @@
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CircuitId, CircuitConfig, Wire, CableTieQuality } from '../types/game';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs } from '../engine/aesthetics';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { CABLE_TIE_BAR_SPEED } from '../data/constants';
+import { tTieQuality, tRoomName } from '../i18nHelpers';
 
 /** Map wire cross-section to a distinct color */
 function wireGaugeColor(crossSection: number): string {
@@ -27,13 +29,6 @@ function getCableTieQuality(pos: number): CableTieQuality {
   if (pos < 0.30) return 'loose';
   return 'over-tight';
 }
-
-const TIE_QUALITY_LABELS: Record<CableTieQuality, string> = {
-  tight: '完美固定',
-  good: '良好固定',
-  loose: '太鬆',
-  'over-tight': '過緊',
-};
 
 function tieQualityColor(quality: CableTieQuality): string {
   switch (quality) {
@@ -109,6 +104,7 @@ export default function PanelInteriorView({
   onToggleCableTie,
   aestheticsScore,
 }: PanelInteriorViewProps) {
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const [hasDragged, setHasDragged] = useState(false);
 
@@ -354,9 +350,9 @@ export default function PanelInteriorView({
         {/* Header */}
         <div className="panel-header">
           <div className="panel-header-tag">WIRE ROUTING</div>
-          <h2 className="panel-title">配電箱內部</h2>
-          <p className="panel-subtitle">拖曳線材重新排列車道，消除交叉，放置束帶</p>
-          <button className="panel-close-btn" onClick={onClose} aria-label="關閉">
+          <h2 className="panel-title">{t('panel.title')}</h2>
+          <p className="panel-subtitle">{t('panel.subtitle')}</p>
+          <button className="panel-close-btn" onClick={onClose} aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
@@ -366,9 +362,9 @@ export default function PanelInteriorView({
         {/* Step bar */}
         <div className="panel-step-bar">
           {[
-            { num: 1, label: '消除交叉', desc: '拖曳線材左右移動' },
-            { num: 2, label: '放置束帶', desc: '點擊線材之間的放置點' },
-            { num: 3, label: '完成整線', desc: '按下完成按鈕' },
+            { num: 1, label: t('panel.step1Label'), desc: t('panel.step1Desc') },
+            { num: 2, label: t('panel.step2Label'), desc: t('panel.step2Desc') },
+            { num: 3, label: t('panel.step3Label'), desc: t('panel.step3Desc') },
           ].map(({ num, label, desc }) => {
             const isDone = num < activeStep;
             const isActive = num === activeStep;
@@ -396,17 +392,17 @@ export default function PanelInteriorView({
         {/* Score bar */}
         <div className="panel-score-bar">
           <div className="panel-score-item">
-            <span className="panel-score-label">交叉數</span>
+            <span className="panel-score-label">{t('panel.crossings')}</span>
             <span className={`panel-score-value ${crossings.length === 0 ? 'score-perfect' : 'score-bad'}`}>
               {crossings.length}
             </span>
           </div>
           <div className="panel-score-item">
-            <span className="panel-score-label">束帶</span>
+            <span className="panel-score-label">{t('panel.cableTies')}</span>
             <span className="panel-score-value">{bundledCount}/{totalPairs}</span>
           </div>
           <div className="panel-score-item">
-            <span className="panel-score-label">整線分數</span>
+            <span className="panel-score-label">{t('panel.aestheticsScore')}</span>
             <span className="panel-score-value" style={{ color: scoreColor }}>
               {aestheticsScore}
             </span>
@@ -638,7 +634,7 @@ export default function PanelInteriorView({
                   style={{ cursor: isCrossing ? 'not-allowed' : 'pointer' }}
                 >
                   {/* Tooltip */}
-                  <title>{isCrossing ? '有交叉，無法束帶' : hasTie ? '點擊移除束帶' : '點擊綁束帶'}</title>
+                  <title>{isCrossing ? t('panel.crossingNoTie') : hasTie ? t('panel.removeTie') : t('panel.placeTie')}</title>
                   {/* Hit area */}
                   <rect x={cx - 14} y={cy - 14} width={28} height={28}
                     fill="transparent" />
@@ -724,7 +720,7 @@ export default function PanelInteriorView({
                   <text x={cx} y={LABEL_Y} textAnchor="middle"
                     fill="#8a96a6" fontSize={8}
                     fontFamily="var(--font-mono)">
-                    {config.label}
+                    {tRoomName(t, config.label)}
                   </text>
                   <text x={cx} y={LABEL_Y + 12} textAnchor="middle"
                     fill={is220 ? '#f87171' : '#4ade80'} fontSize={7}
@@ -757,7 +753,7 @@ export default function PanelInteriorView({
               letterSpacing="0.15em"
               transform={`rotate(-90, ${totalWidth - 10}, ${busbarRowY(1)})`}
               className="panel-area-label"
-            >匯流排</text>
+            >{t('panel.busbar')}</text>
             <text
               x={totalWidth - 10} y={ROUTING_TOP + ROUTING_HEIGHT / 2}
               textAnchor="middle" fill="#3a4555" fontSize={7}
@@ -765,7 +761,7 @@ export default function PanelInteriorView({
               letterSpacing="0.15em"
               transform={`rotate(-90, ${totalWidth - 10}, ${ROUTING_TOP + ROUTING_HEIGHT / 2})`}
               className="panel-area-label"
-            >走線區</text>
+            >{t('panel.routingZone')}</text>
             <text
               x={totalWidth - 10} y={NFB_ZONE_Y + NFB_H / 2}
               textAnchor="middle" fill="#3a4555" fontSize={7}
@@ -781,7 +777,7 @@ export default function PanelInteriorView({
               if (!config) return null;
               const lx = laneX(slot);
               const ly = ROUTING_TOP + ROUTING_HEIGHT / 2 + 4;
-              const labelText = config.label;
+              const labelText = tRoomName(t, config.label);
               const labelWidth = labelText.length * 7 + 10;
               return (
                 <g key={`wire-label-${cId}`}>
@@ -809,7 +805,7 @@ export default function PanelInteriorView({
                 fontFamily="var(--font-mono)" fontWeight={600}
                 opacity={0.7}
                 className="panel-drag-hint"
-              >← 拖曳調整順序 →</text>
+              >{t('panel.dragHint')}</text>
             )}
 
             {/* ── Drag handle zones (invisible, on top) ── */}
@@ -834,7 +830,7 @@ export default function PanelInteriorView({
             >
               <div className="cable-tie-game-header">
                 <span className="cable-tie-game-tag">CABLE TIE</span>
-                <span className="cable-tie-game-label">束帶拉緊</span>
+                <span className="cable-tie-game-label">{t('cableTie.title')}</span>
               </div>
 
               {tieGame.phase === 'playing' && (
@@ -858,7 +854,7 @@ export default function PanelInteriorView({
                       <span className="tie-label-overtight">OVER</span>
                     </div>
                   </div>
-                  <div className="cable-tie-tap-hint">TAP TO LOCK</div>
+                  <div className="cable-tie-tap-hint">{t('cableTie.tapToLock')}</div>
                 </>
               )}
 
@@ -868,7 +864,7 @@ export default function PanelInteriorView({
                   style={{ '--tie-quality-color': tieQualityColor(tieGame.quality) } as React.CSSProperties}
                 >
                   <div className="cable-tie-quality-badge">
-                    {TIE_QUALITY_LABELS[tieGame.quality]}
+                    {tTieQuality(t, tieGame.quality)}
                   </div>
                 </div>
               )}
@@ -879,7 +875,7 @@ export default function PanelInteriorView({
         {/* Footer */}
         <div className="panel-footer">
           <button className="panel-done-btn" onClick={onClose}>
-            完成整線
+            {t('panel.doneBtn')}
           </button>
         </div>
       </div>

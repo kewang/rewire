@@ -23,6 +23,33 @@
   background-clip: text;
 }
 
+.level-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+}
+
+.lang-switcher {
+  padding: var(--space-xs) var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lang-switcher:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent-amber);
+  background: var(--color-surface-raised);
+}
+
 .level-select .subtitle {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
@@ -81,6 +108,86 @@
 
 .level-card:hover::before {
   opacity: 1;
+}
+
+/* ── Random Old House ────────────────────────────────────────── */
+
+.random-section-title {
+  margin-top: var(--space-2xl);
+}
+
+.random-old-house-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-2xl);
+}
+
+.random-card {
+  padding: var(--space-lg) var(--space-xl);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.random-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent-amber), var(--color-status-danger));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.random-card:hover {
+  border-color: var(--color-accent-amber);
+  background: var(--color-bg-card-hover);
+  box-shadow: var(--shadow-card-hover), var(--shadow-glow-amber);
+  transform: translateY(-2px);
+}
+
+.random-card:hover::before {
+  opacity: 1;
+}
+
+.random-card-icon {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--color-accent-amber);
+  margin-bottom: var(--space-sm);
+}
+
+.random-card-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-xs);
+}
+
+.random-card-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin-bottom: var(--space-sm);
+}
+
+.random-card-completions {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-status-safe);
+  letter-spacing: 0.05em;
 }
 
 /* ── Game Board ───────────────────────────────────────────────── */

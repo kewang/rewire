@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Appliance, CircuitConfig, CircuitId } from '../types/game';
+import { tApplianceName, tRoomName } from '../i18nHelpers';
 
 interface AppliancePanelProps {
   circuitConfigs: readonly CircuitConfig[];
@@ -11,6 +13,7 @@ interface AppliancePanelProps {
 }
 
 export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAdd, onRemove, disabled, isPowered }: AppliancePanelProps) {
+  const { t } = useTranslation();
   const isSingle = circuitConfigs.length === 1;
   const [selectedCircuitId, setSelectedCircuitId] = useState<CircuitId>(circuitConfigs[0]?.id ?? '');
 
@@ -25,7 +28,7 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
 
   return (
     <div className="appliance-panel">
-      <h3>電器</h3>
+      <h3>{t('appliance.title')}</h3>
 
       {/* Circuit selector tabs (hidden for single circuit) */}
       {!isSingle && (
@@ -36,7 +39,7 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
               className={`circuit-tab ${config.id === selectedCircuitId ? 'active' : ''}`}
               onClick={() => setSelectedCircuitId(config.id)}
             >
-              {config.label}
+              {tRoomName(t, config.label)}
               {hasMixedVoltage && <span className="voltage-tab-badge">{config.voltage}V</span>}
             </button>
           ))}
@@ -52,16 +55,16 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
               className={`card${voltageIncompat ? ' voltage-disabled' : ''}`}
               onClick={() => !voltageIncompat && onAdd(selectedCircuitId, a)}
               disabled={disabled || voltageIncompat}
-              title={voltageIncompat ? `需要 ${a.voltage}V 迴路` : undefined}
+              title={voltageIncompat ? t('appliance.requiresVoltage', { voltage: a.voltage }) : undefined}
             >
               <div className="card-title">
-                {a.name}
+                {tApplianceName(t, a.name)}
                 {hasMixedVoltage && <span className={`voltage-badge v${a.voltage}`}>{a.voltage}V</span>}
               </div>
               <div className="card-detail">{a.power}W / {a.voltage}V</div>
-              <div className="card-detail">≈ {(a.power / a.voltage).toFixed(1)}A</div>
+              <div className="card-detail">{'\u2248'} {(a.power / a.voltage).toFixed(1)}A</div>
               {voltageIncompat && (
-                <div className="card-hint voltage-hint">需要 {a.voltage}V 迴路</div>
+                <div className="card-hint voltage-hint">{t('appliance.requiresVoltage', { voltage: a.voltage })}</div>
               )}
             </button>
           );
@@ -72,7 +75,7 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
       {isSingle ? (
         plugged.length > 0 && (
           <>
-            <h4>已插入插座</h4>
+            <h4>{t('appliance.pluggedIn')}</h4>
             <div className="card-list">
               {plugged.map((a, i) => (
                 <button
@@ -81,9 +84,9 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
                   onClick={() => onRemove(selectedCircuitId, i)}
                   disabled={disabled}
                 >
-                  <div className="card-title">{a.name}</div>
+                  <div className="card-title">{tApplianceName(t, a.name)}</div>
                   <div className="card-detail">{(a.power / a.voltage).toFixed(1)}A</div>
-                  <div className="card-hint">點擊移除</div>
+                  <div className="card-hint">{t('appliance.clickToRemove')}</div>
                 </button>
               ))}
             </div>
@@ -95,7 +98,7 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
           if (appls.length === 0) return null;
           return (
             <div key={config.id}>
-              <h4>{config.label} 已插入</h4>
+              <h4>{t('appliance.pluggedInCircuit', { label: tRoomName(t, config.label) })}</h4>
               <div className="card-list">
                 {appls.map((a, i) => (
                   <button
@@ -104,9 +107,9 @@ export default function AppliancePanel({ circuitConfigs, circuitAppliances, onAd
                     onClick={() => onRemove(config.id, i)}
                     disabled={disabled}
                   >
-                    <div className="card-title">{a.name}</div>
+                    <div className="card-title">{tApplianceName(t, a.name)}</div>
                     <div className="card-detail">{(a.power / a.voltage).toFixed(1)}A</div>
-                    <div className="card-hint">點擊移除</div>
+                    <div className="card-hint">{t('appliance.clickToRemove')}</div>
                   </button>
                 ))}
               </div>

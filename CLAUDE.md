@@ -2,12 +2,13 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 進行中（new-old-house-problems ✓ → before-after-view ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 中英雙語 ✓。**
 
 ## Tech Stack
 
 - React 19 + TypeScript (strict mode)
 - Vite 7
+- react-i18next（中英雙語 i18n）
 - SVG 視覺化（CircuitDiagram 元件）
 - Web Audio API 音效（無外部音檔）
 - 無狀態管理庫（useState + useRef + rAF loop）
@@ -27,17 +28,22 @@
   - `BreakerSelector.tsx` — NFB 更換彈出選擇器（15A/20A/30A 卡片、相容性標示、當前規格 disabled）
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
-  - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
+  - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等 + 隨機老屋挑戰區塊）
+  - `LanguageSwitcher.tsx` — 語言切換按鈕（EN/中）
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse/randomDifficulty), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
+  - `randomOldHouse.ts` — 隨機老屋生成器（3 難度等級 + 可解性驗證）
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L25 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理, L24-L25 老屋新問題）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
+  - `levels.ts` — L01-L28 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理, L24-L25 老屋新問題, L26 五毒俱全, L27 翻修+整線, L28 終極考驗）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
   - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
+- `src/i18n.ts` — i18next 初始化（localStorage 持久化語言偏好 key: `rewire-lang`，預設 zh-TW）
+- `src/i18nHelpers.ts` — 翻譯輔助函式（tApplianceName, tRoomName, tStatus, tCrimpQuality 等）
+- `src/locales/` — 翻譯檔（zh-TW.json, en.json）
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
@@ -97,7 +103,14 @@
 - totalPanelCurrent = Σ 非終態迴路的 totalCurrent，存於 MultiCircuitState
 - 主開關負載指示器：StatusDisplay 顯示「主開關：XA / YA」，≥80% 橘色、≥100% 紅色，僅 FreeCircuitLevel 顯示
 - Level union type：FixedCircuitLevel（有 circuitConfigs）| FreeCircuitLevel（有 rooms + panel）
-- L01-L05 / L18-L20 / L24-L25 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
+- L01-L05 / L18-L20 / L24-L28 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
+- L26 五毒俱全：4 迴路 + 全 5 種問題（c1 雙問題 wrong-wire-gauge + overrated-breaker）+ 手動相位 + 隨機漏電
+- L27 翻修+整線：oldHouse + routingMode 整合，修復完才能進入走線，aesthetics-score bonus
+- L28 終極考驗：5 迴路 + 4 問題 + 相位 + 漏電 + 走線 = 全機制綜合
+- 老屋+走線整合：routingReady 需 !problemsRemaining，問題全修復+接線完成才能進入整線階段
+- 隨機老屋生成器：generateRandomOldHouse(difficulty: 1|2|3)，budget = 修復成本 × 1.3
+- 隨機老屋 3 級難度：初級 2-3 迴路/中級 3-4 迴路+全問題/高級 4-6 迴路+相位+漏電+走線
+- 隨機老屋通關紀錄：localStorage key=`rewire-random-completions`，value=Record<string, number>，不追蹤星等
 - CircuitCard 相位選擇器：phaseMode 存在 + 110V 時顯示 R/T toggle，auto 模式 disabled（自動交替分配），manual 模式 enabled
 - CircuitCard ELCB toggle：迴路含 wetArea 房間電器時顯示，wetArea 迴路必須啟用 ELCB 才能確認配置
 - PlannerCircuit 擴充：phase?: 'R' | 'T'（110V 迴路）、elcbEnabled?: boolean（wetArea 迴路）
@@ -140,6 +153,9 @@
 - Before/After 佈局：CSS Grid 兩欄（>640px 並排、≤640px 堆疊），Before 紅色系 / After 綠色系
 - Before/After 動畫：整體 fadeIn 0.5s + After 側 ✓ 逐項 popIn（staggered delay 0.15s）
 - 修復摘要：generateRepairItems 純函式，依 5 種問題類型生成 before 描述和 after 修復描述
+- i18n：react-i18next，zh-TW（預設）+ en 雙語，語言偏好 localStorage key=`rewire-lang`
+- i18n 翻譯輔助：i18nHelpers.ts 提供 tApplianceName/tRoomName/tStatus 等便利函式
+- 語言切換器：LevelSelect 標題旁 EN/中 按鈕，LanguageSwitcher 元件
 
 ## Testing Workflow
 

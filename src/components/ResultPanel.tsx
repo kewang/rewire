@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Circuit, MultiCircuitState, OldHouseSnapshot, CircuitId, CircuitConfig, Wire, Breaker } from '../types/game';
 import type { StarDetail } from '../engine/scoring';
 import BeforeAfterView from './BeforeAfterView';
@@ -23,6 +24,7 @@ interface ResultPanelProps {
 }
 
 export default function ResultPanel({ result, circuits, multiState, cost, budget, onRetry, onBackToLevels, starResult, aestheticsScore, oldHouseSnapshot, circuitConfigs, currentWires, currentBreakers, currentElcb }: ResultPanelProps) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
     >
       {result === 'won' && (
         <>
-          <h2 className="result-title" style={{ color: '#22c55e' }}>過關！</h2>
+          <h2 className="result-title" style={{ color: '#22c55e' }}>{t('result.passed')}</h2>
           {starResult && starResult.stars > 0 && (
             <div className="star-rating-section">
               <div className="star-icons">
@@ -70,16 +72,14 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
             </div>
           )}
           <div className="result-details">
-            <p><strong>通電時間：</strong>{multiState.elapsed.toFixed(1)}秒</p>
-            <p><strong>線材成本：</strong>${cost}</p>
-            <p><strong>預算：</strong>${budget}</p>
-            <p><strong>剩餘：</strong>${budget - cost}</p>
-            <p className="result-hint">
-              成功在預算內完成配電！
-            </p>
+            <p><strong>{t('result.powerTime')}:</strong> {multiState.elapsed.toFixed(1)}s</p>
+            <p><strong>{t('result.wireCost')}:</strong> ${cost}</p>
+            <p><strong>{t('result.budgetLabel')}:</strong> ${budget}</p>
+            <p><strong>{t('result.remaining')}:</strong> ${budget - cost}</p>
+            <p className="result-hint">{t('result.passedHint')}</p>
             {aestheticsScore != null && (
               <p className="aesthetics-score-line">
-                <strong>整線分數：</strong>
+                <strong>{t('result.aestheticsScore')}:</strong>
                 <span className={`aesthetics-score-value ${aestheticsScore >= 80 ? 'score-green' : aestheticsScore >= 50 ? 'score-yellow' : 'score-red'}`}>
                   {aestheticsScore} / 100
                 </span>
@@ -91,7 +91,7 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
 
       {result === 'over-budget' && (
         <>
-          <h2 className="result-title" style={{ color: '#eab308' }}>超預算！</h2>
+          <h2 className="result-title" style={{ color: '#eab308' }}>{t('result.overBudget')}</h2>
           {starResult && starResult.stars > 0 && (
             <div className="star-rating-section">
               <div className="star-icons">
@@ -109,26 +109,28 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
             </div>
           )}
           <div className="result-details">
-            <p><strong>線材成本：</strong>${cost}</p>
-            <p><strong>預算：</strong>${budget}</p>
-            <p><strong>超出：</strong>${cost - budget}</p>
-            <p className="result-hint">
-              電路正常運作，但線材成本 ${cost} 超過預算 ${budget}。試試更便宜的線材？
-            </p>
+            <p><strong>{t('result.wireCost')}:</strong> ${cost}</p>
+            <p><strong>{t('result.budgetLabel')}:</strong> ${budget}</p>
+            <p><strong>{t('result.exceeded')}:</strong> ${cost - budget}</p>
+            <p className="result-hint">{t('result.overBudgetHint', { cost, budget })}</p>
           </div>
         </>
       )}
 
       {result === 'tripped' && failedCircuit && failedState && (
         <>
-          <h2 className="result-title" style={{ color: '#ef4444' }}>跳電！</h2>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>{t('result.tripped')}</h2>
           <div className="result-details">
-            <p><strong>失敗類型：</strong>斷路器跳脫</p>
-            {!isSingle && <p><strong>失敗迴路：</strong>{failedCircuit.label}</p>}
-            <p><strong>總電流：</strong>{failedState.totalCurrent.toFixed(1)}A</p>
-            <p><strong>NFB 額定：</strong>{failedCircuit.breaker.ratedCurrent}A</p>
+            <p><strong>{t('result.failType')}:</strong> {t('result.breakerTrip')}</p>
+            {!isSingle && <p><strong>{t('result.failedCircuit')}:</strong> {failedCircuit.label}</p>}
+            <p><strong>{t('status.totalCurrent')}:</strong> {failedState.totalCurrent.toFixed(1)}A</p>
+            <p><strong>{t('result.nfbRating')}:</strong> {failedCircuit.breaker.ratedCurrent}A</p>
             <p className="result-hint">
-              {!isSingle ? `${failedCircuit.label}的` : ''}總電流 {failedState.totalCurrent.toFixed(1)}A 超過 NFB 額定 {failedCircuit.breaker.ratedCurrent}A，觸發跳電保護。
+              {t('result.trippedHint', {
+                prefix: !isSingle ? t('result.trippedHintPrefix', { label: failedCircuit.label }) : '',
+                current: failedState.totalCurrent.toFixed(1),
+                rated: failedCircuit.breaker.ratedCurrent,
+              })}
             </p>
           </div>
         </>
@@ -136,14 +138,19 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
 
       {result === 'burned' && failedCircuit && failedState && (
         <>
-          <h2 className="result-title" style={{ color: '#ef4444' }}>燒線！</h2>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>{t('result.burned')}</h2>
           <div className="result-details">
-            <p><strong>失敗類型：</strong>線材燒毀</p>
-            {!isSingle && <p><strong>失敗迴路：</strong>{failedCircuit.label}</p>}
-            <p><strong>總電流：</strong>{failedState.totalCurrent.toFixed(1)}A</p>
-            <p><strong>線材安全電流：</strong>{failedCircuit.wire.maxCurrent}A（{failedCircuit.wire.crossSection}mm²）</p>
+            <p><strong>{t('result.failType')}:</strong> {t('result.wireBurn')}</p>
+            {!isSingle && <p><strong>{t('result.failedCircuit')}:</strong> {failedCircuit.label}</p>}
+            <p><strong>{t('status.totalCurrent')}:</strong> {failedState.totalCurrent.toFixed(1)}A</p>
+            <p><strong>{t('result.wireMaxCurrent')}:</strong> {failedCircuit.wire.maxCurrent}A ({failedCircuit.wire.crossSection}mm²)</p>
             <p className="result-hint">
-              {!isSingle ? `${failedCircuit.label}的` : ''}總電流 {failedState.totalCurrent.toFixed(1)}A 超過 {failedCircuit.wire.crossSection}mm² 線材的安全電流 {failedCircuit.wire.maxCurrent}A，長時間過載導致燒線。試試更粗的線材？
+              {t('result.burnedHint', {
+                prefix: !isSingle ? t('result.trippedHintPrefix', { label: failedCircuit.label }) : '',
+                current: failedState.totalCurrent.toFixed(1),
+                crossSection: failedCircuit.wire.crossSection,
+                maxCurrent: failedCircuit.wire.maxCurrent,
+              })}
             </p>
           </div>
         </>
@@ -151,38 +158,36 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
 
       {result === 'neutral-burned' && (
         <>
-          <h2 className="result-title" style={{ color: '#ef4444' }}>中性線燒毀！</h2>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>{t('result.neutralBurned')}</h2>
           <div className="result-details">
-            <p><strong>失敗類型：</strong>中性線過載燒毀</p>
-            <p><strong>中性線電流：</strong>{multiState.neutralCurrent.toFixed(1)}A</p>
-            <p><strong>中性線容量：</strong>30A</p>
-            <p className="result-hint">
-              紅相(R)與黑相(T)負載嚴重不平衡，中性線電流超過 30A 安全容量導致燒毀。試著平衡兩相的負載分配！
-            </p>
+            <p><strong>{t('result.failType')}:</strong> {t('result.neutralOverload')}</p>
+            <p><strong>{t('status.neutralCurrent')}:</strong> {multiState.neutralCurrent.toFixed(1)}A</p>
+            <p><strong>{t('result.neutralCapacity')}:</strong> 30A</p>
+            <p className="result-hint">{t('result.neutralBurnedHint')}</p>
           </div>
         </>
       )}
 
       {result === 'main-tripped' && (
         <>
-          <h2 className="result-title" style={{ color: '#ef4444' }}>主開關跳脫！</h2>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>{t('result.mainTripped')}</h2>
           <div className="result-details">
-            <p><strong>失敗類型：</strong>主開關過載跳脫</p>
-            <p className="result-hint">
-              配電箱總電流超過主開關額定容量，觸發跳脫保護。所有迴路斷電！請重新規劃迴路配置，降低同時運行的總負載。
-            </p>
+            <p><strong>{t('result.failType')}:</strong> {t('result.mainOverload')}</p>
+            <p className="result-hint">{t('result.mainTrippedHint')}</p>
           </div>
         </>
       )}
 
       {result === 'leakage' && failedCircuit && (
         <>
-          <h2 className="result-title" style={{ color: '#ef4444' }}>漏電觸電！</h2>
+          <h2 className="result-title" style={{ color: '#ef4444' }}>{t('result.leakage')}</h2>
           <div className="result-details">
-            <p><strong>失敗類型：</strong>漏電觸電危險</p>
-            {!isSingle && <p><strong>失敗迴路：</strong>{failedCircuit.label}</p>}
+            <p><strong>{t('result.failType')}:</strong> {t('result.leakageDanger')}</p>
+            {!isSingle && <p><strong>{t('result.failedCircuit')}:</strong> {failedCircuit.label}</p>}
             <p className="result-hint">
-              {!isSingle ? `${failedCircuit.label}` : '迴路'}發生漏電，但未安裝 ELCB 漏電斷路器，造成觸電危險！潮濕區域迴路務必安裝 ELCB。
+              {t('result.leakageHint', {
+                label: !isSingle ? failedCircuit.label : t('result.leakageHintDefault'),
+              })}
             </p>
           </div>
         </>
@@ -198,8 +203,8 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
       )}
 
       <div className="result-actions">
-        <button className="retry-button" onClick={onRetry}>重新嘗試</button>
-        <button className="back-button" onClick={onBackToLevels}>返回關卡選擇</button>
+        <button className="retry-button" onClick={onRetry}>{t('nav.retry')}</button>
+        <button className="back-button" onClick={onBackToLevels}>{t('nav.backToLevels')}</button>
       </div>
     </div>
   );

@@ -270,6 +270,8 @@ export interface FixedCircuitLevel {
   readonly bonusCondition?: BonusCondition;
   /** 老屋模式配置 */
   readonly oldHouse?: OldHouseConfig;
+  /** 隨機老屋難度（僅隨機生成的關卡有此欄位） */
+  readonly randomDifficulty?: 1 | 2 | 3;
 }
 
 /** 自由配迴路關卡定義（L06-L17, L21-L23） */

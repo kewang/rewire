@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Breaker, Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult, OldHouseProblem, OldHouseProblemType, Wire } from '../types/game';
 import BreakerSelector from './BreakerSelector';
 
@@ -141,6 +142,7 @@ function SingleCircuitSVG({
   onUnwire?: () => void;
   onNfbClick?: () => void;
 }) {
+  const { t } = useTranslation();
   const cx = xOffset + 100; // center x of this circuit
   const wireColor = heatToColor(circuitState.wireHeat);
   const isWarning = circuitState.status === 'warning';
@@ -196,7 +198,7 @@ function SingleCircuitSVG({
           {connectedWire && (
             <text x={xOffset + 100} y={64} textAnchor="middle" fill="#ef4444" fontSize={8}
               fontFamily="var(--font-mono)" opacity={0.9}>
-              NFB {circuit.breaker.ratedCurrent}A {'>'} 線材 {connectedWire.maxCurrent}A
+              {t('oldHouse.nfbOverrated', { breaker: circuit.breaker.ratedCurrent, wire: connectedWire.maxCurrent })}
             </text>
           )}
         </>
@@ -208,7 +210,7 @@ function SingleCircuitSVG({
           <text x={xOffset + CIRCUIT_WIDTH - 18} y={78} textAnchor="end" fill="#3b82f6" fontSize={14}>💧⚠️</text>
           <text x={xOffset + 100} y={92} textAnchor="middle" fill="#3b82f6" fontSize={8}
             fontFamily="var(--font-mono)" opacity={0.9}>
-            潮濕區域需裝 ELCB
+            {t('oldHouse.missingElcb')}
           </text>
         </>
       )}
@@ -219,7 +221,7 @@ function SingleCircuitSVG({
           <rect x={xOffset + 140} y={262} width={46} height={18} rx={3}
             fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth={1} />
           <text x={xOffset + 163} y={274} textAnchor="middle" fill="#ef4444"
-            fontSize={9} fontFamily="var(--font-mono)">拆線</text>
+            fontSize={9} fontFamily="var(--font-mono)">{t('game.unwireBtn')}</text>
         </g>
       )}
 
@@ -299,7 +301,7 @@ function SingleCircuitSVG({
           <text x={xOffset + 29} y={27} textAnchor="middle"
             fill={phase === 'R' ? '#f87171' : '#60a5fa'} fontSize={10}
             fontWeight="bold" fontFamily="var(--font-mono)">
-            {phase === 'R' ? 'R相' : 'T相'}
+            {phase === 'R' ? t('game.phaseR') : t('game.phaseT')}
           </text>
           {/* Toggle button (manual mode only, not powered) */}
           {phaseMode === 'manual' && !isPowered && (
@@ -309,7 +311,7 @@ function SingleCircuitSVG({
                 fill="rgba(255,255,255,0.05)" stroke="#555" strokeWidth={0.8} />
               <text x={xOffset + 29} y={45} textAnchor="middle"
                 fill="#8a96a6" fontSize={7} fontFamily="var(--font-mono)">
-                切換
+                {t('game.switchPhase')}
               </text>
             </g>
           )}
@@ -360,11 +362,11 @@ function SingleCircuitSVG({
           )}
           <text x={cx} y={140} textAnchor="middle" fill="#888" fontSize={10}
             fontFamily="var(--font-mono)">
-            拖曳線材
+            {t('game.dragWire')}
           </text>
           <text x={cx} y={155} textAnchor="middle" fill="#888" fontSize={10}
             fontFamily="var(--font-mono)">
-            到此處接線
+            {t('game.dropHere')}
           </text>
         </>
       )}
@@ -607,7 +609,7 @@ function SingleCircuitSVG({
       <text x={cx} y={272} textAnchor="middle"
         fill={isElcbTripped ? '#3b82f6' : isLeakage ? '#ef4444' : '#888'}
         fontSize={11} fontFamily="var(--font-mono)">
-        {isElcbTripped ? 'ELCB 跳脫' : isLeakage ? '漏電！' : isPowered ? '送電中' : isWired ? '已接線' : '未接線'}
+        {isElcbTripped ? t('status.elcbTripped') : isLeakage ? t('status.leakage') : isPowered ? t('game.powered') : isWired ? t('game.wired') : t('game.unwired')}
       </text>
     </g>
   );

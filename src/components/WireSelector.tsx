@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Wire, WiringState } from '../types/game';
 
 interface WireSelectorProps {
@@ -13,6 +14,7 @@ interface WireSelectorProps {
 const LONG_PRESS_MS = 150;
 
 export default function WireSelector({ wires, wiring, disabled, onDragStart, onDragMove, onDragEnd }: WireSelectorProps) {
+  const { t } = useTranslation();
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draggingRef = useRef(false);
   const startPos = useRef<{ x: number; y: number } | null>(null);
@@ -124,7 +126,7 @@ export default function WireSelector({ wires, wiring, disabled, onDragStart, onD
 
   return (
     <div className="wire-selector">
-      <h3>線材選擇</h3>
+      <h3>{t('wire.title')}</h3>
       <div className="card-list">
         {wires.map((w) => (
           <div
@@ -138,9 +140,9 @@ export default function WireSelector({ wires, wiring, disabled, onDragStart, onD
             data-disabled={disabled || undefined}
           >
             <div className="card-title">{w.crossSection} mm²</div>
-            <div className="card-detail">安全電流：{w.maxCurrent}A</div>
-            <div className="card-detail">成本：${w.costPerMeter}/米</div>
-            {!disabled && <div className="card-hint">拖曳到電路圖接線</div>}
+            <div className="card-detail">{t('wire.maxCurrent')}: {w.maxCurrent}A</div>
+            <div className="card-detail">{t('wire.costPerMeter')}: ${w.costPerMeter}{t('wire.perMeter')}</div>
+            {!disabled && <div className="card-hint">{t('wire.dragHint')}</div>}
           </div>
         ))}
       </div>

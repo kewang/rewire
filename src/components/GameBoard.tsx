@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment, OldHouseSnapshot } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE, BREAKER_20A, NFB_COSTS } from '../data/constants';
 import { LEVELS } from '../data/levels';
@@ -6,6 +7,7 @@ import { isFixedCircuitLevel, isFreeCircuitLevel, isProblemResolved } from '../t
 import type { ProblemResolutionState } from '../types/helpers';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { calcStars, saveBestStars } from '../engine/scoring';
+import { saveRandomCompletion } from '../engine/randomOldHouse';
 import type { StarDetail } from '../engine/scoring';
 import { playPowerOn, playTripped, playBurned, playWin, startBuzzing, updateBuzzingVolume, stopBuzzing, startApplianceSounds, stopApplianceSounds } from '../engine/audio';
 import WireSelector from './WireSelector';
@@ -19,6 +21,7 @@ import PanelInteriorView from './PanelInteriorView';
 import CircuitPlanner from './CircuitPlanner';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
+import { tLevelName, tLevelDesc, tRoomName } from '../i18nHelpers';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
@@ -50,6 +53,7 @@ function createInitialCircuitWires(circuitIds: CircuitId[]): Record<CircuitId, W
 type GamePhase = 'planning' | 'active';
 
 export default function GameBoard() {
+  const { t } = useTranslation();
   const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
   const [gamePhase, setGamePhase] = useState<GamePhase>('active');
   const [resolvedConfigs, setResolvedConfigs] = useState<CircuitConfig[]>([]);
@@ -104,14 +108,14 @@ export default function GameBoard() {
   const circuits: Circuit[] = useMemo(() =>
     circuitConfigs.map(config => ({
       id: config.id,
-      label: config.label,
+      label: tRoomName(t, config.label),
       voltage: config.voltage,
       breaker: circuitBreakers[config.id] ?? config.breaker,
       wire: circuitWires[config.id] ?? DEFAULT_WIRES[0],
       appliances: circuitAppliances[config.id] ?? [],
       contactResistance: circuitCrimps[config.id]?.contactResistance,
     })),
-    [circuitConfigs, circuitWires, circuitAppliances, circuitCrimps, circuitBreakers]
+    [circuitConfigs, circuitWires, circuitAppliances, circuitCrimps, circuitBreakers, t]
   );
 
   const circuitsRef = useRef<Circuit[]>(circuits);
@@ -122,6 +126,9 @@ export default function GameBoard() {
 
   const resolvedConfigsRef = useRef(resolvedConfigs);
   useEffect(() => { resolvedConfigsRef.current = resolvedConfigs; }, [resolvedConfigs]);
+
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
 
   const circuitWiresRef = useRef(circuitWires);
   useEffect(() => { circuitWiresRef.current = circuitWires; }, [circuitWires]);
@@ -137,6 +144,19 @@ export default function GameBoard() {
 
   // Is this a free circuit level?
   const isFreeLevel = currentLevel != null && isFreeCircuitLevel(currentLevel);
+
+  // Translated level name/description
+  const currentLevelIndex = currentLevel ? LEVELS.indexOf(currentLevel) : -1;
+  const isRandomLevel = currentLevel && isFixedCircuitLevel(currentLevel) && currentLevel.randomDifficulty != null;
+  const DIFFICULTY_NAMES: Record<number, string> = { 1: t('random.beginner'), 2: t('random.intermediate'), 3: t('random.advanced') };
+  const translatedLevelName = currentLevel
+    ? (isRandomLevel && isFixedCircuitLevel(currentLevel)
+      ? t('random.levelName', { difficulty: DIFFICULTY_NAMES[currentLevel.randomDifficulty!] })
+      : currentLevelIndex >= 0 ? tLevelName(t, currentLevelIndex) : currentLevel.name)
+    : '';
+  const translatedLevelDesc = currentLevel
+    ? (currentLevelIndex >= 0 ? tLevelDesc(t, currentLevelIndex) : currentLevel.description)
+    : '';
 
   // Total cost: sum of all circuits' wire costs + ELCB costs + NFB costs (free levels only)
   const totalCost = useMemo(() => {
@@ -171,8 +191,8 @@ export default function GameBoard() {
   const routingMissing = currentLevel?.requiresRouting === true && !routingCompleted;
   const canPowerOn = hasAnyAppliance && allWired && !wetAreaMissingElcb && !crimpMissing && !problemsRemaining && !routingMissing;
 
-  // Routing readiness: all wired + crimped (if requiresCrimp) → show routing button
-  const routingReady = currentLevel?.requiresRouting === true && allWired && !crimpMissing;
+  // Routing readiness: all wired + crimped (if requiresCrimp) + all problems fixed → show routing button
+  const routingReady = currentLevel?.requiresRouting === true && allWired && !crimpMissing && !problemsRemaining;
 
   // Aesthetics score computation for routing overlay
   const configIndex = useMemo(() => {
@@ -366,13 +386,18 @@ export default function GameBoard() {
         circuitCrimps: circuitCrimpsRef.current,
         requiresCrimp: level.requiresCrimp === true,
         aestheticsScore: aestheticsScoreRef.current,
-      });
+      }, tRef.current);
       setStarResult(sr);
 
       // Save best stars to localStorage
       const levelIndex = LEVELS.indexOf(level);
       if (levelIndex >= 0 && sr.stars > 0) {
         saveBestStars(levelIndex, sr.stars);
+      }
+
+      // Save random old house completion
+      if (gameResult === 'won' && isFixedCircuitLevel(level) && level.randomDifficulty) {
+        saveRandomCompletion(level.randomDifficulty);
       }
 
       if (gameResult === 'won') playWin();
@@ -855,7 +880,7 @@ export default function GameBoard() {
 
   const plannerCanConfirm = plannerAllAssigned && plannerAllWired && !plannerWetAreaMissingElcb;
   const plannerConfirmTooltip = !plannerCanConfirm
-    ? (!plannerAllAssigned ? '請將所有電器指派到迴路' : !plannerAllWired ? '請為每條迴路選擇線材' : plannerWetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : undefined)
+    ? (!plannerAllAssigned ? t('planner.assignAllAppliances') : !plannerAllWired ? t('planner.selectAllWires') : plannerWetAreaMissingElcb ? t('planner.wetAreaNeedElcb') : undefined)
     : undefined;
 
   // Confirm planning: convert PlannerCircuit[] → CircuitConfig[] + game state
@@ -870,7 +895,7 @@ export default function GameBoard() {
       const hasWetArea = pc.assignedAppliances.some(a => wetAreaRoomIds.has(a.roomId));
       return {
         id: `c${idx + 1}` as CircuitId,
-        label: `迴路 ${idx + 1}`,
+        label: t('planner.circuitNum', { num: idx + 1 }),
         voltage: pc.voltage,
         breaker: pc.breaker,
         availableAppliances: pc.assignedAppliances.map(a => a.appliance),
@@ -944,7 +969,7 @@ export default function GameBoard() {
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
     setGamePhase('active');
-  }, [currentLevel, plannerCircuits, plannerCanConfirm]);
+  }, [currentLevel, plannerCircuits, plannerCanConfirm, t]);
 
   // Wiring drag callbacks
   const handleDragStart = useCallback((wire: Wire) => {
@@ -1096,7 +1121,7 @@ export default function GameBoard() {
 
   // Old house mode: unwire a circuit
   const handleUnwire = useCallback((circuitId: CircuitId) => {
-    if (!window.confirm('確定要拆除此迴路的線材嗎？舊線材將被丟棄。')) return;
+    if (!window.confirm(t('game.unwireConfirm'))) return;
     setCircuitWires(prev => ({ ...prev, [circuitId]: DEFAULT_WIRES[0] }));
     setCircuitCrimps(prev => {
       const next = { ...prev };
@@ -1115,7 +1140,7 @@ export default function GameBoard() {
     );
     setPreWiredCircuitIds(updated);
     preWiredCircuitIdsRef.current = updated;
-  }, []);
+  }, [t]);
 
   // Routing: lane reorder callback
   const handleLanesChange = useCallback((newLanes: CircuitId[]) => {
@@ -1174,11 +1199,11 @@ export default function GameBoard() {
       <div className="game-board planning-phase">
         <header className="game-header">
           <div className="header-top">
-            <button className="back-button" onClick={handleBackToLevels}>← 返回</button>
-            <h1>{currentLevel.name}</h1>
-            <span className="level-goal">通電 {currentLevel.survivalTime}秒 / 預算 ${currentLevel.budget}</span>
+            <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
+            <h1>{translatedLevelName}</h1>
+            <span className="level-goal">{t('game.powerTimeBudget', { time: currentLevel.survivalTime, budget: currentLevel.budget })}</span>
           </div>
-          <p className="level-description">{currentLevel.description}</p>
+          <p className="level-description">{translatedLevelDesc}</p>
         </header>
 
         <CircuitPlanner
@@ -1209,9 +1234,9 @@ export default function GameBoard() {
     <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}${circuitConfigs.length >= 4 ? ' many-circuits' : ''}`}>
       <header className="game-header">
         <div className="header-top">
-          <button className="back-button" onClick={handleBackToLevels}>← 返回</button>
-          <h1>{currentLevel.name}</h1>
-          <span className="level-goal">通電 {currentLevel.survivalTime}秒</span>
+          <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
+          <h1>{translatedLevelName}</h1>
+          <span className="level-goal">{t('game.powerTime', { time: currentLevel.survivalTime })}</span>
         </div>
         <StatusDisplay
           circuits={circuits}
@@ -1244,7 +1269,7 @@ export default function GameBoard() {
             wiring={wiring}
             onPowerToggle={handlePowerToggle}
             leverDisabled={!canPowerOn && !isPowered}
-            leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? '請先修復所有問題迴路' : wetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : !allWired ? '請先完成所有迴路接線' : crimpMissing ? '請先完成所有迴路壓接' : routingMissing ? '請先完成整線' : '請先分配電器') : undefined}
+            leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded')) : undefined}
             onTargetCircuitChange={handleTargetCircuitChange}
             phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
             phaseMode={currentLevel?.phaseMode}
@@ -1263,7 +1288,7 @@ export default function GameBoard() {
               className="routing-button"
               onClick={() => setShowRoutingOverlay(true)}
             >
-              {routingCompleted ? '重新整線' : '整線'}
+              {routingCompleted ? t('game.rerouting') : t('game.routing')}
             </button>
           )}
         </section>
@@ -1279,7 +1304,7 @@ export default function GameBoard() {
           />
           {hasAnyElcbOption && (
             <div className="elcb-panel">
-              <h3 className="elcb-panel-title">ELCB 漏電斷路器 (${ELCB_COST}/迴路)</h3>
+              <h3 className="elcb-panel-title">{t('elcb.title', { cost: ELCB_COST })}</h3>
               {circuitConfigs.filter(c => c.elcbAvailable).map(config => (
                 <label key={config.id} className="elcb-toggle">
                   <input
@@ -1288,7 +1313,7 @@ export default function GameBoard() {
                     onChange={() => handleToggleElcb(config.id)}
                     disabled={isPowered}
                   />
-                  <span className="elcb-label">{config.label}</span>
+                  <span className="elcb-label">{tRoomName(t, config.label)}</span>
                 </label>
               ))}
             </div>

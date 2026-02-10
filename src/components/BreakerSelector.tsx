@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Breaker } from '../types/game';
 import { BREAKER_15A, BREAKER_20A, BREAKER_30A } from '../data/constants';
 
@@ -11,15 +12,17 @@ interface BreakerSelectorProps {
 const BREAKER_OPTIONS: readonly Breaker[] = [BREAKER_15A, BREAKER_20A, BREAKER_30A];
 
 export default function BreakerSelector({ currentBreaker, wireMaxCurrent, onSelect, onClose }: BreakerSelectorProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="breaker-selector-backdrop" onClick={onClose}>
       <div className="breaker-selector" onClick={e => e.stopPropagation()}>
         <div className="breaker-selector-header">
-          <span className="breaker-selector-title">NFB 更換</span>
+          <span className="breaker-selector-title">{t('breaker.title')}</span>
           <button className="breaker-selector-close" onClick={onClose}>&times;</button>
         </div>
         <div className="breaker-selector-wire-info">
-          線材安全電流 <span className="breaker-selector-wire-value">{wireMaxCurrent}A</span>
+          {t('breaker.wireMaxCurrent')} <span className="breaker-selector-wire-value">{wireMaxCurrent}A</span>
         </div>
         <div className="breaker-selector-options">
           {BREAKER_OPTIONS.map(breaker => {
@@ -36,9 +39,9 @@ export default function BreakerSelector({ currentBreaker, wireMaxCurrent, onSele
               >
                 <div className="breaker-option-rating">{breaker.ratedCurrent}A</div>
                 <div className="breaker-option-trip">
-                  {isCurrent ? '目前' : `${isCompatible ? '✓' : '⚠️'}`}
+                  {isCurrent ? t('breaker.current') : `${isCompatible ? '\u2713' : '\u26A0\uFE0F'}`}
                 </div>
-                <div className="breaker-option-detail">跳脫 {tripThreshold}A</div>
+                <div className="breaker-option-detail">{t('breaker.trip')} {tripThreshold}A</div>
               </button>
             );
           })}

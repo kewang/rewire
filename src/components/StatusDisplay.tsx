@@ -1,5 +1,18 @@
-import type { Circuit, CircuitId, MultiCircuitState, SimulationStatus } from '../types/game';
+import { useTranslation } from 'react-i18next';
+import type { Circuit, CircuitId, MultiCircuitState } from '../types/game';
 import { NEUTRAL_MAX_CURRENT } from '../data/constants';
+import { tStatus } from '../i18nHelpers';
+
+const STATUS_COLORS: Record<string, string> = {
+  normal: '#22c55e',
+  warning: '#eab308',
+  tripped: '#ef4444',
+  burned: '#ef4444',
+  'neutral-burned': '#ef4444',
+  'elcb-tripped': '#3b82f6',
+  leakage: '#ef4444',
+  'main-tripped': '#ef4444',
+};
 
 interface StatusDisplayProps {
   circuits: readonly Circuit[];
@@ -11,29 +24,8 @@ interface StatusDisplayProps {
   mainBreakerRating?: number;
 }
 
-const STATUS_LABELS: Record<SimulationStatus, string> = {
-  normal: '正常',
-  warning: '過載預警',
-  tripped: '跳電',
-  burned: '燒毀',
-  'neutral-burned': '中性線燒毀',
-  'elcb-tripped': 'ELCB 跳脫',
-  leakage: '漏電！',
-  'main-tripped': '主開關跳脫',
-};
-
-const STATUS_COLORS: Record<SimulationStatus, string> = {
-  normal: '#22c55e',
-  warning: '#eab308',
-  tripped: '#ef4444',
-  burned: '#ef4444',
-  'neutral-burned': '#ef4444',
-  'elcb-tripped': '#3b82f6',
-  leakage: '#ef4444',
-  'main-tripped': '#ef4444',
-};
-
 export default function StatusDisplay({ circuits, multiState, cost, budget, survivalTime, phases, mainBreakerRating }: StatusDisplayProps) {
+  const { t } = useTranslation();
   const overBudget = cost > budget;
   const remainingTime = Math.max(0, survivalTime - multiState.elapsed);
   const isSingle = circuits.length === 1;
@@ -46,21 +38,21 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
     return (
       <div className="status-display">
         <div className="status-row">
-          <span className="status-label">狀態</span>
+          <span className="status-label">{t('status.statusLabel')}</span>
           <span className="status-value" style={{ color: STATUS_COLORS[cs.status] }}>
-            {STATUS_LABELS[cs.status]}
+            {tStatus(t, cs.status)}
           </span>
         </div>
         <div className="status-row">
-          <span className="status-label">總電流</span>
+          <span className="status-label">{t('status.totalCurrent')}</span>
           <span className="status-value">{cs.totalCurrent.toFixed(1)}A / {circuit.breaker.ratedCurrent}A (NFB)</span>
         </div>
         <div className="status-row">
-          <span className="status-label">線材負載</span>
+          <span className="status-label">{t('status.wireLoad')}</span>
           <span className="status-value">{cs.totalCurrent.toFixed(1)}A / {circuit.wire.maxCurrent}A</span>
         </div>
         <div className="status-row">
-          <span className="status-label">線材熱度</span>
+          <span className="status-label">{t('status.wireHeat')}</span>
           <div className="heat-bar">
             <div
               className="heat-fill"
@@ -73,13 +65,13 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
           <span className="status-value">{(cs.wireHeat * 100).toFixed(0)}%</span>
         </div>
         <div className="status-row">
-          <span className="status-label">剩餘時間</span>
+          <span className="status-label">{t('status.remainingTime')}</span>
           <span className="status-value">{remainingTime.toFixed(1)}s</span>
         </div>
         <div className="status-row">
-          <span className="status-label">成本/預算</span>
+          <span className="status-label">{t('status.costBudget')}</span>
           <span className="status-value" style={{ color: overBudget ? '#ef4444' : '#22c55e' }}>
-            ${cost} / ${budget}{overBudget ? ' (超預算！)' : ''}
+            ${cost} / ${budget}{overBudget ? ` (${t('status.overBudget')})` : ''}
           </span>
         </div>
       </div>
@@ -113,9 +105,9 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
   return (
     <div className="status-display">
       <div className="status-row">
-        <span className="status-label">整體狀態</span>
+        <span className="status-label">{t('status.overallStatus')}</span>
         <span className="status-value" style={{ color: STATUS_COLORS[multiState.overallStatus] }}>
-          {STATUS_LABELS[multiState.overallStatus]}
+          {tStatus(t, multiState.overallStatus)}
         </span>
       </div>
       {circuits.map(circuit => {
@@ -129,7 +121,7 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
               {hasPhases && phases[circuit.id] && <span className={`phase-badge phase-${phases[circuit.id]}`}>{phases[circuit.id]}</span>}
             </span>
             <span className="status-value" style={{ color: STATUS_COLORS[cs.status] }}>
-              {STATUS_LABELS[cs.status]} {cs.totalCurrent.toFixed(1)}A
+              {tStatus(t, cs.status)} {cs.totalCurrent.toFixed(1)}A
             </span>
           </div>
         );
@@ -137,21 +129,21 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
       {hasPhases && (
         <div className="phase-balance-indicator">
           <div className="status-row">
-            <span className="status-label"><span className="phase-badge phase-R">R</span> 紅相電流</span>
+            <span className="status-label"><span className="phase-badge phase-R">R</span> {t('status.phaseRCurrent')}</span>
             <span className="status-value">{sumR.toFixed(1)}A</span>
           </div>
           <div className="status-row">
-            <span className="status-label"><span className="phase-badge phase-T">T</span> 黑相電流</span>
+            <span className="status-label"><span className="phase-badge phase-T">T</span> {t('status.phaseTCurrent')}</span>
             <span className="status-value">{sumT.toFixed(1)}A</span>
           </div>
           <div className="status-row">
-            <span className="status-label"><span className="phase-badge phase-N">N</span> 中性線電流</span>
+            <span className="status-label"><span className="phase-badge phase-N">N</span> {t('status.neutralCurrent')}</span>
             <span className="status-value" style={{ color: neutralColor }}>
               {multiState.neutralCurrent.toFixed(1)}A / {NEUTRAL_MAX_CURRENT}A
             </span>
           </div>
           <div className="status-row">
-            <span className="status-label">中性線熱度</span>
+            <span className="status-label">{t('status.neutralHeat')}</span>
             <div className="heat-bar">
               <div
                 className="heat-fill"
@@ -170,7 +162,7 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
         const loadColor = loadRatio >= 1.0 ? '#ef4444' : loadRatio >= 0.8 ? '#f97316' : '#22c55e';
         return (
           <div className="status-row main-breaker-row">
-            <span className="status-label">主開關</span>
+            <span className="status-label">{t('status.mainBreaker')}</span>
             <span className="status-value" style={{ color: loadColor }}>
               {multiState.totalPanelCurrent.toFixed(1)}A / {mainBreakerRating}A
             </span>
@@ -178,13 +170,13 @@ export default function StatusDisplay({ circuits, multiState, cost, budget, surv
         );
       })()}
       <div className="status-row">
-        <span className="status-label">剩餘時間</span>
+        <span className="status-label">{t('status.remainingTime')}</span>
         <span className="status-value">{remainingTime.toFixed(1)}s</span>
       </div>
       <div className="status-row">
-        <span className="status-label">成本/預算</span>
+        <span className="status-label">{t('status.costBudget')}</span>
         <span className="status-value" style={{ color: overBudget ? '#ef4444' : '#22c55e' }}>
-          ${cost} / ${budget}{overBudget ? ' (超預算！)' : ''}
+          ${cost} / ${budget}{overBudget ? ` (${t('status.overBudget')})` : ''}
         </span>
       </div>
     </div>

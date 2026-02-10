@@ -204,3 +204,40 @@ BeforeAfterView MUST 在 ResultPanel 內部渲染，位於結果詳情和按鈕�
 - **WHEN** BeforeAfterView 顯示
 - **THEN** MUST 位於 ResultPanel 的 star-rating / result-details 區塊之後
 - **AND** MUST 位於 result-actions 按鈕區塊之前
+
+### Requirement: Old house routing integration
+
+老屋模式 MUST 可與走線整理系統整合。
+
+#### Scenario: routingReady 前置條件
+
+- **WHEN** 老屋+走線整合關卡
+- **THEN** routingReady MUST 需要 !problemsRemaining（所有問題修復 + 接線完成）
+- **AND** 問題未全修復時走線按鈕 MUST 為 disabled
+
+#### Scenario: 整合流程
+
+- **WHEN** 玩家進入 oldHouse + routingMode 關卡
+- **THEN** 遊戲流程 MUST 為：診斷問題 → 修復 → 整線 → 送電
+
+### Requirement: L26-L28 level definitions
+
+系統 MUST 定義 L26-L28 固定關卡。
+
+#### Scenario: L26 五毒俱全
+
+- **WHEN** 玩家選擇 L26
+- **THEN** 關卡 MUST 有 4 迴路、全 5 種問題類型（c1 雙問題）
+- **AND** 相位模式 MUST 為 manual、漏電模式 MUST 為 random
+
+#### Scenario: L27 翻修+整線
+
+- **WHEN** 玩家選擇 L27
+- **THEN** 關卡 MUST 同時有 oldHouse 和 routingMode
+- **AND** bonusCondition MUST 為 aesthetics-score
+
+#### Scenario: L28 終極考驗
+
+- **WHEN** 玩家選擇 L28
+- **THEN** 關卡 MUST 有 5 迴路 + 4 問題 + 相位 + 漏電 + 走線
+- **AND** bonusCondition MUST 為 under-budget-ratio

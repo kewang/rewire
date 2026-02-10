@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Appliance, Wire, Breaker, FreeCircuitLevel, PlannerCircuit } from '../types/game';
 import { NEUTRAL_MAX_CURRENT } from '../data/constants';
 import RoomPanel from './RoomPanel';
@@ -43,6 +44,7 @@ export default function CircuitPlanner({
   onSelectCircuit,
   onConfirm,
 }: CircuitPlannerProps) {
+  const { t } = useTranslation();
   const slotsUsed = circuits.length;
   const slotsMax = level.panel.maxSlots;
   const canAddCircuit = slotsUsed < slotsMax;
@@ -98,19 +100,19 @@ export default function CircuitPlanner({
 
       <div className="circuit-planner-circuits">
         <div className="circuit-planner-circuits-header">
-          <h3>迴路規劃</h3>
+          <h3>{t('planner.title')}</h3>
           <button
             className="add-circuit-btn"
             onClick={onAddCircuit}
             disabled={!canAddCircuit}
-            title={canAddCircuit ? '新增迴路' : '插槽已滿'}
+            title={canAddCircuit ? t('planner.addCircuitTooltip') : t('planner.slotsFull')}
           >
-            ＋ 新增迴路
+            {t('planner.addCircuit')}
           </button>
         </div>
 
         {circuits.length === 0 && (
-          <p className="circuit-planner-empty">尚未建立迴路，請點擊「＋ 新增迴路」開始規劃</p>
+          <p className="circuit-planner-empty">{t('planner.empty')}</p>
         )}
 
         <div className="circuit-cards-list">
@@ -136,25 +138,25 @@ export default function CircuitPlanner({
       </div>
 
       <div className="circuit-planner-summary">
-        <h3>配電箱</h3>
+        <h3>{t('planner.panelTitle')}</h3>
         <div className="planner-summary-row">
-          <span className="summary-label">插槽</span>
+          <span className="summary-label">{t('planner.slots')}</span>
           <span className={`summary-value ${slotsUsed >= slotsMax ? 'at-limit' : ''}`}>
             {slotsUsed} / {slotsMax}
           </span>
         </div>
         <div className="planner-summary-row">
-          <span className="summary-label">主開關</span>
+          <span className="summary-label">{t('planner.mainBreaker')}</span>
           <span className="summary-value">{level.panel.mainBreakerRating}A</span>
         </div>
         <div className="planner-summary-row">
-          <span className="summary-label">電器指派</span>
+          <span className="summary-label">{t('planner.applianceAssign')}</span>
           <span className={`summary-value ${assignedCount < totalAppliances ? 'incomplete' : ''}`}>
             {assignedCount} / {totalAppliances}
           </span>
         </div>
         <div className="planner-summary-row">
-          <span className="summary-label">成本</span>
+          <span className="summary-label">{t('planner.cost')}</span>
           <span className={`summary-value ${totalCost > level.budget ? 'over-budget' : ''}`}>
             ${totalCost} / ${level.budget}
           </span>
@@ -162,17 +164,17 @@ export default function CircuitPlanner({
 
         {phaseBalance && (
           <div className="planner-phase-balance">
-            <h4>相位預估</h4>
+            <h4>{t('planner.phaseEstimate')}</h4>
             <div className="phase-balance-row">
-              <span className="phase-label phase-r-label">R相</span>
+              <span className="phase-label phase-r-label">{t('game.phaseR')}</span>
               <span className="phase-value">{phaseBalance.r.toFixed(1)}A</span>
             </div>
             <div className="phase-balance-row">
-              <span className="phase-label phase-t-label">T相</span>
+              <span className="phase-label phase-t-label">{t('game.phaseT')}</span>
               <span className="phase-value">{phaseBalance.t.toFixed(1)}A</span>
             </div>
             <div className="phase-balance-row">
-              <span className="phase-label">N線</span>
+              <span className="phase-label">{t('planner.nLine')}</span>
               <span className={`phase-value${phaseBalance.n >= NEUTRAL_MAX_CURRENT ? ' neutral-danger' : ''}`}>
                 {phaseBalance.n.toFixed(1)}A
               </span>
@@ -186,7 +188,7 @@ export default function CircuitPlanner({
           disabled={!canConfirm}
           title={confirmTooltip}
         >
-          確認配置
+          {t('planner.confirmConfig')}
         </button>
       </div>
     </div>

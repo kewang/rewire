@@ -1,4 +1,6 @@
+import type { TFunction } from 'i18next';
 import type { BonusCondition, CrimpQuality, CrimpResult, CircuitId } from '../types/game';
+import { tBonusLabel } from '../i18nHelpers';
 
 export interface StarDetail {
   readonly star: 1 | 2 | 3;
@@ -51,34 +53,19 @@ function checkBonus(input: CalcStarsInput): boolean {
   }
 }
 
-function bonusLabel(condition: BonusCondition): string {
-  switch (condition.type) {
-    case 'no-warning':
-      return '全程零預警';
-    case 'under-budget-ratio':
-      return `成本 ≤ 預算 ${Math.round(condition.ratio * 100)}%`;
-    case 'time-margin':
-      return `剩餘 ≥ ${condition.margin} 秒`;
-    case 'crimp-quality':
-      return `壓接品質達 ${condition.minQuality}`;
-    case 'no-trip':
-      return '全程無跳脫';
-    case 'aesthetics-score':
-      return `整線分數 ≥ ${condition.minScore}`;
-  }
-}
-
-export function calcStars(input: CalcStarsInput): { stars: number; details: StarDetail[] } {
+export function calcStars(input: CalcStarsInput, t?: TFunction): { stars: number; details: StarDetail[] } {
   const star1 = input.passed;
   const star2 = star1 && input.finalCost <= input.budget;
   const star3 = star2 && checkBonus(input);
 
   const details: StarDetail[] = [
-    { star: 1, label: '安全通關', achieved: star1 },
-    { star: 2, label: '成本達標', achieved: star2 },
+    { star: 1, label: t ? t('star.safePass') : '安全通關', achieved: star1 },
+    { star: 2, label: t ? t('star.costMet') : '成本達標', achieved: star2 },
     {
       star: 3,
-      label: input.bonusCondition ? bonusLabel(input.bonusCondition) : '獎勵目標',
+      label: input.bonusCondition
+        ? (t ? tBonusLabel(t, input.bonusCondition) : input.bonusCondition.type)
+        : (t ? t('star.bonusGoal') : '獎勵目標'),
       achieved: star3,
     },
   ];

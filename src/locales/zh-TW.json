@@ -1,0 +1,385 @@
+{
+  "app": {
+    "title": "Project Rewire",
+    "subtitle": "配電盤燒線模擬器"
+  },
+  "nav": {
+    "back": "返回",
+    "backToLevels": "返回關卡選擇",
+    "retry": "重新嘗試"
+  },
+  "levelSelect": {
+    "selectLevel": "選擇關卡",
+    "appliances": "電器",
+    "budget": "預算",
+    "powerGoal": "通電目標",
+    "seconds": "秒"
+  },
+  "game": {
+    "powerTime": "通電 {{time}}秒",
+    "powerTimeBudget": "通電 {{time}}秒 / 預算 ${{budget}}",
+    "powered": "送電中",
+    "wired": "已接線",
+    "unwired": "未接線",
+    "dragWire": "拖曳線材",
+    "dropHere": "到此處接線",
+    "unwireBtn": "拆線",
+    "phaseR": "R相",
+    "phaseT": "T相",
+    "switchPhase": "切換",
+    "routing": "整線",
+    "rerouting": "重新整線",
+    "unwireConfirm": "確定要拆除此迴路的線材嗎？舊線材將被丟棄。"
+  },
+  "status": {
+    "normal": "正常",
+    "warning": "過載預警",
+    "tripped": "跳電",
+    "burned": "燒毀",
+    "neutralBurned": "中性線燒毀",
+    "elcbTripped": "ELCB 跳脫",
+    "leakage": "漏電！",
+    "mainTripped": "主開關跳脫",
+    "overallStatus": "整體狀態",
+    "statusLabel": "狀態",
+    "totalCurrent": "總電流",
+    "wireLoad": "線材負載",
+    "wireHeat": "線材熱度",
+    "remainingTime": "剩餘時間",
+    "costBudget": "成本/預算",
+    "overBudget": "超預算！",
+    "mainBreaker": "主開關",
+    "phaseRCurrent": "紅相電流",
+    "phaseTCurrent": "黑相電流",
+    "neutralCurrent": "中性線電流",
+    "neutralHeat": "中性線熱度"
+  },
+  "result": {
+    "passed": "過關！",
+    "overBudget": "超預算！",
+    "tripped": "跳電！",
+    "burned": "燒線！",
+    "neutralBurned": "中性線燒毀！",
+    "mainTripped": "主開關跳脫！",
+    "leakage": "漏電觸電！",
+    "powerTime": "通電時間",
+    "wireCost": "線材成本",
+    "budgetLabel": "預算",
+    "remaining": "剩餘",
+    "exceeded": "超出",
+    "passedHint": "成功在預算內完成配電！",
+    "overBudgetHint": "電路正常運作，但線材成本 ${{cost}} 超過預算 ${{budget}}。試試更便宜的線材？",
+    "failType": "失敗類型",
+    "failedCircuit": "失敗迴路",
+    "nfbRating": "NFB 額定",
+    "wireMaxCurrent": "線材安全電流",
+    "breakerTrip": "斷路器跳脫",
+    "wireBurn": "線材燒毀",
+    "neutralOverload": "中性線過載燒毀",
+    "mainOverload": "主開關過載跳脫",
+    "leakageDanger": "漏電觸電危險",
+    "trippedHint": "{{prefix}}總電流 {{current}}A 超過 NFB 額定 {{rated}}A，觸發跳電保護。",
+    "trippedHintPrefix": "{{label}}的",
+    "burnedHint": "{{prefix}}總電流 {{current}}A 超過 {{crossSection}}mm² 線材的安全電流 {{maxCurrent}}A，長時間過載導致燒線。試試更粗的線材？",
+    "neutralBurnedHint": "紅相(R)與黑相(T)負載嚴重不平衡，中性線電流超過 30A 安全容量導致燒毀。試著平衡兩相的負載分配！",
+    "mainTrippedHint": "配電箱總電流超過主開關額定容量，觸發跳脫保護。所有迴路斷電！請重新規劃迴路配置，降低同時運行的總負載。",
+    "leakageHint": "{{label}}發生漏電，但未安裝 ELCB 漏電斷路器，造成觸電危險！潮濕區域迴路務必安裝 ELCB。",
+    "leakageHintDefault": "迴路",
+    "neutralCapacity": "中性線容量",
+    "aestheticsScore": "整線分數"
+  },
+  "star": {
+    "safePass": "安全通關",
+    "costMet": "成本達標",
+    "bonusGoal": "獎勵目標",
+    "noWarning": "全程零預警",
+    "underBudgetRatio": "成本 ≤ 預算 {{ratio}}%",
+    "timeMargin": "剩餘 ≥ {{margin}} 秒",
+    "crimpQuality": "壓接品質達 {{quality}}",
+    "noTrip": "全程無跳脫",
+    "aestheticsScore": "整線分數 ≥ {{score}}"
+  },
+  "wire": {
+    "title": "線材選擇",
+    "maxCurrent": "安全電流",
+    "costPerMeter": "成本",
+    "perMeter": "/米",
+    "dragHint": "拖曳到電路圖接線"
+  },
+  "appliance": {
+    "title": "電器",
+    "pluggedIn": "已插入插座",
+    "pluggedInCircuit": "{{label}} 已插入",
+    "clickToRemove": "點擊移除",
+    "requiresVoltage": "需要 {{voltage}}V 迴路",
+    "hairDryer": "吹風機",
+    "kettle": "快煮壺",
+    "microwave": "微波爐",
+    "underSinkHeater": "廚下加熱器",
+    "dryer": "烘衣機",
+    "waterHeater": "電熱水器",
+    "ihStove": "IH 爐",
+    "airCon": "冷氣",
+    "bathHeater": "浴室暖風機",
+    "fridge": "冰箱",
+    "heater": "電暖器",
+    "oven": "烤箱",
+    "dehumidifier": "除濕機"
+  },
+  "elcb": {
+    "title": "ELCB 漏電斷路器 (${{cost}}/迴路)",
+    "label": "ELCB 漏電斷路器",
+    "costTag": "${{cost}}"
+  },
+  "crimp": {
+    "title": "壓接端子",
+    "selectTerminal": "選擇端子類型",
+    "crimpAction": "壓接操作",
+    "stopAtSweet": "點擊甜蜜區停止",
+    "tapAnywhere": "TAP ANYWHERE",
+    "crimpResult": "壓接結果",
+    "excellent": "完美壓接",
+    "good": "良好壓接",
+    "poor": "壓接不良",
+    "none": "未壓接",
+    "contactResistance": "接觸電阻倍率",
+    "effectiveCurrent": "有效電流倍率",
+    "confirm": "確認",
+    "incompatible": "不相容此線徑",
+    "oRing": "O 型環",
+    "yFork": "Y 型叉"
+  },
+  "planner": {
+    "title": "迴路規劃",
+    "addCircuit": "＋ 新增迴路",
+    "addCircuitTooltip": "新增迴路",
+    "slotsFull": "插槽已滿",
+    "empty": "尚未建立迴路，請點擊「＋ 新增迴路」開始規劃",
+    "panelTitle": "配電箱",
+    "slots": "插槽",
+    "mainBreaker": "主開關",
+    "applianceAssign": "電器指派",
+    "cost": "成本",
+    "phaseEstimate": "相位預估",
+    "nLine": "N線",
+    "confirmConfig": "確認配置",
+    "assignAllAppliances": "請將所有電器指派到迴路",
+    "selectAllWires": "請為每條迴路選擇線材",
+    "wetAreaNeedElcb": "潮濕區域迴路需安裝 ELCB",
+    "circuitNum": "迴路 {{num}}",
+    "deleteCircuit": "刪除迴路",
+    "voltage": "電壓",
+    "phase": "相位",
+    "nfb": "NFB",
+    "wireLabel": "線材",
+    "selectWire": "選擇線材",
+    "assignedAppliances": "已指派電器",
+    "removeHint": "點擊移除"
+  },
+  "room": {
+    "title": "房間 / 電器",
+    "wetArea": "潮濕區域",
+    "circuitPrefix": "迴路 ",
+    "living": "客廳",
+    "kitchen": "廚房",
+    "bedroom": "臥室",
+    "bathroom": "浴室",
+    "laundry": "洗衣間",
+    "storage": "儲藏室",
+    "balcony": "陽台",
+    "acRoom": "冷氣間",
+    "mainCircuit": "主迴路",
+    "study": "書房",
+    "livingAc": "客廳冷氣"
+  },
+  "panel": {
+    "title": "配電箱內部",
+    "subtitle": "拖曳線材重新排列車道，消除交叉，放置束帶",
+    "step1Label": "消除交叉",
+    "step1Desc": "拖曳線材左右移動",
+    "step2Label": "放置束帶",
+    "step2Desc": "點擊線材之間的放置點",
+    "step3Label": "完成整線",
+    "step3Desc": "按下完成按鈕",
+    "crossings": "交叉數",
+    "cableTies": "束帶",
+    "aestheticsScore": "整線分數",
+    "doneBtn": "完成整線",
+    "dragHint": "← 拖曳調整順序 →",
+    "busbar": "匯流排",
+    "routingZone": "走線區",
+    "circuits": "CIRCUITS",
+    "crossingNoTie": "有交叉，無法束帶",
+    "removeTie": "點擊移除束帶",
+    "placeTie": "點擊綁束帶"
+  },
+  "cableTie": {
+    "title": "束帶拉緊",
+    "tight": "完美固定",
+    "good": "良好固定",
+    "loose": "太鬆",
+    "overTight": "過緊",
+    "tapToLock": "TAP TO LOCK"
+  },
+  "breaker": {
+    "title": "NFB 更換",
+    "wireMaxCurrent": "線材安全電流",
+    "current": "目前",
+    "trip": "跳脫"
+  },
+  "oldHouse": {
+    "nfbOverrated": "NFB {{breaker}}A > 線材 {{wire}}A",
+    "missingElcb": "潮濕區域需裝 ELCB",
+    "problemsRemaining": "請先修復所有問題迴路",
+    "wetAreaMissingElcb": "潮濕區域迴路需安裝 ELCB",
+    "allWiresNeeded": "請先完成所有迴路接線",
+    "crimpNeeded": "請先完成所有迴路壓接",
+    "routingNeeded": "請先完成整線",
+    "appliancesNeeded": "請先分配電器"
+  },
+  "beforeAfter": {
+    "title": "修復對比",
+    "before": "修復前",
+    "after": "修復後",
+    "bareWire": "沒壓端子",
+    "bareWireFixed": "重新接線 + 壓接",
+    "oxidizedSplice": "氧化接點",
+    "oxidizedFixed": "重新接線 + 壓接",
+    "wrongGauge": "線徑過小 ({{size}}mm²)",
+    "wrongGaugeFixed": "更換線材 → {{size}}mm²",
+    "overratedBreaker": "NFB 過大 ({{rating}}A)",
+    "overratedFixed": "更換 NFB {{old}}A → {{new}}A",
+    "missingElcb": "缺漏電保護",
+    "missingElcbFixed": "安裝漏電斷路器（ELCB）"
+  },
+  "level": {
+    "L01": {
+      "name": "L01 基礎教學",
+      "description": "接上吹風機並成功送電。理解 P ÷ V = I。"
+    },
+    "L02": {
+      "name": "L02 燒線陷阱",
+      "description": "同時使用吹風機和快煮壺。小心選線！"
+    },
+    "L03": {
+      "name": "L03 成本取捨",
+      "description": "同樣的電器，但預算收緊。不能無腦選最粗線。"
+    },
+    "L04": {
+      "name": "L04 低功率陷阱",
+      "description": "廚下加熱器才 800W，看起來很無害？加上快煮壺撐 8 秒試試。"
+    },
+    "L05": {
+      "name": "L05 長時間耐久",
+      "description": "電暖器 + 快煮壺，合計 30A。需要粗線才撐得住！"
+    },
+    "L06": {
+      "name": "L06 自由配迴路入門",
+      "description": "第一次體驗自由配迴路！兩個房間、三台電器，你來決定怎麼分。"
+    },
+    "L07": {
+      "name": "L07 高功率初體驗",
+      "description": "電暖器 16.4A — 第一次遇到 1.6mm² 不夠用的電器！"
+    },
+    "L08": {
+      "name": "L08 廚房分迴路",
+      "description": "快煮壺、微波爐、電暖器 — 三台高功率電器，怎麼分才划算？"
+    },
+    "L09": {
+      "name": "L09 混合電壓",
+      "description": "廚房 110V + 洗衣間 220V。不同電壓需要不同迴路！"
+    },
+    "L10": {
+      "name": "L10 全屋配電",
+      "description": "五個房間、七台電器 — 第一次全屋配電設計！"
+    },
+    "L11": {
+      "name": "L11 相位平衡入門",
+      "description": "單相三線制登場！R 相和 T 相要均衡分配，否則中性線過載燒毀。"
+    },
+    "L12": {
+      "name": "L12 相位平衡進階",
+      "description": "更多電器、手動相位切換。你來決定哪條迴路走 R 相、哪條走 T 相。"
+    },
+    "L13": {
+      "name": "L13 ELCB 入門",
+      "description": "浴室潮濕區必須安裝 ELCB。不裝 = 觸電！"
+    },
+    "L14": {
+      "name": "L14 ELCB 預算壓力",
+      "description": "浴室 ELCB 必裝，加上廚房高功率電器，預算很緊。"
+    },
+    "L15": {
+      "name": "L15 綜合挑戰",
+      "description": "相位平衡 + ELCB + 多房間。所有 v0.4 機制的自由配迴路版！"
+    },
+    "L16": {
+      "name": "L16 壓接端子入門",
+      "description": "接好線後要壓接才能送電。低壓力環境學習壓接。"
+    },
+    "L17": {
+      "name": "L17 端子品質大考驗",
+      "description": "壓接品質差 = 接觸電阻高 = 線材加速過熱！廚房高功率迴路要壓好。"
+    },
+    "L18": {
+      "name": "L18 老屋驚魂：初診",
+      "description": "打開老配電箱，c1 活線沒壓端子！拆掉問題線路重新接線再送電。"
+    },
+    "L19": {
+      "name": "L19 老屋驚魂：全面檢修",
+      "description": "廚房線太細、客廳沒壓端子。兩條問題迴路等你修復！"
+    },
+    "L20": {
+      "name": "L20 老屋驚魂：危機四伏",
+      "description": "v0.5 畢業考！氧化接點、裸線、線太細 — 三個問題加上潮濕浴室和相位平衡。"
+    },
+    "L21": {
+      "name": "L21 整線入門",
+      "description": "設計迴路後進入配電箱整理走線。學習車道排列和束帶。"
+    },
+    "L22": {
+      "name": "L22 交叉迷宮",
+      "description": "5 個房間 + 混合電壓 + 手動相位。迴路規劃直接影響走線難度！"
+    },
+    "L23": {
+      "name": "L23 完美配電箱",
+      "description": "v0.7 畢業考！全機制綜合 — 自由配迴路 + 相位 + ELCB + 壓接 + 走線。"
+    },
+    "L24": {
+      "name": "L24 老屋驚魂：保護力缺失",
+      "description": "廚房的 30A NFB 保護不了 20A 線材！更換正確的 NFB 規格，修復裸線問題。"
+    },
+    "L25": {
+      "name": "L25 老屋驚魂：潮濕陷阱",
+      "description": "浴室迴路缺少漏電斷路器！安裝 ELCB 保護生命，修復氧化接點。"
+    },
+    "L26": {
+      "name": "L26 老屋驚魂：五毒俱全",
+      "description": "全 5 種問題類型登場！診斷每條迴路的問題，逐一修復後平衡相位送電。"
+    },
+    "L27": {
+      "name": "L27 老屋驚魂：翻修 + 整線",
+      "description": "修復問題後進入配電箱整理走線。第一次體驗「修復 + 整線」完整翻修流程！"
+    },
+    "L28": {
+      "name": "L28 老屋驚魂：終極考驗",
+      "description": "v0.8 畢業考！5 迴路 + 4 問題 + 相位 + 漏電 + 整線 = 全機制綜合終極挑戰。"
+    }
+  },
+  "random": {
+    "title": "隨機老屋挑戰",
+    "beginner": "初級",
+    "beginnerDesc": "2-3 迴路、1-2 問題（基礎問題類型）",
+    "intermediate": "中級",
+    "intermediateDesc": "3-4 迴路、2-3 問題（全 5 種問題 + 手動相位）",
+    "advanced": "高級",
+    "advancedDesc": "4-6 迴路、3-5 問題（全機制 + 整線）",
+    "completions": "已通關 {{count}} 次",
+    "levelName": "隨機老屋（{{difficulty}}）",
+    "levelDesc": "隨機生成的老屋挑戰 — {{circuits}} 條迴路、{{problems}} 個問題"
+  },
+  "language": {
+    "zh-TW": "繁體中文",
+    "en": "English"
+  }
+}

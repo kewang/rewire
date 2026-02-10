@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import type { Wire, Breaker, PlannerCircuit } from '../types/game';
 import { DEFAULT_WIRES, BREAKER_15A, BREAKER_20A, BREAKER_30A, DEFAULT_WIRE_LENGTH, NFB_COSTS, ELCB_COST } from '../data/constants';
+import { tApplianceName } from '../i18nHelpers';
 
 interface CircuitCardProps {
   readonly circuit: PlannerCircuit;
@@ -38,6 +40,7 @@ export default function CircuitCard({
   onChangePhase,
   onChangeElcb,
 }: CircuitCardProps) {
+  const { t } = useTranslation();
   const totalCurrent = circuit.assignedAppliances.reduce((sum, a) => {
     if (a.appliance.voltage !== circuit.voltage) return sum;
     return sum + a.appliance.power / a.appliance.voltage;
@@ -58,13 +61,13 @@ export default function CircuitCard({
   return (
     <div className={`circuit-card voltage-${circuit.voltage}${isSelected ? ' circuit-card-selected' : ''}`} onClick={onSelect}>
       <div className="circuit-card-header">
-        <span className="circuit-card-number">迴路 {index + 1}</span>
-        <button className="circuit-card-delete" onClick={e => { e.stopPropagation(); onDelete(circuit.id); }} title="刪除迴路">✕</button>
+        <span className="circuit-card-number">{t('planner.circuitNum', { num: index + 1 })}</span>
+        <button className="circuit-card-delete" onClick={e => { e.stopPropagation(); onDelete(circuit.id); }} title={t('planner.deleteCircuit')}>✕</button>
       </div>
 
       <div className={`circuit-card-controls${showPhaseSelector ? ' has-phase' : ''}`}>
         <div className="circuit-card-field">
-          <label>電壓</label>
+          <label>{t('planner.voltage')}</label>
           <div className="voltage-toggle">
             <button
               className={circuit.voltage === 110 ? 'active' : ''}
@@ -79,7 +82,7 @@ export default function CircuitCard({
 
         {showPhaseSelector && (
           <div className="circuit-card-field">
-            <label>相位</label>
+            <label>{t('planner.phase')}</label>
             <div className="phase-toggle">
               <button
                 className={circuit.phase === 'R' ? 'active phase-r' : ''}
@@ -96,7 +99,7 @@ export default function CircuitCard({
         )}
 
         <div className="circuit-card-field">
-          <label>NFB</label>
+          <label>{t('planner.nfb')}</label>
           <select
             value={circuit.breaker.ratedCurrent}
             onChange={e => {
@@ -113,7 +116,7 @@ export default function CircuitCard({
         </div>
 
         <div className="circuit-card-field">
-          <label>線材</label>
+          <label>{t('planner.wireLabel')}</label>
           <select
             value={circuit.selectedWire?.crossSection ?? ''}
             onChange={e => {
@@ -121,7 +124,7 @@ export default function CircuitCard({
               if (wire) onSelectWire(circuit.id, wire);
             }}
           >
-            <option value="" disabled>選擇線材</option>
+            <option value="" disabled>{t('planner.selectWire')}</option>
             {DEFAULT_WIRES.map(w => (
               <option key={w.crossSection} value={w.crossSection}>
                 {w.crossSection}mm² ({w.maxCurrent}A) ${w.costPerMeter * DEFAULT_WIRE_LENGTH}
@@ -138,20 +141,20 @@ export default function CircuitCard({
             checked={!!circuit.elcbEnabled}
             onChange={e => onChangeElcb?.(circuit.id, e.target.checked)}
           />
-          <span>ELCB 漏電斷路器</span>
+          <span>{t('elcb.label')}</span>
           <span className="elcb-cost-tag">${ELCB_COST}</span>
         </label>
       )}
 
       {circuit.assignedAppliances.length > 0 && (
         <div className="circuit-card-appliances">
-          <label>已指派電器</label>
+          <label>{t('planner.assignedAppliances')}</label>
           <ul>
             {circuit.assignedAppliances.map((a, i) => (
               <li key={i} className="circuit-card-appliance" onClick={() => onUnassignAppliance(circuit.id, i)}>
-                <span>{a.appliance.name}</span>
+                <span>{tApplianceName(t, a.appliance.name)}</span>
                 <span className="appliance-current">{(a.appliance.power / a.appliance.voltage).toFixed(1)}A</span>
-                <span className="remove-hint" title="點擊移除">✕</span>
+                <span className="remove-hint" title={t('planner.removeHint')}>✕</span>
               </li>
             ))}
           </ul>
