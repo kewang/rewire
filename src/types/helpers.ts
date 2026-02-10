@@ -5,10 +5,12 @@ import type {
   CircuitConfig,
   CircuitId,
   CircuitState,
+  CrimpResult,
   FixedCircuitLevel,
   FreeCircuitLevel,
   Level,
   MultiCircuitState,
+  OldHouseProblem,
   SimulationState,
   Wire,
 } from './game';
@@ -81,6 +83,46 @@ export function toLegacyCircuit(
     wire: connectedWire,
     appliances: assignedAppliances,
   };
+}
+
+/** 問題修復判定所需的狀態 */
+export interface ProblemResolutionState {
+  /** 該迴路是否仍在 preWiredCircuitIds 中（尚未拆線） */
+  readonly isPreWired: boolean;
+  /** 該迴路是否已接線 */
+  readonly isWired: boolean;
+  /** 該迴路的壓接結果（undefined = 尚未壓接） */
+  readonly crimpResult: CrimpResult | undefined;
+  /** 該迴路當前的 NFB 規格 */
+  readonly breaker: Breaker;
+  /** 該迴路當前的線材 */
+  readonly wire: Wire;
+  /** 該迴路是否已安裝 ELCB */
+  readonly elcbEnabled: boolean;
+  /** 關卡是否要求壓接 */
+  readonly requiresCrimp: boolean;
+}
+
+/**
+ * 統一判定某個老屋問題是否已修復。
+ * 各問題類型獨立判定，同迴路多問題需各自呼叫。
+ */
+export function isProblemResolved(problem: OldHouseProblem, state: ProblemResolutionState): boolean {
+  switch (problem.type) {
+    case 'bare-wire':
+    case 'oxidized-splice':
+      // 需要拆線（不在 preWired 中）+ 已接線 + 已壓接（若要求）
+      return !state.isPreWired && state.isWired && (!state.requiresCrimp || state.crimpResult !== undefined);
+    case 'wrong-wire-gauge':
+      // 需要拆線 + 已接線（新線材）+ 已壓接（若要求）
+      return !state.isPreWired && state.isWired && (!state.requiresCrimp || state.crimpResult !== undefined);
+    case 'overrated-breaker':
+      // NFB 額定電流 ≤ 線材安全電流
+      return state.breaker.ratedCurrent <= state.wire.maxCurrent;
+    case 'missing-elcb':
+      // ELCB 已安裝
+      return state.elcbEnabled;
+  }
 }
 
 /** 狀態嚴重度排序：burned/neutral-burned/leakage/main-tripped > tripped/elcb-tripped > warning > normal */

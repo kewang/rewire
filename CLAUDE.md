@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 PRD 已完成（完整老屋驚魂模式，原 v0.7 內容順延）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 進行中（new-old-house-problems ✓）。**
 
 ## Tech Stack
 
@@ -16,25 +16,26 @@
 ## Project Structure
 
 - `src/components/` — React 元件
-  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents/selectedPlannerCircuitId）
+  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire/circuitBreakers/handleChangeBreaker）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents/selectedPlannerCircuitId）
   - `CircuitPlanner.tsx` — 迴路規劃主容器（RoomPanel + CircuitCard 列表 + 配電箱摘要 + 相位平衡預估面板）
   - `CircuitCard.tsx` — 單條迴路卡片（電壓/NFB/線材選擇 + 相位 R/T toggle + ELCB toggle + 電器列表 + 成本 + 迴路選取高亮）
   - `RoomPanel.tsx` — 房間電器清單（未指派高亮 / 已指派灰化）
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器 + 主開關負載指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示 + main-tripped）
-  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路多行排列佈局（MAX_CIRCUITS_PER_ROW=4）+ 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕）
+  - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路多行排列佈局（MAX_CIRCUITS_PER_ROW=4）+ 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕/NFB 紅框+提示/💧⚠️+提示）+ BreakerSelector popup
+  - `BreakerSelector.tsx` — NFB 更換彈出選擇器（15A/20A/30A 卡片、相容性標示、當前規格 disabled）
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等）
 - `src/types/` — TypeScript 型別定義
-  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType, OldHouseProblem, PreWiredCircuit, OldHouseConfig
-  - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel
+  - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig
+  - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
 - `src/data/` — 遊戲資料
-  - `levels.ts` — L01-L23 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
+  - `levels.ts` — L01-L25 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理, L24-L25 老屋新問題）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
   - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
@@ -89,7 +90,7 @@
 - totalPanelCurrent = Σ 非終態迴路的 totalCurrent，存於 MultiCircuitState
 - 主開關負載指示器：StatusDisplay 顯示「主開關：XA / YA」，≥80% 橘色、≥100% 紅色，僅 FreeCircuitLevel 顯示
 - Level union type：FixedCircuitLevel（有 circuitConfigs）| FreeCircuitLevel（有 rooms + panel）
-- L01-L05 / L18-L20 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
+- L01-L05 / L18-L20 / L24-L25 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
 - CircuitCard 相位選擇器：phaseMode 存在 + 110V 時顯示 R/T toggle，auto 模式 disabled（自動交替分配），manual 模式 enabled
 - CircuitCard ELCB toggle：迴路含 wetArea 房間電器時顯示，wetArea 迴路必須啟用 ELCB 才能確認配置
 - PlannerCircuit 擴充：phase?: 'R' | 'T'（110V 迴路）、elcbEnabled?: boolean（wetArea 迴路）
@@ -115,11 +116,15 @@
 - warning/trip 追蹤用 useRef flag，rAF loop 中累積偵測
 - 星等 localStorage 持久化：key=`rewire-stars`，value=`Record<number, 0|1|2|3>`
 - 老屋模式：Level.oldHouse 可選擴展，GameBoard handleSelectLevel 偵測後初始化預接線
-- 老屋 3 種問題：bare-wire（無端子）、wrong-wire-gauge（線太細）、oxidized-splice（氧化接點 contactResistance=2.0）
+- 老屋 5 種問題：bare-wire（無端子）、wrong-wire-gauge（線太細）、oxidized-splice（氧化接點 contactResistance=2.0）、overrated-breaker（NFB 超過線材容量）、missing-elcb（潮濕區域缺 ELCB）
 - 老屋預接線：preWiredCircuits 定義每迴路的 wire/crimpQuality/appliances，進入時自動初始化
 - 拆線操作：window.confirm 確認後清除 wire/crimp/appliances，從 preWiredCircuitIds 移除
 - 老屋成本規則：保留原線（preWiredCircuitIds 中）免費，僅替換的新線計成本
-- 問題修復判定：拆線 → 重新接線 → 壓接後從 problemCircuits 移除
+- 問題修復判定：isProblemResolved 統一函式，舊問題（拆線→重新接線→壓接）、overrated-breaker（換 NFB ≤ 線材 maxCurrent）、missing-elcb（啟用 ELCB）
+- circuitBreakers state：per-circuit Breaker 追蹤，覆寫 CircuitConfig.breaker，用於 Circuit[] memo 建構
+- BreakerSelector：NFB 點擊彈出，三卡片（15A/20A/30A），相容性標示（✓/⚠️），當前規格 disabled
+- overrated-breaker 視覺：NFB 紅框 + ⚠️ + 提示文字「NFB XA > 線材 YA」
+- missing-elcb 視覺：💧⚠️ + 提示文字「潮濕區域需裝 ELCB」
 - 老屋送電前置：problemCircuits 為空才能送電
 - 問題迴路視覺：閃爍橘色邊框 + ⚠️ 圖示，oxidized-splice 暗褐色(#6b4423)線材
 - 拆線按鈕：僅 preWiredCircuitIds 中的迴路顯示（修復後不再出現）

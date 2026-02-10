@@ -352,4 +352,56 @@ export const LEVELS: readonly Level[] = [
     requiresRouting: true,
     bonusCondition: { type: 'aesthetics-score', minScore: 70 },
   },
+  // === L24-L25: 老屋驚魂 v0.8（新問題類型） ===
+  {
+    name: 'L24 老屋驚魂：保護力缺失',
+    description: '廚房的 30A NFB 保護不了 20A 線材！更換正確的 NFB 規格，修復裸線問題。',
+    requiredAppliances: [kettle, fridge, hairDryer, fridge],
+    budget: 120,
+    survivalTime: 10,
+    requiresCrimp: true,
+    bonusCondition: { type: 'no-warning' },
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle] },
+      { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge] },
+      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+    ],
+    oldHouse: {
+      problems: [
+        { circuitId: 'c1', type: 'overrated-breaker' },
+        { circuitId: 'c2', type: 'bare-wire' },
+      ],
+      preWiredCircuits: {
+        c1: { wire: wire20, crimpQuality: 'good', appliances: [kettle], breaker: BREAKER_30A },
+        c2: { wire: wire20, crimpQuality: 'none', appliances: [hairDryer] },
+        c3: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
+      },
+    },
+  },
+  {
+    name: 'L25 老屋驚魂：潮濕陷阱',
+    description: '浴室迴路缺少漏電斷路器！安裝 ELCB 保護生命，修復氧化接點。',
+    requiredAppliances: [bathHeater, hairDryer, fridge],
+    budget: 170,
+    survivalTime: 12,
+    requiresCrimp: true,
+    leakageMode: 'random',
+    bonusCondition: { type: 'no-trip' },
+    circuitConfigs: [
+      { id: 'c1', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+    ],
+    oldHouse: {
+      problems: [
+        { circuitId: 'c1', type: 'missing-elcb' },
+        { circuitId: 'c2', type: 'oxidized-splice' },
+      ],
+      preWiredCircuits: {
+        c1: { wire: wire20, crimpQuality: 'good', appliances: [bathHeater] },
+        c2: { wire: wire20, crimpQuality: 'none', appliances: [hairDryer] },
+        c3: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
+      },
+    },
+  },
 ] as const;

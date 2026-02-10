@@ -173,7 +173,7 @@ export interface LeakageEvent {
 }
 
 /** 老屋問題類型 */
-export type OldHouseProblemType = 'bare-wire' | 'wrong-wire-gauge' | 'oxidized-splice';
+export type OldHouseProblemType = 'bare-wire' | 'wrong-wire-gauge' | 'oxidized-splice' | 'overrated-breaker' | 'missing-elcb';
 
 /** 老屋問題 */
 export interface OldHouseProblem {
@@ -186,6 +186,8 @@ export interface PreWiredCircuit {
   readonly wire: Wire;
   readonly crimpQuality: CrimpQuality;
   readonly appliances: readonly Appliance[];
+  /** 預裝 NFB 規格（overrated-breaker 問題迴路使用，省略時用 CircuitConfig.breaker） */
+  readonly breaker?: Breaker;
 }
 
 /** 老屋配置 */

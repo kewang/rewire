@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
-import type { Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult, OldHouseProblem, OldHouseProblemType } from '../types/game';
+import type { Breaker, Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult, OldHouseProblem, OldHouseProblemType, Wire } from '../types/game';
+import BreakerSelector from './BreakerSelector';
 
 interface CircuitDiagramProps {
   circuits: readonly Circuit[];
@@ -19,6 +20,10 @@ interface CircuitDiagramProps {
   onUnwire?: (circuitId: CircuitId) => void;
   isOldHouse?: boolean;
   oldHouseProblems?: readonly OldHouseProblem[];
+  /** NFB 更換 callback（僅 overrated-breaker 問題迴路） */
+  onChangeBreaker?: (circuitId: CircuitId, breaker: Breaker) => void;
+  /** 各迴路線材（用於 BreakerSelector 相容性判定） */
+  circuitWires?: Record<CircuitId, Wire>;
 }
 
 /** wireHeat 0→1 對應 白→黃→紅→黑 */
@@ -106,6 +111,8 @@ function SingleCircuitSVG({
   isOldHouse,
   isPreWired,
   onUnwire,
+  problemTypes,
+  onNfbClick,
 }: {
   circuit: Circuit;
   circuitState: CircuitState;
@@ -128,9 +135,11 @@ function SingleCircuitSVG({
   crimpResult?: CrimpResult;
   isProblem?: boolean;
   problemType?: OldHouseProblemType;
+  problemTypes?: OldHouseProblemType[];
   isOldHouse?: boolean;
   isPreWired?: boolean;
   onUnwire?: () => void;
+  onNfbClick?: () => void;
 }) {
   const cx = xOffset + 100; // center x of this circuit
   const wireColor = heatToColor(circuitState.wireHeat);
@@ -167,13 +176,40 @@ function SingleCircuitSVG({
 
   return (
     <g transform={yOffset ? `translate(0,${yOffset})` : undefined}>
-      {/* Problem circuit: flashing orange border + ⚠️ icon */}
-      {isProblem && (
+      {/* Problem circuit: flashing orange border + ⚠️ icon (for wire problems) */}
+      {isProblem && problemTypes && !problemTypes.every(t => t === 'overrated-breaker' || t === 'missing-elcb') && (
         <>
           <rect x={xOffset + 4} y={4} width={CIRCUIT_WIDTH - 8} height={CIRCUIT_HEIGHT - 16} rx={8}
             fill="none" stroke="#f97316" strokeWidth={2}
             className="old-house-problem-border" />
           <text x={xOffset + 18} y={78} fill="#f97316" fontSize={16}>⚠️</text>
+        </>
+      )}
+
+      {/* overrated-breaker: red border around NFB + ⚠️ above + hint text */}
+      {isProblem && problemTypes?.includes('overrated-breaker') && (
+        <>
+          <rect x={nfbX - 2} y={8} width={nfbWidth + 4} height={44} rx={6}
+            fill="none" stroke="#ef4444" strokeWidth={2}
+            className="old-house-problem-border" />
+          <text x={xOffset + 85} y={6} textAnchor="middle" fill="#ef4444" fontSize={12}>⚠️</text>
+          {connectedWire && (
+            <text x={xOffset + 100} y={64} textAnchor="middle" fill="#ef4444" fontSize={8}
+              fontFamily="var(--font-mono)" opacity={0.9}>
+              NFB {circuit.breaker.ratedCurrent}A {'>'} 線材 {connectedWire.maxCurrent}A
+            </text>
+          )}
+        </>
+      )}
+
+      {/* missing-elcb: 💧⚠️ icon + hint text */}
+      {isProblem && problemTypes?.includes('missing-elcb') && (
+        <>
+          <text x={xOffset + CIRCUIT_WIDTH - 18} y={78} textAnchor="end" fill="#3b82f6" fontSize={14}>💧⚠️</text>
+          <text x={xOffset + 100} y={92} textAnchor="middle" fill="#3b82f6" fontSize={8}
+            fontFamily="var(--font-mono)" opacity={0.9}>
+            潮濕區域需裝 ELCB
+          </text>
         </>
       )}
 
@@ -199,22 +235,30 @@ function SingleCircuitSVG({
       )}
 
       {/* NFB Breaker body */}
-      <rect x={nfbX} y={10} width={nfbWidth} height={40} rx={4}
-        fill="#2a2a2a" stroke={is220V ? '#744' : '#555'} strokeWidth={1.5} />
-      <text x={xOffset + 85} y={28} textAnchor="middle" fill="#aaa"
-        fontSize={10} fontWeight="bold" fontFamily="var(--font-mono)">
-        NFB
-      </text>
-      <text x={xOffset + 85} y={42} textAnchor="middle" fill="#777"
-        fontSize={9} fontFamily="var(--font-mono)">
-        {circuit.breaker.ratedCurrent}A
-      </text>
-      {/* Pole type label */}
-      <text x={xOffset + 110} y={28} textAnchor="middle"
-        fill={is220V ? '#f87171' : '#777'} fontSize={8} fontWeight="bold"
-        fontFamily="var(--font-mono)">
-        {poleLabel}
-      </text>
+      <g
+        style={onNfbClick && !isPowered ? { cursor: 'pointer' } : undefined}
+        onClick={onNfbClick && !isPowered ? (e) => { e.stopPropagation(); onNfbClick(); } : undefined}
+      >
+        <rect x={nfbX} y={10} width={nfbWidth} height={40} rx={4}
+          fill="#2a2a2a" stroke={is220V ? '#744' : '#555'} strokeWidth={1.5} />
+        <text x={xOffset + 85} y={28} textAnchor="middle" fill="#aaa"
+          fontSize={10} fontWeight="bold" fontFamily="var(--font-mono)"
+          style={{ pointerEvents: 'none' }}>
+          NFB
+        </text>
+        <text x={xOffset + 85} y={42} textAnchor="middle" fill="#777"
+          fontSize={9} fontFamily="var(--font-mono)"
+          style={{ pointerEvents: 'none' }}>
+          {circuit.breaker.ratedCurrent}A
+        </text>
+        {/* Pole type label */}
+        <text x={xOffset + 110} y={28} textAnchor="middle"
+          fill={is220V ? '#f87171' : '#777'} fontSize={8} fontWeight="bold"
+          fontFamily="var(--font-mono)"
+          style={{ pointerEvents: 'none' }}>
+          {poleLabel}
+        </text>
+      </g>
 
       {/* Lever track */}
       <rect x={leverTrackX} y={leverTrackY} width={LEVER_TRACK_W} height={LEVER_TRACK_H}
@@ -569,13 +613,14 @@ function SingleCircuitSVG({
   );
 }
 
-export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase, circuitCrimps, problemCircuits, preWiredCircuitIds, onUnwire, isOldHouse, oldHouseProblems }: CircuitDiagramProps) {
+export default function CircuitDiagram({ circuits, multiState, isPowered, wiring, onPowerToggle, leverDisabled, leverTooltip, onTargetCircuitChange, phases, phaseMode, onTogglePhase, circuitCrimps, problemCircuits, preWiredCircuitIds, onUnwire, isOldHouse, oldHouseProblems, onChangeBreaker, circuitWires }: CircuitDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [overCircuitId, setOverCircuitId] = useState<CircuitId | null>(null);
   const [flashCircuitId, setFlashCircuitId] = useState<CircuitId | null>(null);
   const [previewY, setPreviewY] = useState(120);
   const [prevWiringCircuits, setPrevWiringCircuits] = useState(wiring.circuits);
+  const [breakerSelectorCircuitId, setBreakerSelectorCircuitId] = useState<CircuitId | null>(null);
 
   const n = circuits.length;
   const isSingle = n === 1;
@@ -753,7 +798,9 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
           const isOver = overCircuitId === cId;
 
           const isProblem = problemCircuits?.has(cId) ?? false;
-          const problem = oldHouseProblems?.find(p => p.circuitId === cId);
+          const problems = oldHouseProblems?.filter(p => p.circuitId === cId);
+          const problemTypes = problems?.map(p => p.type);
+          const hasOverratedBreaker = problemTypes?.includes('overrated-breaker') ?? false;
 
           return (
             <SingleCircuitSVG
@@ -778,10 +825,12 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
               onTogglePhase={onTogglePhase ? () => onTogglePhase(cId) : undefined}
               crimpResult={circuitCrimps?.[cId]}
               isProblem={isProblem}
-              problemType={isProblem ? problem?.type : undefined}
+              problemType={isProblem ? problems?.[0]?.type : undefined}
+              problemTypes={isProblem ? problemTypes : undefined}
               isOldHouse={isOldHouse}
               isPreWired={preWiredCircuitIds?.has(cId)}
               onUnwire={onUnwire ? () => onUnwire(cId) : undefined}
+              onNfbClick={hasOverratedBreaker && isProblem && onChangeBreaker ? () => setBreakerSelectorCircuitId(cId) : undefined}
             />
           );
         })}
@@ -813,6 +862,23 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
           </text>
         )}
       </svg>
+
+      {breakerSelectorCircuitId && onChangeBreaker && (() => {
+        const circuit = circuits.find(c => c.id === breakerSelectorCircuitId);
+        const wire = circuitWires?.[breakerSelectorCircuitId];
+        if (!circuit || !wire) return null;
+        return (
+          <BreakerSelector
+            currentBreaker={circuit.breaker}
+            wireMaxCurrent={wire.maxCurrent}
+            onSelect={(breaker) => {
+              onChangeBreaker(breakerSelectorCircuitId, breaker);
+              setBreakerSelectorCircuitId(null);
+            }}
+            onClose={() => setBreakerSelectorCircuitId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE, BREAKER_20A, NFB_COSTS } from '../data/constants';
 import { LEVELS } from '../data/levels';
-import { isFixedCircuitLevel, isFreeCircuitLevel } from '../types/helpers';
+import { isFixedCircuitLevel, isFreeCircuitLevel, isProblemResolved } from '../types/helpers';
+import type { ProblemResolutionState } from '../types/helpers';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { calcStars, saveBestStars } from '../engine/scoring';
 import type { StarDetail } from '../engine/scoring';
@@ -76,6 +77,7 @@ export default function GameBoard() {
   const [finalAestheticsScore, setFinalAestheticsScore] = useState<number | undefined>(undefined);
   const aestheticsScoreRef = useRef<number | undefined>(undefined);
   const [selectedPlannerCircuitId, setSelectedPlannerCircuitId] = useState<string | null>(null);
+  const [circuitBreakers, setCircuitBreakers] = useState<Record<CircuitId, Breaker>>({});
 
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
@@ -97,18 +99,18 @@ export default function GameBoard() {
   const circuitConfigs = resolvedConfigs;
   const circuitIds = useMemo(() => circuitConfigs.map(c => c.id), [circuitConfigs]);
 
-  // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances + circuitCrimps
+  // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances + circuitCrimps + circuitBreakers
   const circuits: Circuit[] = useMemo(() =>
     circuitConfigs.map(config => ({
       id: config.id,
       label: config.label,
       voltage: config.voltage,
-      breaker: config.breaker,
+      breaker: circuitBreakers[config.id] ?? config.breaker,
       wire: circuitWires[config.id] ?? DEFAULT_WIRES[0],
       appliances: circuitAppliances[config.id] ?? [],
       contactResistance: circuitCrimps[config.id]?.contactResistance,
     })),
-    [circuitConfigs, circuitWires, circuitAppliances, circuitCrimps]
+    [circuitConfigs, circuitWires, circuitAppliances, circuitCrimps, circuitBreakers]
   );
 
   const circuitsRef = useRef<Circuit[]>(circuits);
@@ -475,6 +477,13 @@ export default function GameBoard() {
         };
       }
       setCircuitCrimps(preCrimps);
+      // Re-initialize circuitBreakers
+      const preBreakers: Record<CircuitId, Breaker> = {};
+      for (const config of currentLevel.circuitConfigs) {
+        const pw = oh.preWiredCircuits[config.id];
+        preBreakers[config.id] = pw?.breaker ?? config.breaker;
+      }
+      setCircuitBreakers(preBreakers);
       const wiringCircuits: WiringState['circuits'] = {};
       for (const id of ids) {
         wiringCircuits[id] = { isWired: true, connectedWire: preWires[id] ?? null };
@@ -486,7 +495,15 @@ export default function GameBoard() {
       setProblemCircuits(new Set(oh.problems.map(p => p.circuitId)));
       setPreWiredCircuitIds(new Set(ids));
       preWiredCircuitIdsRef.current = new Set(ids);
-      setCircuitElcb({});
+      // Re-initialize ELCB state for missing-elcb
+      const initElcb: Record<CircuitId, boolean> = {};
+      for (const config of currentLevel.circuitConfigs) {
+        const hasMissingElcb = oh.problems.some(p => p.circuitId === config.id && p.type === 'missing-elcb');
+        if (hasMissingElcb) {
+          initElcb[config.id] = false;
+        }
+      }
+      setCircuitElcb(initElcb);
     } else {
       setWiring(createInitialWiring(circuitIds));
       setCircuitCrimps({});
@@ -525,6 +542,7 @@ export default function GameBoard() {
     setResolvedConfigs([]);
     setPlannerCircuits([]);
     setPlannerNextId(1);
+    setCircuitBreakers({});
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
@@ -591,6 +609,24 @@ export default function GameBoard() {
         };
       }
       setCircuitCrimps(preCrimps);
+
+      // Initialize circuitBreakers from preWiredCircuit.breaker or config.breaker
+      const preBreakers: Record<CircuitId, Breaker> = {};
+      for (const config of level.circuitConfigs) {
+        const pw = oh.preWiredCircuits[config.id];
+        preBreakers[config.id] = pw?.breaker ?? config.breaker;
+      }
+      setCircuitBreakers(preBreakers);
+
+      // Initialize ELCB state: missing-elcb circuits start with ELCB disabled
+      const initElcb: Record<CircuitId, boolean> = {};
+      for (const config of level.circuitConfigs) {
+        const hasMissingElcb = oh.problems.some(p => p.circuitId === config.id && p.type === 'missing-elcb');
+        if (hasMissingElcb) {
+          initElcb[config.id] = false; // explicitly uninstalled
+        }
+      }
+      setCircuitElcb(initElcb);
 
       const wiringCircuits: WiringState['circuits'] = {};
       for (const id of ids) {
@@ -949,15 +985,7 @@ export default function GameBoard() {
         circuits: newCircuits,
       };
     });
-    // Check if this repairs a problem circuit (must have been unwired first = not in preWiredCircuitIds)
-    setProblemCircuits(prev => {
-      if (prev.has(cid) && !preWiredCircuitIdsRef.current.has(cid)) {
-        const next = new Set(prev);
-        next.delete(cid);
-        return next;
-      }
-      return prev;
-    });
+    // Problem repair check is handled by the unified useEffect below
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
   }, [pendingCrimpCircuitId, pendingCrimpWire]);
@@ -990,6 +1018,37 @@ export default function GameBoard() {
     setCircuitElcb(prev => ({ ...prev, [circuitId]: !prev[circuitId] }));
   }, []);
 
+  // Unified problem resolution: re-check all problems whenever relevant state changes
+  useEffect(() => {
+    if (!currentLevel || !isFixedCircuitLevel(currentLevel) || !currentLevel.oldHouse) return;
+    const oh = currentLevel.oldHouse;
+    if (oh.problems.length === 0) return;
+
+    const remaining = new Set<CircuitId>();
+    for (const problem of oh.problems) {
+      const cid = problem.circuitId;
+      const wire = circuitWires[cid] ?? DEFAULT_WIRES[0];
+      const resState: ProblemResolutionState = {
+        isPreWired: preWiredCircuitIds.has(cid),
+        isWired: wiring.circuits[cid]?.isWired ?? false,
+        crimpResult: circuitCrimps[cid],
+        breaker: circuitBreakers[cid] ?? currentLevel.circuitConfigs.find(c => c.id === cid)?.breaker ?? BREAKER_20A,
+        wire,
+        elcbEnabled: !!circuitElcb[cid],
+        requiresCrimp: currentLevel.requiresCrimp === true,
+      };
+      if (!isProblemResolved(problem, resState)) {
+        remaining.add(cid);
+      }
+    }
+
+    setProblemCircuits(prev => {
+      // Only update if the set changed
+      if (prev.size === remaining.size && [...prev].every(id => remaining.has(id))) return prev;
+      return remaining;
+    });
+  }, [currentLevel, circuitWires, circuitBreakers, circuitElcb, circuitCrimps, wiring.circuits, preWiredCircuitIds]);
+
   const handleTogglePhase = useCallback((circuitId: CircuitId) => {
     if (isPowered || currentLevel?.phaseMode !== 'manual') return;
     setCircuitPhases(prev => ({
@@ -997,6 +1056,11 @@ export default function GameBoard() {
       [circuitId]: prev[circuitId] === 'R' ? 'T' : 'R',
     }));
   }, [isPowered, currentLevel?.phaseMode]);
+
+  // Old house mode: change breaker (for overrated-breaker problem)
+  const handleChangeBreaker = useCallback((circuitId: CircuitId, breaker: Breaker) => {
+    setCircuitBreakers(prev => ({ ...prev, [circuitId]: breaker }));
+  }, []);
 
   // Old house mode: unwire a circuit
   const handleUnwire = useCallback((circuitId: CircuitId) => {
@@ -1159,6 +1223,8 @@ export default function GameBoard() {
             onUnwire={handleUnwire}
             isOldHouse={isOldHouse}
             oldHouseProblems={oldHouseProblems}
+            onChangeBreaker={isOldHouse ? handleChangeBreaker : undefined}
+            circuitWires={isOldHouse ? circuitWires : undefined}
           />
           {routingReady && !isPowered && (
             <button
