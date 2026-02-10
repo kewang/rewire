@@ -1,11 +1,11 @@
-import type { FixedCircuitLevel } from '../types/game';
+import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, DEFAULT_WIRES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
 
 const [hairDryer, kettle, microwave, underSinkHeater, dryer, waterHeater, ihStove, airCon, bathHeater, fridge, heater] = DEFAULT_APPLIANCES;
 const [wire16, wire20] = DEFAULT_WIRES;
 
 /** 關卡定義（L01-L05 單迴路, L06-L09 多迴路） */
-export const LEVELS: readonly FixedCircuitLevel[] = [
+export const LEVELS: readonly Level[] = [
   {
     name: 'L01 基礎教學',
     description: '接上吹風機並成功送電。理解 P ÷ V = I。',

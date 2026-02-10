@@ -48,7 +48,7 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 
 ### Requirement: Power control
 
-玩家 MUST 能透過 CircuitDiagram 內的 NFB 撥桿控制送電與斷電，但 MUST 先完成接線。老屋模式下額外需修復所有問題迴路。
+玩家 MUST 能透過 CircuitDiagram 內的 NFB 撥桿控制送電與斷電，但 MUST 先完成接線。老屋模式下額外需修復所有問題迴路。自由配迴路關卡 MUST 先完成迴路規劃後才能進入接線/送電流程。
 
 #### Scenario: 未接線時禁用送電
 
@@ -73,6 +73,12 @@ TBD - created by archiving change game-ui. Update Purpose after archive.
 - **WHEN** 老屋關卡中仍有問題迴路未修復
 - **THEN** NFB 撥桿 MUST 處於禁用狀態
 - **AND** MUST 顯示提示「請先修復所有問題迴路」
+
+#### Scenario: 自由配迴路規劃未完成時不顯示接線 UI
+
+- **WHEN** 自由配迴路關卡且 gamePhase = 'planning'
+- **THEN** MUST 不顯示 WireSelector / CircuitDiagram / AppliancePanel
+- **AND** MUST 顯示 CircuitPlanner 規劃 UI
 
 ### Requirement: Real-time status display
 

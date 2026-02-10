@@ -283,3 +283,19 @@ export interface FreeCircuitLevel {
 
 /** 關卡定義（固定迴路 | 自由配迴路） */
 export type Level = FixedCircuitLevel | FreeCircuitLevel;
+
+/** 電器指派記錄（用於迴路規劃） */
+export interface ApplianceAssignment {
+  readonly appliance: Appliance;
+  readonly roomId: string;
+  readonly roomApplianceIndex: number;
+}
+
+/** 玩家自建迴路（迴路規劃階段） */
+export interface PlannerCircuit {
+  readonly id: string;
+  readonly voltage: 110 | 220;
+  readonly breaker: Breaker;
+  readonly assignedAppliances: readonly ApplianceAssignment[];
+  readonly selectedWire: Wire | null;
+}

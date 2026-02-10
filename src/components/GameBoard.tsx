@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { Wire, Appliance, Circuit, Level, FixedCircuitLevel, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality } from '../types/game';
-import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE } from '../data/constants';
+import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment } from '../types/game';
+import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE, BREAKER_20A, NFB_COSTS } from '../data/constants';
 import { LEVELS } from '../data/levels';
-import { isFixedCircuitLevel } from '../types/helpers';
+import { isFixedCircuitLevel, isFreeCircuitLevel } from '../types/helpers';
 import { createInitialMultiState, stepMulti } from '../engine/simulation';
 import { calcStars, saveBestStars } from '../engine/scoring';
 import type { StarDetail } from '../engine/scoring';
@@ -15,12 +15,11 @@ import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
 import CrimpMiniGame from './CrimpMiniGame';
 import PanelInteriorView from './PanelInteriorView';
+import CircuitPlanner from './CircuitPlanner';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
-
-const EMPTY_CONFIGS: CircuitConfig[] = [];
 
 function createInitialWiring(circuitIds: CircuitId[]): WiringState {
   const circuits: WiringState['circuits'] = {};
@@ -47,8 +46,14 @@ function createInitialCircuitWires(circuitIds: CircuitId[]): Record<CircuitId, W
 }
 
 
+type GamePhase = 'planning' | 'active';
+
 export default function GameBoard() {
-  const [currentLevel, setCurrentLevel] = useState<FixedCircuitLevel | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
+  const [gamePhase, setGamePhase] = useState<GamePhase>('active');
+  const [resolvedConfigs, setResolvedConfigs] = useState<CircuitConfig[]>([]);
+  const [plannerCircuits, setPlannerCircuits] = useState<PlannerCircuit[]>([]);
+  const [plannerNextId, setPlannerNextId] = useState(1);
   const [circuitWires, setCircuitWires] = useState<Record<CircuitId, Wire>>({});
   const [circuitAppliances, setCircuitAppliances] = useState<Record<CircuitId, Appliance[]>>({});
   const [multiState, setMultiState] = useState<MultiCircuitState>(createInitialMultiState([]));
@@ -87,8 +92,8 @@ export default function GameBoard() {
     preWiredCircuitIdsRef.current = preWiredCircuitIds;
   }, [preWiredCircuitIds]);
 
-  // Derive circuitIds from current level
-  const circuitConfigs = currentLevel?.circuitConfigs ?? EMPTY_CONFIGS;
+  // Derive circuitIds from resolved configs (set by handleSelectLevel or confirmPlanning)
+  const circuitConfigs = resolvedConfigs;
   const circuitIds = useMemo(() => circuitConfigs.map(c => c.id), [circuitConfigs]);
 
   // Build Circuit[] from circuitConfigs + circuitWires + circuitAppliances + circuitCrimps
@@ -111,6 +116,9 @@ export default function GameBoard() {
   const currentLevelRef = useRef(currentLevel);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
 
+  const resolvedConfigsRef = useRef(resolvedConfigs);
+  useEffect(() => { resolvedConfigsRef.current = resolvedConfigs; }, [resolvedConfigs]);
+
   const circuitWiresRef = useRef(circuitWires);
   useEffect(() => { circuitWiresRef.current = circuitWires; }, [circuitWires]);
 
@@ -123,16 +131,21 @@ export default function GameBoard() {
   const circuitCrimpsRef = useRef(circuitCrimps);
   useEffect(() => { circuitCrimpsRef.current = circuitCrimps; }, [circuitCrimps]);
 
-  // Total cost: sum of all circuits' wire costs + ELCB costs (skip pre-wired circuits in old house mode)
+  // Is this a free circuit level?
+  const isFreeLevel = currentLevel != null && isFreeCircuitLevel(currentLevel);
+
+  // Total cost: sum of all circuits' wire costs + ELCB costs + NFB costs (free levels only)
   const totalCost = useMemo(() => {
     return circuitIds.reduce((sum, id) => {
       const elcbCost = circuitElcb[id] ? ELCB_COST : 0;
       if (preWiredCircuitIds.has(id)) return sum + elcbCost;
       const wire = circuitWires[id] ?? DEFAULT_WIRES[0];
       const wireCost = wire.costPerMeter * DEFAULT_WIRE_LENGTH;
-      return sum + wireCost + elcbCost;
+      const config = circuitConfigs.find(c => c.id === id);
+      const nfbCost = isFreeLevel && config ? (NFB_COSTS[config.breaker.ratedCurrent] ?? 0) : 0;
+      return sum + wireCost + elcbCost + nfbCost;
     }, 0);
-  }, [circuitIds, circuitWires, circuitElcb, preWiredCircuitIds]);
+  }, [circuitIds, circuitWires, circuitElcb, preWiredCircuitIds, circuitConfigs, isFreeLevel]);
 
   // All appliances across all circuits (for sound)
   const allAppliances = useMemo(() => {
@@ -202,7 +215,7 @@ export default function GameBoard() {
     const curLevel = currentLevelRef.current;
     if (curLevel?.leakageMode) {
       const elcbs = circuitElcbRef.current;
-      const wetAreaConfigs = curLevel.circuitConfigs.filter(c => c.wetArea);
+      const wetAreaConfigs = resolvedConfigsRef.current.filter(c => c.wetArea);
       const updatedStates: Record<CircuitId, CircuitState> = { ...newMultiState.circuitStates };
 
       if (curLevel.leakageMode === 'scripted' && curLevel.leakageEvents) {
@@ -404,13 +417,29 @@ export default function GameBoard() {
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
     setMultiState(createInitialMultiState(circuitIds));
-    setCircuitLanes(currentLevel?.initialLanes ? [...currentLevel.initialLanes] : circuitIds);
+    const initialLanes = currentLevel && isFixedCircuitLevel(currentLevel) ? currentLevel.initialLanes : undefined;
+    setCircuitLanes(initialLanes ? [...initialLanes] : circuitIds);
     setCableTies(new Map());
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
 
-    if (currentLevel?.oldHouse) {
+    if (currentLevel && isFreeCircuitLevel(currentLevel)) {
+      // Free circuit level: reset to planning phase
+      setGamePhase('planning');
+      setResolvedConfigs([]);
+      setPlannerCircuits([]);
+      setPlannerNextId(1);
+      setCircuitWires({});
+      setCircuitAppliances({});
+      setCircuitCrimps({});
+      setWiring(createInitialWiring([]));
+      setCircuitPhases({});
+      setMultiState(createInitialMultiState([]));
+      setProblemCircuits(new Set());
+      setPreWiredCircuitIds(new Set());
+      preWiredCircuitIdsRef.current = new Set();
+    } else if (currentLevel && isFixedCircuitLevel(currentLevel) && currentLevel.oldHouse) {
       // Re-initialize old house pre-wired state
       const oh = currentLevel.oldHouse;
       const ids = currentLevel.circuitConfigs.map(c => c.id);
@@ -480,19 +509,49 @@ export default function GameBoard() {
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
+    setGamePhase('active');
+    setResolvedConfigs([]);
+    setPlannerCircuits([]);
+    setPlannerNextId(1);
     setCurrentLevel(null);
     setWiring(createInitialWiring([]));
   }, []);
 
   const handleSelectLevel = useCallback((level: Level) => {
-    // TODO: FreeCircuitLevel support in circuit-planner-ui change
-    if (!isFixedCircuitLevel(level)) return;
-    const ids = level.circuitConfigs.map(c => c.id);
     setCurrentLevel(level);
     setCircuitElcb({});
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
     setStarResult(null);
+
+    if (isFreeCircuitLevel(level)) {
+      // Free circuit level: enter planning phase
+      setGamePhase('planning');
+      setResolvedConfigs([]);
+      setPlannerCircuits([]);
+      setPlannerNextId(1);
+      setCircuitWires({});
+      setCircuitAppliances({});
+      setCircuitCrimps({});
+      setWiring(createInitialWiring([]));
+      setCircuitPhases({});
+      setMultiState(createInitialMultiState([]));
+      setResult('none');
+      setProblemCircuits(new Set());
+      setPreWiredCircuitIds(new Set());
+      preWiredCircuitIdsRef.current = new Set();
+      setCircuitLanes([]);
+      setCableTies(new Map());
+      setRoutingCompleted(false);
+      setShowRoutingOverlay(false);
+      setFinalAestheticsScore(undefined);
+      return;
+    }
+
+    // Fixed circuit level: existing flow
+    setGamePhase('active');
+    const ids = level.circuitConfigs.map(c => c.id);
+    setResolvedConfigs([...level.circuitConfigs]);
 
     if (level.oldHouse) {
       // Old house mode: initialize pre-wired state
@@ -553,7 +612,7 @@ export default function GameBoard() {
       setWiring(createInitialWiring(ids));
       setProblemCircuits(new Set());
       setPreWiredCircuitIds(new Set());
-    preWiredCircuitIdsRef.current = new Set();
+      preWiredCircuitIdsRef.current = new Set();
     }
 
     // Initialize phase assignments from CircuitConfig.phase
@@ -572,6 +631,148 @@ export default function GameBoard() {
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
   }, []);
+
+  // === Planner handlers (free circuit levels) ===
+
+  const handleAddPlannerCircuit = useCallback(() => {
+    setPlannerCircuits(prev => [
+      ...prev,
+      {
+        id: `pc-${plannerNextId}`,
+        voltage: 110,
+        breaker: BREAKER_20A,
+        assignedAppliances: [],
+        selectedWire: null,
+      },
+    ]);
+    setPlannerNextId(prev => prev + 1);
+  }, [plannerNextId]);
+
+  const handleDeletePlannerCircuit = useCallback((id: string) => {
+    setPlannerCircuits(prev => prev.filter(c => c.id !== id));
+  }, []);
+
+  const handleChangePlannerVoltage = useCallback((id: string, voltage: 110 | 220) => {
+    setPlannerCircuits(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      // Remove appliances that don't match new voltage
+      const filtered = c.assignedAppliances.filter(a => a.appliance.voltage === voltage);
+      return { ...c, voltage, assignedAppliances: filtered };
+    }));
+  }, []);
+
+  const handleChangePlannerBreaker = useCallback((id: string, breaker: Breaker) => {
+    setPlannerCircuits(prev => prev.map(c =>
+      c.id === id ? { ...c, breaker } : c
+    ));
+  }, []);
+
+  const handleSelectPlannerWire = useCallback((id: string, wire: Wire) => {
+    setPlannerCircuits(prev => prev.map(c =>
+      c.id === id ? { ...c, selectedWire: wire } : c
+    ));
+  }, []);
+
+  const handleAssignAppliance = useCallback((appliance: Appliance, roomId: string, roomApplianceIndex: number) => {
+    // Find matching voltage circuits
+    const matching = plannerCircuits.filter(c => c.voltage === appliance.voltage);
+    if (matching.length === 0) return;
+    // Auto-assign to first matching circuit (single match) or first one
+    const targetId = matching[0].id;
+    const assignment: ApplianceAssignment = { appliance, roomId, roomApplianceIndex };
+    setPlannerCircuits(prev => prev.map(c =>
+      c.id === targetId
+        ? { ...c, assignedAppliances: [...c.assignedAppliances, assignment] }
+        : c
+    ));
+  }, [plannerCircuits]);
+
+  const handleUnassignPlannerAppliance = useCallback((circuitId: string, applianceIndex: number) => {
+    setPlannerCircuits(prev => prev.map(c =>
+      c.id === circuitId
+        ? { ...c, assignedAppliances: c.assignedAppliances.filter((_, i) => i !== applianceIndex) }
+        : c
+    ));
+  }, []);
+
+  // Planner cost (computed for planning phase display)
+  const plannerTotalCost = useMemo(() => {
+    return plannerCircuits.reduce((sum, c) => {
+      const wireCost = c.selectedWire ? c.selectedWire.costPerMeter * DEFAULT_WIRE_LENGTH : 0;
+      const nfbCost = NFB_COSTS[c.breaker.ratedCurrent] ?? 0;
+      return sum + wireCost + nfbCost;
+    }, 0);
+  }, [plannerCircuits]);
+
+  // Planner validation
+  const plannerAllAssigned = useMemo(() => {
+    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return false;
+    const totalAppliances = currentLevel.rooms.reduce((sum, r) => sum + r.appliances.length, 0);
+    const assignedCount = plannerCircuits.reduce((sum, c) => sum + c.assignedAppliances.length, 0);
+    return assignedCount >= totalAppliances;
+  }, [currentLevel, plannerCircuits]);
+
+  const plannerAllWired = plannerCircuits.length > 0 && plannerCircuits.every(c => c.selectedWire !== null);
+  const plannerCanConfirm = plannerAllAssigned && plannerAllWired;
+  const plannerConfirmTooltip = !plannerCanConfirm
+    ? (!plannerAllAssigned ? '請將所有電器指派到迴路' : '請為每條迴路選擇線材')
+    : undefined;
+
+  // Confirm planning: convert PlannerCircuit[] → CircuitConfig[] + game state
+  const handleConfirmPlanning = useCallback(() => {
+    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return;
+    if (!plannerCanConfirm) return;
+
+    const configs: CircuitConfig[] = plannerCircuits.map((pc, idx) => ({
+      id: `c${idx + 1}` as CircuitId,
+      label: `迴路 ${idx + 1}`,
+      voltage: pc.voltage,
+      breaker: pc.breaker,
+      availableAppliances: pc.assignedAppliances.map(a => a.appliance),
+    }));
+
+    const wires: Record<CircuitId, Wire> = {};
+    const appls: Record<CircuitId, Appliance[]> = {};
+    const wiringCircuits: WiringState['circuits'] = {};
+    const ids: CircuitId[] = [];
+
+    for (let i = 0; i < plannerCircuits.length; i++) {
+      const pc = plannerCircuits[i];
+      const cid = `c${i + 1}` as CircuitId;
+      ids.push(cid);
+      wires[cid] = pc.selectedWire!;
+      appls[cid] = pc.assignedAppliances.map(a => a.appliance);
+      // For requiresCrimp levels, leave circuits as not wired (crimp flow will handle)
+      if (currentLevel.requiresCrimp) {
+        wiringCircuits[cid] = { isWired: false, connectedWire: null };
+      } else {
+        wiringCircuits[cid] = { isWired: true, connectedWire: pc.selectedWire };
+      }
+    }
+
+    setResolvedConfigs(configs);
+    setCircuitWires(wires);
+    setCircuitAppliances(appls);
+    setCircuitCrimps({});
+    setWiring({
+      isDragging: false,
+      dragWire: null,
+      cursorPos: null,
+      isWired: !currentLevel.requiresCrimp,
+      connectedWire: null,
+      circuits: wiringCircuits,
+      targetCircuitId: null,
+    });
+    setCircuitPhases({});
+    setMultiState(createInitialMultiState(ids));
+    setResult('none');
+    setCircuitLanes(ids);
+    setCableTies(new Map());
+    setRoutingCompleted(false);
+    setShowRoutingOverlay(false);
+    setFinalAestheticsScore(undefined);
+    setGamePhase('active');
+  }, [currentLevel, plannerCircuits, plannerCanConfirm]);
 
   // Wiring drag callbacks
   const handleDragStart = useCallback((wire: Wire) => {
@@ -759,11 +960,47 @@ export default function GameBoard() {
     }));
   }, []);
 
+  const isOldHouse = currentLevel != null && isFixedCircuitLevel(currentLevel) && !!currentLevel.oldHouse;
+  const oldHouseProblems = currentLevel != null && isFixedCircuitLevel(currentLevel) ? currentLevel.oldHouse?.problems : undefined;
+
   // Level select screen
   if (!currentLevel) {
     return <LevelSelect levels={LEVELS} onSelect={handleSelectLevel} />;
   }
 
+  // Planning phase for free circuit levels
+  if (gamePhase === 'planning' && isFreeCircuitLevel(currentLevel)) {
+    return (
+      <div className="game-board planning-phase">
+        <header className="game-header">
+          <div className="header-top">
+            <button className="back-button" onClick={handleBackToLevels}>← 返回</button>
+            <h1>{currentLevel.name}</h1>
+            <span className="level-goal">通電 {currentLevel.survivalTime}秒 / 預算 ${currentLevel.budget}</span>
+          </div>
+          <p className="level-description">{currentLevel.description}</p>
+        </header>
+
+        <CircuitPlanner
+          level={currentLevel}
+          circuits={plannerCircuits}
+          totalCost={plannerTotalCost}
+          canConfirm={plannerCanConfirm}
+          confirmTooltip={plannerConfirmTooltip}
+          onAddCircuit={handleAddPlannerCircuit}
+          onDeleteCircuit={handleDeletePlannerCircuit}
+          onChangeVoltage={handleChangePlannerVoltage}
+          onChangeBreaker={handleChangePlannerBreaker}
+          onSelectWire={handleSelectPlannerWire}
+          onAssignAppliance={handleAssignAppliance}
+          onUnassignAppliance={handleUnassignPlannerAppliance}
+          onConfirm={handleConfirmPlanning}
+        />
+      </div>
+    );
+  }
+
+  // Active phase (wiring / simulation) — same for both fixed and free circuit levels
   return (
     <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}${circuitConfigs.length >= 4 ? ' many-circuits' : ''}`}>
       <header className="game-header">
@@ -811,8 +1048,8 @@ export default function GameBoard() {
             problemCircuits={problemCircuits}
             preWiredCircuitIds={preWiredCircuitIds}
             onUnwire={handleUnwire}
-            isOldHouse={!!currentLevel?.oldHouse}
-            oldHouseProblems={currentLevel?.oldHouse?.problems}
+            isOldHouse={isOldHouse}
+            oldHouseProblems={oldHouseProblems}
           />
           {routingReady && !isPowered && (
             <button
@@ -826,7 +1063,7 @@ export default function GameBoard() {
 
         <section className="panel-right">
           <AppliancePanel
-            circuitConfigs={currentLevel.circuitConfigs}
+            circuitConfigs={circuitConfigs}
             circuitAppliances={circuitAppliances}
             onAdd={handleAddAppliance}
             onRemove={handleRemoveAppliance}
