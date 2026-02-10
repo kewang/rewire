@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 中英雙語 ✓。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 中英雙語 ✓。v0.9 PRD 已完成（平面圖模式）。**
 
 ## Tech Stack
 
@@ -57,7 +57,7 @@
 
 - 語言：程式碼用英文，註解與文件可用繁體中文
 - OpenSpec 工作流程管理所有 change
-- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`
+- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`、`docs/project-rewire-prd-v0.9.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
 - **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
 - **Change 實作完成後 MUST 提供人工測試指引**：每個 change 的所有 task 完成後，MUST 輸出一份簡明的手動測試步驟清單，包含：
@@ -156,6 +156,12 @@
 - i18n：react-i18next，zh-TW（預設）+ en 雙語，語言偏好 localStorage key=`rewire-lang`
 - i18n 翻譯輔助：i18nHelpers.ts 提供 tApplianceName/tRoomName/tStatus 等便利函式
 - 語言切換器：LevelSelect 標題旁 EN/中 按鈕，LanguageSwitcher 元件
+- v0.9 平面圖模式：FloorPlanView 取代 CircuitDiagram 作為主視圖
+- 平面圖房型：S(4×4套房)/M(6×4兩房)/L(8×6三房)/XL(10×6豪宅)，色塊方格渲染
+- 空間走線：RoutingGraph 沿牆路徑圖 + Dijkstra 自動路由 + 星形/串聯候選選擇
+- 走線距離影響成本：cost = wire.costPerMeter × routeDistance（取代固定 DEFAULT_WIRE_LENGTH）
+- 配電箱操作：點擊平面圖上的配電箱 → PanelInteriorView overlay 展開
+- RoutingGraph 通用設計：FloorPlanOutlet.type 含 'power' | 'network'，為 v1.0 弱電預留
 
 ## Testing Workflow
 
