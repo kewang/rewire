@@ -149,6 +149,13 @@
 2. smoke test 通過 → 人類體驗測試 → 回饋修正
 3. 全部通過 → opsx:archive
 
+## Deployment
+
+- **GitHub Pages**: https://kewang.github.io/rewire/
+- Push 到 `master` 自動透過 GitHub Actions 建置部署
+- Vite `base: '/rewire/'` 確保靜態資源路徑正確
+- Workflow: `.github/workflows/deploy.yml`
+
 ## Known Issues / Notes
 
 - 電器音效目前用 Web Audio API 合成，未來可換真實音檔提升品質

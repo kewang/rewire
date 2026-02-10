@@ -1,8 +1,5 @@
-# dev-environment Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change project-scaffold. Update Purpose after archive.
-## Requirements
 ### Requirement: Vite Dev Server
 
 系統 MUST 提供透過 npm scripts 啟動本地開發伺服器的能力，支援 HMR。
@@ -19,4 +16,3 @@ TBD - created by archiving change project-scaffold. Update Purpose after archive
 - **THEN** 產出靜態檔案至 `dist/` 目錄
 - **AND** 建置過程無 TypeScript 錯誤
 - **AND** 靜態資源路徑以 `/rewire/` 為 base path
-
