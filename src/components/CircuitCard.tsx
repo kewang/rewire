@@ -1,14 +1,18 @@
 import type { Wire, Breaker, PlannerCircuit } from '../types/game';
-import { DEFAULT_WIRES, BREAKER_15A, BREAKER_20A, BREAKER_30A, DEFAULT_WIRE_LENGTH, NFB_COSTS } from '../data/constants';
+import { DEFAULT_WIRES, BREAKER_15A, BREAKER_20A, BREAKER_30A, DEFAULT_WIRE_LENGTH, NFB_COSTS, ELCB_COST } from '../data/constants';
 
 interface CircuitCardProps {
   readonly circuit: PlannerCircuit;
   readonly index: number;
+  readonly phaseMode?: 'auto' | 'manual';
+  readonly hasWetAreaAppliance: boolean;
   readonly onDelete: (id: string) => void;
   readonly onChangeVoltage: (id: string, voltage: 110 | 220) => void;
   readonly onChangeBreaker: (id: string, breaker: Breaker) => void;
   readonly onSelectWire: (id: string, wire: Wire) => void;
   readonly onUnassignAppliance: (circuitId: string, applianceIndex: number) => void;
+  readonly onChangePhase?: (id: string, phase: 'R' | 'T') => void;
+  readonly onChangeElcb?: (id: string, enabled: boolean) => void;
 }
 
 const BREAKER_OPTIONS: { breaker: Breaker; label: string }[] = [
@@ -20,11 +24,15 @@ const BREAKER_OPTIONS: { breaker: Breaker; label: string }[] = [
 export default function CircuitCard({
   circuit,
   index,
+  phaseMode,
+  hasWetAreaAppliance,
   onDelete,
   onChangeVoltage,
   onChangeBreaker,
   onSelectWire,
   onUnassignAppliance,
+  onChangePhase,
+  onChangeElcb,
 }: CircuitCardProps) {
   const totalCurrent = circuit.assignedAppliances.reduce((sum, a) => {
     if (a.appliance.voltage !== circuit.voltage) return sum;
@@ -37,7 +45,11 @@ export default function CircuitCard({
 
   const wireCost = circuit.selectedWire ? circuit.selectedWire.costPerMeter * DEFAULT_WIRE_LENGTH : 0;
   const nfbCost = NFB_COSTS[circuit.breaker.ratedCurrent] ?? 0;
-  const circuitCost = wireCost + nfbCost;
+  const elcbCost = circuit.elcbEnabled ? ELCB_COST : 0;
+  const circuitCost = wireCost + nfbCost + elcbCost;
+
+  const showPhaseSelector = phaseMode != null && circuit.voltage === 110;
+  const phaseDisabled = phaseMode === 'auto';
 
   return (
     <div className={`circuit-card voltage-${circuit.voltage}`}>
@@ -46,7 +58,7 @@ export default function CircuitCard({
         <button className="circuit-card-delete" onClick={() => onDelete(circuit.id)} title="刪除迴路">✕</button>
       </div>
 
-      <div className="circuit-card-controls">
+      <div className={`circuit-card-controls${showPhaseSelector ? ' has-phase' : ''}`}>
         <div className="circuit-card-field">
           <label>電壓</label>
           <div className="voltage-toggle">
@@ -60,6 +72,24 @@ export default function CircuitCard({
             >220V</button>
           </div>
         </div>
+
+        {showPhaseSelector && (
+          <div className="circuit-card-field">
+            <label>相位</label>
+            <div className="phase-toggle">
+              <button
+                className={circuit.phase === 'R' ? 'active phase-r' : ''}
+                onClick={() => onChangePhase?.(circuit.id, 'R')}
+                disabled={phaseDisabled}
+              >R</button>
+              <button
+                className={circuit.phase === 'T' ? 'active phase-t' : ''}
+                onClick={() => onChangePhase?.(circuit.id, 'T')}
+                disabled={phaseDisabled}
+              >T</button>
+            </div>
+          </div>
+        )}
 
         <div className="circuit-card-field">
           <label>NFB</label>
@@ -96,6 +126,18 @@ export default function CircuitCard({
           </select>
         </div>
       </div>
+
+      {hasWetAreaAppliance && (
+        <label className="elcb-toggle-planner">
+          <input
+            type="checkbox"
+            checked={!!circuit.elcbEnabled}
+            onChange={e => onChangeElcb?.(circuit.id, e.target.checked)}
+          />
+          <span>ELCB 漏電斷路器</span>
+          <span className="elcb-cost-tag">${ELCB_COST}</span>
+        </label>
+      )}
 
       {circuit.assignedAppliances.length > 0 && (
         <div className="circuit-card-appliances">

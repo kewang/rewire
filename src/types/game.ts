@@ -300,4 +300,8 @@ export interface PlannerCircuit {
   readonly breaker: Breaker;
   readonly assignedAppliances: readonly ApplianceAssignment[];
   readonly selectedWire: Wire | null;
+  /** 相位分配（僅 110V + phaseMode 關卡適用） */
+  readonly phase?: 'R' | 'T';
+  /** 是否啟用 ELCB（含 wetArea 電器的迴路使用） */
+  readonly elcbEnabled?: boolean;
 }

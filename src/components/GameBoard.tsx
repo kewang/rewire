@@ -199,6 +199,8 @@ export default function GameBoard() {
 
   // Track which scripted leakage events have fired
   const firedLeakageEventsRef = useRef<Set<number>>(new Set());
+  // Resolved leakage events (for free circuit levels with dynamic circuitId mapping)
+  const resolvedLeakageEventsRef = useRef<readonly { time: number; circuitId: CircuitId }[] | null>(null);
 
   // rAF simulation loop
   const tick = useCallback((timestamp: number) => {
@@ -220,9 +222,10 @@ export default function GameBoard() {
       const wetAreaConfigs = resolvedConfigsRef.current.filter(c => c.wetArea);
       const updatedStates: Record<CircuitId, CircuitState> = { ...newMultiState.circuitStates };
 
-      if (curLevel.leakageMode === 'scripted' && curLevel.leakageEvents) {
-        for (let i = 0; i < curLevel.leakageEvents.length; i++) {
-          const evt = curLevel.leakageEvents[i];
+      const effectiveLeakageEvents = resolvedLeakageEventsRef.current ?? curLevel.leakageEvents;
+      if (curLevel.leakageMode === 'scripted' && effectiveLeakageEvents) {
+        for (let i = 0; i < effectiveLeakageEvents.length; i++) {
+          const evt = effectiveLeakageEvents[i];
           if (firedLeakageEventsRef.current.has(i)) continue;
           if (newMultiState.elapsed >= evt.time) {
             firedLeakageEventsRef.current.add(i);
@@ -413,6 +416,7 @@ export default function GameBoard() {
     hasWarningRef.current = false;
     hasTripRef.current = false;
     firedLeakageEventsRef.current = new Set();
+    resolvedLeakageEventsRef.current = null;
     setIsPowered(false);
     setResult('none');
     setStarResult(null);
@@ -492,6 +496,7 @@ export default function GameBoard() {
     buzzingRef.current = false;
     hasWarningRef.current = false;
     hasTripRef.current = false;
+    resolvedLeakageEventsRef.current = null;
     setIsPowered(false);
     setMultiState(createInitialMultiState([]));
     setResult('none');
@@ -637,31 +642,43 @@ export default function GameBoard() {
   // === Planner handlers (free circuit levels) ===
 
   const handleAddPlannerCircuit = useCallback(() => {
-    setPlannerCircuits(prev => [
-      ...prev,
-      {
-        id: `pc-${plannerNextId}`,
-        voltage: 110,
-        breaker: BREAKER_20A,
-        assignedAppliances: [],
-        selectedWire: null,
-      },
-    ]);
+    const hasPhaseMode = currentLevel != null && 'phaseMode' in currentLevel && currentLevel.phaseMode != null;
+    setPlannerCircuits(prev => {
+      // Auto phase for 'auto' mode: alternate R/T
+      const autoPhase = hasPhaseMode && currentLevel!.phaseMode === 'auto';
+      const existing110Count = prev.filter(c => c.voltage === 110).length;
+      const phase = hasPhaseMode ? (autoPhase ? (existing110Count % 2 === 0 ? 'R' : 'T') : 'R') : undefined;
+      return [
+        ...prev,
+        {
+          id: `pc-${plannerNextId}`,
+          voltage: 110 as const,
+          breaker: BREAKER_20A,
+          assignedAppliances: [],
+          selectedWire: null,
+          phase,
+        },
+      ];
+    });
     setPlannerNextId(prev => prev + 1);
-  }, [plannerNextId]);
+  }, [plannerNextId, currentLevel]);
 
   const handleDeletePlannerCircuit = useCallback((id: string) => {
     setPlannerCircuits(prev => prev.filter(c => c.id !== id));
   }, []);
 
   const handleChangePlannerVoltage = useCallback((id: string, voltage: 110 | 220) => {
+    const hasPhaseMode = currentLevel != null && 'phaseMode' in currentLevel && currentLevel.phaseMode != null;
     setPlannerCircuits(prev => prev.map(c => {
       if (c.id !== id) return c;
       // Remove appliances that don't match new voltage
       const filtered = c.assignedAppliances.filter(a => a.appliance.voltage === voltage);
-      return { ...c, voltage, assignedAppliances: filtered };
+      // 220V: clear phase; 110V: restore default 'R' if phaseMode
+      const phase = voltage === 220 ? undefined : (hasPhaseMode ? 'R' as const : undefined);
+      // 220V: clear elcb (will be re-evaluated based on wetArea)
+      return { ...c, voltage, assignedAppliances: filtered, phase };
     }));
-  }, []);
+  }, [currentLevel]);
 
   const handleChangePlannerBreaker = useCallback((id: string, breaker: Breaker) => {
     setPlannerCircuits(prev => prev.map(c =>
@@ -690,10 +707,30 @@ export default function GameBoard() {
   }, [plannerCircuits]);
 
   const handleUnassignPlannerAppliance = useCallback((circuitId: string, applianceIndex: number) => {
+    setPlannerCircuits(prev => prev.map(c => {
+      if (c.id !== circuitId) return c;
+      const filtered = c.assignedAppliances.filter((_, i) => i !== applianceIndex);
+      // If no remaining wetArea appliances, reset elcbEnabled
+      if (currentLevel && isFreeCircuitLevel(currentLevel)) {
+        const wetAreaRoomIds = new Set(currentLevel.rooms.filter(r => r.wetArea).map(r => r.id));
+        const hasWetArea = filtered.some(a => wetAreaRoomIds.has(a.roomId));
+        if (!hasWetArea && c.elcbEnabled) {
+          return { ...c, assignedAppliances: filtered, elcbEnabled: false };
+        }
+      }
+      return { ...c, assignedAppliances: filtered };
+    }));
+  }, [currentLevel]);
+
+  const handleChangePlannerPhase = useCallback((id: string, phase: 'R' | 'T') => {
     setPlannerCircuits(prev => prev.map(c =>
-      c.id === circuitId
-        ? { ...c, assignedAppliances: c.assignedAppliances.filter((_, i) => i !== applianceIndex) }
-        : c
+      c.id === id ? { ...c, phase } : c
+    ));
+  }, []);
+
+  const handleChangePlannerElcb = useCallback((id: string, enabled: boolean) => {
+    setPlannerCircuits(prev => prev.map(c =>
+      c.id === id ? { ...c, elcbEnabled: enabled } : c
     ));
   }, []);
 
@@ -702,7 +739,8 @@ export default function GameBoard() {
     return plannerCircuits.reduce((sum, c) => {
       const wireCost = c.selectedWire ? c.selectedWire.costPerMeter * DEFAULT_WIRE_LENGTH : 0;
       const nfbCost = NFB_COSTS[c.breaker.ratedCurrent] ?? 0;
-      return sum + wireCost + nfbCost;
+      const elcbCost = c.elcbEnabled ? ELCB_COST : 0;
+      return sum + wireCost + nfbCost + elcbCost;
     }, 0);
   }, [plannerCircuits]);
 
@@ -715,9 +753,20 @@ export default function GameBoard() {
   }, [currentLevel, plannerCircuits]);
 
   const plannerAllWired = plannerCircuits.length > 0 && plannerCircuits.every(c => c.selectedWire !== null);
-  const plannerCanConfirm = plannerAllAssigned && plannerAllWired;
+
+  // Check wetArea ELCB requirement
+  const plannerWetAreaMissingElcb = useMemo(() => {
+    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return false;
+    const wetAreaRoomIds = new Set(currentLevel.rooms.filter(r => r.wetArea).map(r => r.id));
+    if (wetAreaRoomIds.size === 0) return false;
+    return plannerCircuits.some(c =>
+      c.assignedAppliances.some(a => wetAreaRoomIds.has(a.roomId)) && !c.elcbEnabled
+    );
+  }, [currentLevel, plannerCircuits]);
+
+  const plannerCanConfirm = plannerAllAssigned && plannerAllWired && !plannerWetAreaMissingElcb;
   const plannerConfirmTooltip = !plannerCanConfirm
-    ? (!plannerAllAssigned ? '請將所有電器指派到迴路' : '請為每條迴路選擇線材')
+    ? (!plannerAllAssigned ? '請將所有電器指派到迴路' : !plannerAllWired ? '請為每條迴路選擇線材' : plannerWetAreaMissingElcb ? '潮濕區域迴路需安裝 ELCB' : undefined)
     : undefined;
 
   // Confirm planning: convert PlannerCircuit[] → CircuitConfig[] + game state
@@ -725,18 +774,29 @@ export default function GameBoard() {
     if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return;
     if (!plannerCanConfirm) return;
 
-    const configs: CircuitConfig[] = plannerCircuits.map((pc, idx) => ({
-      id: `c${idx + 1}` as CircuitId,
-      label: `迴路 ${idx + 1}`,
-      voltage: pc.voltage,
-      breaker: pc.breaker,
-      availableAppliances: pc.assignedAppliances.map(a => a.appliance),
-    }));
+    // Build wetArea room IDs for config generation
+    const wetAreaRoomIds = new Set(currentLevel.rooms.filter(r => r.wetArea).map(r => r.id));
+
+    const configs: CircuitConfig[] = plannerCircuits.map((pc, idx) => {
+      const hasWetArea = pc.assignedAppliances.some(a => wetAreaRoomIds.has(a.roomId));
+      return {
+        id: `c${idx + 1}` as CircuitId,
+        label: `迴路 ${idx + 1}`,
+        voltage: pc.voltage,
+        breaker: pc.breaker,
+        availableAppliances: pc.assignedAppliances.map(a => a.appliance),
+        phase: pc.phase,
+        wetArea: hasWetArea || undefined,
+        elcbAvailable: pc.elcbEnabled || undefined,
+      };
+    });
 
     const wires: Record<CircuitId, Wire> = {};
     const appls: Record<CircuitId, Appliance[]> = {};
     const wiringCircuits: WiringState['circuits'] = {};
     const ids: CircuitId[] = [];
+    const phases: Record<CircuitId, 'R' | 'T'> = {};
+    const elcbs: Record<CircuitId, boolean> = {};
 
     for (let i = 0; i < plannerCircuits.length; i++) {
       const pc = plannerCircuits[i];
@@ -744,12 +804,32 @@ export default function GameBoard() {
       ids.push(cid);
       wires[cid] = pc.selectedWire!;
       appls[cid] = pc.assignedAppliances.map(a => a.appliance);
+      if (pc.phase) phases[cid] = pc.phase;
+      if (pc.elcbEnabled) elcbs[cid] = true;
       // For requiresCrimp levels, leave circuits as not wired (crimp flow will handle)
       if (currentLevel.requiresCrimp) {
         wiringCircuits[cid] = { isWired: false, connectedWire: null };
       } else {
         wiringCircuits[cid] = { isWired: true, connectedWire: pc.selectedWire };
       }
+    }
+
+    // Resolve scripted leakageEvent circuitIds: map wetArea events to actual circuit IDs
+    if (currentLevel.leakageMode === 'scripted' && currentLevel.leakageEvents) {
+      const wetAreaCircuitIds = ids.filter((_id, idx) => {
+        const pc = plannerCircuits[idx];
+        return pc.assignedAppliances.some(a => wetAreaRoomIds.has(a.roomId));
+      });
+      // Replace leakageEvent circuitIds with resolved wetArea circuit IDs
+      // Store resolved events on the level object is not possible (readonly),
+      // so we store them via a ref that the tick loop can access
+      const resolvedEvents = currentLevel.leakageEvents.map((evt, evtIdx) => ({
+        ...evt,
+        circuitId: wetAreaCircuitIds[evtIdx % wetAreaCircuitIds.length] ?? evt.circuitId,
+      }));
+      resolvedLeakageEventsRef.current = resolvedEvents;
+    } else {
+      resolvedLeakageEventsRef.current = null;
     }
 
     setResolvedConfigs(configs);
@@ -765,7 +845,8 @@ export default function GameBoard() {
       circuits: wiringCircuits,
       targetCircuitId: null,
     });
-    setCircuitPhases({});
+    setCircuitPhases(phases);
+    setCircuitElcb(elcbs);
     setMultiState(createInitialMultiState(ids));
     setResult('none');
     setCircuitLanes(ids);
@@ -996,6 +1077,8 @@ export default function GameBoard() {
           onSelectWire={handleSelectPlannerWire}
           onAssignAppliance={handleAssignAppliance}
           onUnassignAppliance={handleUnassignPlannerAppliance}
+          onChangePhase={handleChangePlannerPhase}
+          onChangeElcb={handleChangePlannerElcb}
           onConfirm={handleConfirmPlanning}
         />
       </div>

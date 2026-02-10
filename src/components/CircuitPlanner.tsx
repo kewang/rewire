@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import type { Appliance, Wire, Breaker, FreeCircuitLevel, PlannerCircuit } from '../types/game';
+import { NEUTRAL_MAX_CURRENT } from '../data/constants';
 import RoomPanel from './RoomPanel';
 import CircuitCard from './CircuitCard';
 
@@ -15,6 +17,8 @@ interface CircuitPlannerProps {
   readonly onSelectWire: (id: string, wire: Wire) => void;
   readonly onAssignAppliance: (appliance: Appliance, roomId: string, roomApplianceIndex: number) => void;
   readonly onUnassignAppliance: (circuitId: string, applianceIndex: number) => void;
+  readonly onChangePhase?: (id: string, phase: 'R' | 'T') => void;
+  readonly onChangeElcb?: (id: string, enabled: boolean) => void;
   readonly onConfirm: () => void;
 }
 
@@ -31,6 +35,8 @@ export default function CircuitPlanner({
   onSelectWire,
   onAssignAppliance,
   onUnassignAppliance,
+  onChangePhase,
+  onChangeElcb,
   onConfirm,
 }: CircuitPlannerProps) {
   const slotsUsed = circuits.length;
@@ -40,6 +46,41 @@ export default function CircuitPlanner({
   // Count total assigned and total appliances
   const totalAppliances = level.rooms.reduce((sum, r) => sum + r.appliances.length, 0);
   const assignedCount = circuits.reduce((sum, c) => sum + c.assignedAppliances.length, 0);
+
+  // Build wetArea room IDs set for efficient lookup
+  const wetAreaRoomIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const room of level.rooms) {
+      if (room.wetArea) ids.add(room.id);
+    }
+    return ids;
+  }, [level.rooms]);
+
+  // Pre-compute hasWetAreaAppliance for each circuit
+  const circuitWetAreaMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const c of circuits) {
+      map[c.id] = c.assignedAppliances.some(a => wetAreaRoomIds.has(a.roomId));
+    }
+    return map;
+  }, [circuits, wetAreaRoomIds]);
+
+  // Phase balance preview (only when phaseMode exists)
+  const phaseBalance = useMemo(() => {
+    if (!level.phaseMode) return null;
+    let rCurrent = 0;
+    let tCurrent = 0;
+    for (const c of circuits) {
+      if (c.voltage !== 110 || !c.phase) continue;
+      const current = c.assignedAppliances.reduce((sum, a) => {
+        if (a.appliance.voltage !== c.voltage) return sum;
+        return sum + a.appliance.power / a.appliance.voltage;
+      }, 0);
+      if (c.phase === 'R') rCurrent += current;
+      else tCurrent += current;
+    }
+    return { r: rCurrent, t: tCurrent, n: Math.abs(rCurrent - tCurrent) };
+  }, [level.phaseMode, circuits]);
 
   return (
     <div className="circuit-planner">
@@ -74,11 +115,15 @@ export default function CircuitPlanner({
               key={circuit.id}
               circuit={circuit}
               index={index}
+              phaseMode={level.phaseMode}
+              hasWetAreaAppliance={circuitWetAreaMap[circuit.id] ?? false}
               onDelete={onDeleteCircuit}
               onChangeVoltage={onChangeVoltage}
               onChangeBreaker={onChangeBreaker}
               onSelectWire={onSelectWire}
               onUnassignAppliance={onUnassignAppliance}
+              onChangePhase={onChangePhase}
+              onChangeElcb={onChangeElcb}
             />
           ))}
         </div>
@@ -108,6 +153,26 @@ export default function CircuitPlanner({
             ${totalCost} / ${level.budget}
           </span>
         </div>
+
+        {phaseBalance && (
+          <div className="planner-phase-balance">
+            <h4>相位預估</h4>
+            <div className="phase-balance-row">
+              <span className="phase-label phase-r-label">R相</span>
+              <span className="phase-value">{phaseBalance.r.toFixed(1)}A</span>
+            </div>
+            <div className="phase-balance-row">
+              <span className="phase-label phase-t-label">T相</span>
+              <span className="phase-value">{phaseBalance.t.toFixed(1)}A</span>
+            </div>
+            <div className="phase-balance-row">
+              <span className="phase-label">N線</span>
+              <span className={`phase-value${phaseBalance.n >= NEUTRAL_MAX_CURRENT ? ' neutral-danger' : ''}`}>
+                {phaseBalance.n.toFixed(1)}A
+              </span>
+            </div>
+          </div>
+        )}
 
         <button
           className="confirm-planning-btn"

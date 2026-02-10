@@ -16,7 +16,10 @@
 ## Project Structure
 
 - `src/components/` — React 元件
-  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）
+  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents）
+  - `CircuitPlanner.tsx` — 迴路規劃主容器（RoomPanel + CircuitCard 列表 + 配電箱摘要 + 相位平衡預估面板）
+  - `CircuitCard.tsx` — 單條迴路卡片（電壓/NFB/線材選擇 + 相位 R/T toggle + ELCB toggle + 電器列表 + 成本）
+  - `RoomPanel.tsx` — 房間電器清單（未指派高亮 / 已指派灰化）
   - `StatusDisplay.tsx` — 即時狀態面板（單迴路詳細 / 多迴路摘要 + 相位平衡指示器 + 主開關負載指示器）
   - `ResultPanel.tsx` — 結果面板（inline + 失敗迴路標示 + 星等顯示 + main-tripped）
   - `CircuitDiagram.tsx` — SVG 線路圖，SingleCircuitSVG 子元件 + 多迴路多行排列佈局（MAX_CIRCUITS_PER_ROW=4）+ 相位標籤/切換 + 老屋問題視覺（閃爍邊框/⚠️/氧化線色/拆線按鈕）
@@ -87,6 +90,13 @@
 - 主開關負載指示器：StatusDisplay 顯示「主開關：XA / YA」，≥80% 橘色、≥100% 紅色，僅 FreeCircuitLevel 顯示
 - Level union type：FixedCircuitLevel（有 circuitConfigs）| FreeCircuitLevel（有 rooms + panel）
 - L01-L05 / L18-L20 維持固定迴路，L06-L17 / L21-L23 改為自由配迴路
+- CircuitCard 相位選擇器：phaseMode 存在 + 110V 時顯示 R/T toggle，auto 模式 disabled（自動交替分配），manual 模式 enabled
+- CircuitCard ELCB toggle：迴路含 wetArea 房間電器時顯示，wetArea 迴路必須啟用 ELCB 才能確認配置
+- PlannerCircuit 擴充：phase?: 'R' | 'T'（110V 迴路）、elcbEnabled?: boolean（wetArea 迴路）
+- 相位平衡預估：CircuitPlanner 摘要區即時計算 R/T/N 電流，N 線 >= 30A 紅色警告
+- 規劃→模擬轉換：confirmPlanning 提取 phase → circuitPhases、elcb → circuitElcb，生成 CircuitConfig 含 phase/wetArea/elcbAvailable
+- scripted leakageEvent 動態映射：FreeCircuitLevel 的 leakageEvent circuitId 在確認配置時解析為含 wetArea 電器的實際迴路 ID（resolvedLeakageEventsRef）
+- 移除 wetArea 電器時自動清除 elcbEnabled
 - buzzing 音效：任一迴路 warning 時觸發，音量 = max wireHeat across all circuits
 - 相位平衡：單相三線制 R-N(110V) / T-N(110V) / R-T(220V)，中性線電流 I_N = |Σ I_R − Σ I_T|
 - 中性線熱度：同 wire heat model（heatRate=0.4, coolRate=0.15），NEUTRAL_MAX_CURRENT=30A

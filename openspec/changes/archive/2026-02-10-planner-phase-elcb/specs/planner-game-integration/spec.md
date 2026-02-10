@@ -1,20 +1,4 @@
-## ADDED Requirements
-
-### Requirement: GameBoard detects FreeCircuitLevel and enters planning phase
-
-GameBoard MUST 偵測 FreeCircuitLevel 並進入規劃階段。
-
-#### Scenario: 選擇自由配迴路關卡
-
-- **WHEN** 玩家選擇一個 FreeCircuitLevel（level 有 rooms 屬性）
-- **THEN** GameBoard MUST 設定 gamePhase = 'planning'
-- **AND** MUST 渲染 CircuitPlanner 元件
-- **AND** MUST 不渲染既有的 wiring/simulation UI
-
-#### Scenario: 選擇固定迴路關卡（不受影響）
-
-- **WHEN** 玩家選擇一個 FixedCircuitLevel
-- **THEN** GameBoard MUST 走既有流程（無 planning phase）
+## MODIFIED Requirements
 
 ### Requirement: Planning phase completion triggers transition
 
@@ -78,25 +62,7 @@ GameBoard MUST 偵測 FreeCircuitLevel 並進入規劃階段。
 - **WHEN** 所有電器已指派、所有迴路已選線、wetArea 迴路已啟用 ELCB
 - **THEN** 「確認配置」按鈕 MUST 為 enabled
 
-### Requirement: Back to levels resets planning state
-
-返回關卡選擇 MUST 清除規劃狀態。
-
-#### Scenario: 返回關卡選擇
-
-- **WHEN** 玩家在規劃階段點擊「← 返回」
-- **THEN** MUST 清除所有規劃相關狀態
-- **AND** MUST 回到關卡選擇畫面
-
-### Requirement: Retry resets to planning phase for free circuit levels
-
-重試 MUST 回到規劃階段。
-
-#### Scenario: 自由配迴路關卡重試
-
-- **WHEN** 玩家在自由配迴路關卡結果畫面點擊「重試」
-- **THEN** MUST 回到規劃階段（gamePhase = 'planning'）
-- **AND** MUST 清除所有迴路規劃（從頭開始）
+## ADDED Requirements
 
 ### Requirement: Scripted leakageEvent circuitId dynamic resolution
 

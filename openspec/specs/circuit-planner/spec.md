@@ -128,6 +128,21 @@
 - **WHEN** 迴路預估電流 >= 線材安全容量
 - **THEN** 電流指示 MUST 為紅色
 
+#### Scenario: CircuitCard 顯示相位選擇器（條件顯示）
+
+- **WHEN** 關卡有 phaseMode 且迴路電壓為 110V
+- **THEN** CircuitCard MUST 在電壓控制項後方顯示相位選擇器（R/T toggle）
+
+#### Scenario: CircuitCard 顯示 ELCB toggle（條件顯示）
+
+- **WHEN** 迴路包含 wetArea 房間的電器
+- **THEN** CircuitCard MUST 在控制項區域顯示 ELCB 開關（checkbox + 成本 $35）
+
+#### Scenario: CircuitCard footer 顯示含 ELCB 的迴路成本
+
+- **WHEN** CircuitCard 渲染且 elcbEnabled 為 true
+- **THEN** footer 成本 MUST = wire cost + NFB cost + ELCB_COST
+
 ### Requirement: Player can select wire for each circuit in planner
 
 玩家 MUST 能為每條自建迴路選擇線材。
@@ -147,3 +162,17 @@
 - **WHEN** 計算自由配迴路的總成本
 - **THEN** 每條迴路成本 MUST = wire.costPerMeter × DEFAULT_WIRE_LENGTH + NFB_COSTS[breaker.ratedCurrent]
 - **AND** 總成本 = Σ 各迴路成本
+
+### Requirement: PlannerCircuit includes phase and elcbEnabled
+
+PlannerCircuit MUST 支援 `phase` 和 `elcbEnabled` 可選欄位。
+
+#### Scenario: PlannerCircuit phase 欄位
+
+- **WHEN** 建立一個有 phaseMode 關卡中的 110V PlannerCircuit
+- **THEN** 該物件 MUST 包含 `phase?: 'R' | 'T'` 欄位
+
+#### Scenario: PlannerCircuit elcbEnabled 欄位
+
+- **WHEN** 建立一個 PlannerCircuit
+- **THEN** 該物件 MUST 包含 `elcbEnabled?: boolean` 欄位（預設 false）
