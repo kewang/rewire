@@ -1,0 +1,389 @@
+{
+  "app": {
+    "title": "Project Rewire",
+    "subtitle": "분전반 시뮬레이터"
+  },
+  "nav": {
+    "back": "뒤로",
+    "backToLevels": "스테이지 선택으로",
+    "retry": "다시 시도"
+  },
+  "levelSelect": {
+    "selectLevel": "스테이지 선택",
+    "appliances": "가전제품",
+    "budget": "예산",
+    "powerGoal": "통전 목표",
+    "seconds": "초"
+  },
+  "game": {
+    "powerTime": "통전 {{time}}초",
+    "powerTimeBudget": "통전 {{time}}초 / 예산 ${{budget}}",
+    "powered": "통전 중",
+    "wired": "배선 완료",
+    "unwired": "미배선",
+    "dragWire": "전선 드래그",
+    "dropHere": "여기에 연결",
+    "unwireBtn": "배선 해제",
+    "phaseR": "R상",
+    "phaseT": "T상",
+    "switchPhase": "전환",
+    "routing": "정리",
+    "rerouting": "재정리",
+    "unwireConfirm": "이 회로의 배선을 제거하시겠습니까? 기존 전선은 폐기됩니다."
+  },
+  "status": {
+    "normal": "정상",
+    "warning": "과부하 경고",
+    "tripped": "트립",
+    "burned": "소손",
+    "neutralBurned": "중성선 소손",
+    "elcbTripped": "ELCB 트립",
+    "leakage": "누전!",
+    "mainTripped": "주 차단기 트립",
+    "overallStatus": "전체 상태",
+    "statusLabel": "상태",
+    "totalCurrent": "총 전류",
+    "wireLoad": "전선 부하",
+    "wireHeat": "전선 온도",
+    "remainingTime": "남은 시간",
+    "costBudget": "비용/예산",
+    "overBudget": "예산 초과!",
+    "mainBreaker": "주 차단기",
+    "phaseRCurrent": "R상 전류",
+    "phaseTCurrent": "T상 전류",
+    "neutralCurrent": "중성선 전류",
+    "neutralHeat": "중성선 온도"
+  },
+  "result": {
+    "passed": "클리어!",
+    "overBudget": "예산 초과!",
+    "tripped": "트립!",
+    "burned": "전선 소손!",
+    "neutralBurned": "중성선 소손!",
+    "mainTripped": "주 차단기 트립!",
+    "leakage": "감전!",
+    "powerTime": "통전 시간",
+    "wireCost": "전선 비용",
+    "budgetLabel": "예산",
+    "remaining": "잔여",
+    "exceeded": "초과",
+    "passedHint": "예산 내에서 배전을 성공적으로 완료했습니다!",
+    "overBudgetHint": "회로는 정상 작동하지만, 전선 비용 ${{cost}}이 예산 ${{budget}}을 초과합니다. 더 저렴한 전선을 시도해 보세요.",
+    "failType": "실패 유형",
+    "failedCircuit": "실패한 회로",
+    "nfbRating": "NFB 정격",
+    "wireMaxCurrent": "전선 허용 전류",
+    "breakerTrip": "차단기 트립",
+    "wireBurn": "전선 소손",
+    "neutralOverload": "중성선 과부하 소손",
+    "mainOverload": "주 차단기 과부하 트립",
+    "leakageDanger": "누전 감전",
+    "trippedHint": "{{prefix}}총 전류 {{current}}A가 NFB 정격 {{rated}}A를 초과하여 차단기가 작동했습니다.",
+    "trippedHintPrefix": "{{label}}의 ",
+    "burnedHint": "{{prefix}}총 전류 {{current}}A가 {{crossSection}}mm² 전선의 허용 전류 {{maxCurrent}}A를 초과했습니다. 장시간 과부하로 소손되었습니다. 더 굵은 전선을 시도해 보세요.",
+    "neutralBurnedHint": "R상과 T상의 부하가 심하게 불균형합니다. 중성선 전류가 안전 용량 30A를 초과하여 소손되었습니다. 양 상의 부하를 균등하게 분배해 보세요!",
+    "mainTrippedHint": "분전반 총 전류가 주 차단기 정격을 초과하여 트립되었습니다. 모든 회로 정전! 회로 구성을 재설계하여 총 동시 부하를 줄이세요.",
+    "leakageHint": "{{label}}에서 누전이 발생했지만 ELCB가 설치되어 있지 않아 감전 위험이 있습니다! 습윤 구역 회로에는 반드시 ELCB를 설치하세요.",
+    "leakageHintDefault": "회로",
+    "neutralCapacity": "중성선 용량",
+    "aestheticsScore": "정리 점수"
+  },
+  "star": {
+    "safePass": "안전 클리어",
+    "costMet": "예산 달성",
+    "bonusGoal": "보너스 목표",
+    "noWarning": "경고 제로",
+    "underBudgetRatio": "비용 ≤ 예산의 {{ratio}}%",
+    "timeMargin": "잔여 ≥ {{margin}}초",
+    "crimpQuality": "압착 품질 ≥ {{quality}}",
+    "noTrip": "트립 제로",
+    "aestheticsScore": "정리 점수 ≥ {{score}}"
+  },
+  "wire": {
+    "title": "전선 선택",
+    "maxCurrent": "허용 전류",
+    "costPerMeter": "비용",
+    "perMeter": "/m",
+    "dragHint": "회로도에 드래그하여 연결"
+  },
+  "appliance": {
+    "title": "가전제품",
+    "pluggedIn": "연결됨",
+    "pluggedInCircuit": "{{label}}에 연결됨",
+    "clickToRemove": "클릭하여 제거",
+    "requiresVoltage": "{{voltage}}V 회로 필요",
+    "hairDryer": "헤어드라이어",
+    "kettle": "전기 주전자",
+    "microwave": "전자레인지",
+    "underSinkHeater": "소형 온수기",
+    "dryer": "건조기",
+    "waterHeater": "전기 온수기",
+    "ihStove": "IH 쿡탑",
+    "airCon": "에어컨",
+    "bathHeater": "욕실 난방기",
+    "fridge": "냉장고",
+    "heater": "전기 히터",
+    "oven": "오븐",
+    "dehumidifier": "제습기"
+  },
+  "elcb": {
+    "title": "ELCB 누전 차단기 (${{cost}}/회로)",
+    "label": "ELCB 누전 차단기",
+    "costTag": "${{cost}}"
+  },
+  "crimp": {
+    "title": "압착 단자",
+    "selectTerminal": "단자 유형 선택",
+    "crimpAction": "압착 작업",
+    "stopAtSweet": "스위트 스폿에서 정지",
+    "tapAnywhere": "TAP ANYWHERE",
+    "crimpResult": "압착 결과",
+    "excellent": "완벽한 압착",
+    "good": "양호한 압착",
+    "poor": "불량 압착",
+    "none": "미압착",
+    "contactResistance": "접촉 저항 배율",
+    "effectiveCurrent": "유효 전류 배율",
+    "confirm": "확인",
+    "incompatible": "이 선경과 호환 불가",
+    "oRing": "O형 단자",
+    "yFork": "Y형 단자"
+  },
+  "planner": {
+    "title": "회로 설계",
+    "addCircuit": "＋ 회로 추가",
+    "addCircuitTooltip": "회로 추가",
+    "slotsFull": "슬롯 가득 참",
+    "empty": "회로가 없습니다. \"＋ 회로 추가\"를 클릭하여 설계를 시작하세요",
+    "panelTitle": "분전반",
+    "slots": "슬롯",
+    "mainBreaker": "주 차단기",
+    "applianceAssign": "기기 할당",
+    "cost": "비용",
+    "phaseEstimate": "상 밸런스 예측",
+    "nLine": "N선",
+    "confirmConfig": "구성 확정",
+    "assignAllAppliances": "모든 가전제품을 회로에 할당하세요",
+    "selectAllWires": "각 회로의 전선을 선택하세요",
+    "wetAreaNeedElcb": "습윤 구역 회로에는 ELCB가 필요합니다",
+    "circuitNum": "회로 {{num}}",
+    "deleteCircuit": "회로 삭제",
+    "voltage": "전압",
+    "phase": "상",
+    "nfb": "NFB",
+    "wireLabel": "전선",
+    "selectWire": "전선 선택",
+    "assignedAppliances": "할당된 가전제품",
+    "removeHint": "클릭하여 제거"
+  },
+  "room": {
+    "title": "방 / 가전제품",
+    "wetArea": "습윤 구역",
+    "circuitPrefix": "회로 ",
+    "living": "거실",
+    "kitchen": "주방",
+    "bedroom": "침실",
+    "bathroom": "욕실",
+    "laundry": "세탁실",
+    "storage": "창고",
+    "balcony": "발코니",
+    "acRoom": "에어컨실",
+    "mainCircuit": "메인 회로",
+    "study": "서재",
+    "livingAc": "거실 에어컨"
+  },
+  "panel": {
+    "title": "분전반 내부",
+    "subtitle": "전선을 드래그하여 재배열하고, 교차를 제거하고, 케이블 타이를 설치하세요",
+    "step1Label": "교차 제거",
+    "step1Desc": "전선을 좌우로 드래그",
+    "step2Label": "케이블 타이 설치",
+    "step2Desc": "전선 사이를 클릭",
+    "step3Label": "정리 완료",
+    "step3Desc": "완료 버튼 누르기",
+    "crossings": "교차 수",
+    "cableTies": "케이블 타이",
+    "aestheticsScore": "정리 점수",
+    "doneBtn": "정리 완료",
+    "dragHint": "← 드래그하여 재배열 →",
+    "busbar": "부스바",
+    "routingZone": "배선 구역",
+    "circuits": "CIRCUITS",
+    "crossingNoTie": "교차 — 타이 불가",
+    "removeTie": "클릭하여 타이 제거",
+    "placeTie": "클릭하여 타이 설치"
+  },
+  "cableTie": {
+    "title": "케이블 타이 조임",
+    "tight": "완벽",
+    "good": "양호",
+    "loose": "너무 느슨",
+    "overTight": "너무 조임",
+    "tapToLock": "TAP TO LOCK"
+  },
+  "breaker": {
+    "title": "NFB 교체",
+    "wireMaxCurrent": "전선 허용 전류",
+    "current": "현재",
+    "trip": "트립"
+  },
+  "oldHouse": {
+    "nfbOverrated": "NFB {{breaker}}A > 전선 {{wire}}A",
+    "missingElcb": "습윤 구역에 ELCB 필요",
+    "problemsRemaining": "모든 문제 회로를 먼저 수리하세요",
+    "wetAreaMissingElcb": "습윤 구역 회로에 ELCB가 필요합니다",
+    "allWiresNeeded": "모든 회로 배선을 먼저 완료하세요",
+    "crimpNeeded": "모든 회로 압착을 먼저 완료하세요",
+    "routingNeeded": "배선 정리를 먼저 완료하세요",
+    "appliancesNeeded": "먼저 가전제품을 할당하세요"
+  },
+  "beforeAfter": {
+    "title": "수리 비교",
+    "before": "수리 전",
+    "after": "수리 후",
+    "bareWire": "단자 없음",
+    "bareWireFixed": "재배선 + 압착",
+    "oxidizedSplice": "산화된 접점",
+    "oxidizedFixed": "재배선 + 압착",
+    "wrongGauge": "선경 부족 ({{size}}mm²)",
+    "wrongGaugeFixed": "전선 교체 → {{size}}mm²",
+    "overratedBreaker": "NFB 과대 ({{rating}}A)",
+    "overratedFixed": "NFB 교체 {{old}}A → {{new}}A",
+    "missingElcb": "누전 보호 없음",
+    "missingElcbFixed": "ELCB 설치 완료"
+  },
+  "level": {
+    "L01": {
+      "name": "L01 기초 교육",
+      "description": "헤어드라이어를 연결하고 통전. P ÷ V = I를 이해하자."
+    },
+    "L02": {
+      "name": "L02 소손의 함정",
+      "description": "헤어드라이어와 주전자를 동시 사용. 전선 선택은 신중하게!"
+    },
+    "L03": {
+      "name": "L03 비용 트레이드오프",
+      "description": "같은 가전제품, 더 빠듯한 예산. 가장 굵은 전선만 고를 순 없다."
+    },
+    "L04": {
+      "name": "L04 저전력의 함정",
+      "description": "소형 온수기 800W는 무해해 보인다? 주전자를 추가해서 8초 버텨보자."
+    },
+    "L05": {
+      "name": "L05 장시간 내구",
+      "description": "히터 + 주전자, 합계 30A. 굵은 전선이 아니면 못 버틴다!"
+    },
+    "L06": {
+      "name": "L06 자유 회로 입문",
+      "description": "첫 자유 회로 설계! 2개의 방, 3대의 가전제품 — 배분은 당신이 결정."
+    },
+    "L07": {
+      "name": "L07 고전력 체험",
+      "description": "전기 히터 16.4A — 1.6mm²로는 부족한 첫 가전제품!"
+    },
+    "L08": {
+      "name": "L08 주방 분기 회로",
+      "description": "주전자, 전자레인지, 히터 — 고전력 가전 3대, 어떻게 나눌까?"
+    },
+    "L09": {
+      "name": "L09 혼합 전압",
+      "description": "주방 110V + 세탁실 220V. 전압이 다르면 회로도 달라야!"
+    },
+    "L10": {
+      "name": "L10 전체 배전",
+      "description": "5개의 방, 7대의 가전제품 — 첫 전체 배전 설계!"
+    },
+    "L11": {
+      "name": "L11 상 밸런스 입문",
+      "description": "단상 3선식 등장! R상과 T상을 균등하게 배분하지 않으면 중성선이 소손."
+    },
+    "L12": {
+      "name": "L12 상 밸런스 고급",
+      "description": "더 많은 가전제품, 수동 상 전환. 각 회로의 R상·T상은 당신이 결정."
+    },
+    "L13": {
+      "name": "L13 ELCB 입문",
+      "description": "욕실 습윤 구역에는 ELCB 필수. 미설치 = 감전!"
+    },
+    "L14": {
+      "name": "L14 ELCB 예산 압박",
+      "description": "욕실 ELCB 필수, 주방 고전력 가전까지. 예산이 빡빡하다."
+    },
+    "L15": {
+      "name": "L15 종합 도전",
+      "description": "상 밸런스 + ELCB + 다중 방. v0.4의 모든 메카닉을 자유 회로로!"
+    },
+    "L16": {
+      "name": "L16 압착 단자 입문",
+      "description": "배선 후 압착해야 통전 가능. 낮은 압박 속에서 압착을 배우자."
+    },
+    "L17": {
+      "name": "L17 압착 품질 시험",
+      "description": "불량 압착 = 높은 저항 = 과열 가속! 고전력 회로는 정성스럽게."
+    },
+    "L18": {
+      "name": "L18 오래된 집: 첫 진단",
+      "description": "오래된 분전반을 열어보니 c1에 단자가 없다! 문제 배선을 다시 하자."
+    },
+    "L19": {
+      "name": "L19 오래된 집: 전면 점검",
+      "description": "주방 전선이 가늘고, 거실에 단자가 없다. 2개의 문제 회로!"
+    },
+    "L20": {
+      "name": "L20 오래된 집: 위기 상황",
+      "description": "졸업 시험! 산화 접점, 벗은 전선, 선경 부족 — 3개의 문제에 욕실과 상 밸런스도."
+    },
+    "L21": {
+      "name": "L21 배선 정리 입문",
+      "description": "회로 설계 후 분전반 배선을 정리. 레인 배열과 케이블 타이를 배우자."
+    },
+    "L22": {
+      "name": "L22 교차의 미로",
+      "description": "5개 방 + 혼합 전압 + 수동 상 전환. 회로 계획이 정리 난이도에 직결!"
+    },
+    "L23": {
+      "name": "L23 완벽한 분전반",
+      "description": "졸업 시험! 모든 메카닉 — 자유 회로 + 상 + ELCB + 압착 + 정리."
+    },
+    "L24": {
+      "name": "L24 오래된 집: 보호 부족",
+      "description": "주방 30A NFB로는 20A 전선을 보호할 수 없다! 올바른 NFB로 교체."
+    },
+    "L25": {
+      "name": "L25 오래된 집: 습윤의 함정",
+      "description": "욕실 회로에 ELCB가 없다! 생명을 지키는 ELCB 설치, 산화 접점 수리."
+    },
+    "L26": {
+      "name": "L26 오래된 집: 다섯 가지 문제",
+      "description": "5종류 문제 모두 등장! 각 회로를 진단하고, 모두 수리 후 상 밸런스를 맞춰 통전."
+    },
+    "L27": {
+      "name": "L27 오래된 집: 개보수 + 정리",
+      "description": "문제 수리 후 분전반 배선 정리. 첫 \"수리 + 정리\" 완전 개보수 체험!"
+    },
+    "L28": {
+      "name": "L28 오래된 집: 궁극의 시련",
+      "description": "졸업 시험! 5 회로 + 4 문제 + 상 + 누전 + 정리 = 궁극의 종합 도전."
+    }
+  },
+  "random": {
+    "title": "랜덤 오래된 집 도전",
+    "beginner": "초급",
+    "beginnerDesc": "2-3 회로, 1-2 문제 (기본 유형)",
+    "intermediate": "중급",
+    "intermediateDesc": "3-4 회로, 2-3 문제 (전 5종 + 수동 상 전환)",
+    "advanced": "고급",
+    "advancedDesc": "4-6 회로, 3-5 문제 (전 메카닉 + 정리)",
+    "completions": "클리어 {{count}}회",
+    "levelName": "랜덤 오래된 집 ({{difficulty}})",
+    "levelDesc": "랜덤 생성 오래된 집 — {{circuits}}개 회로, {{problems}}개 문제"
+  },
+  "language": {
+    "zh-TW": "繁體中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어",
+    "fr": "Français",
+    "th": "ไทย"
+  }
+}

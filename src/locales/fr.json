@@ -1,0 +1,389 @@
+{
+  "app": {
+    "title": "Project Rewire",
+    "subtitle": "Simulateur de Tableau Électrique"
+  },
+  "nav": {
+    "back": "Retour",
+    "backToLevels": "Retour aux niveaux",
+    "retry": "Réessayer"
+  },
+  "levelSelect": {
+    "selectLevel": "Choisir un niveau",
+    "appliances": "Appareils",
+    "budget": "Budget",
+    "powerGoal": "Objectif",
+    "seconds": "s"
+  },
+  "game": {
+    "powerTime": "Alimentation {{time}}s",
+    "powerTimeBudget": "Alimentation {{time}}s / Budget ${{budget}}",
+    "powered": "Sous tension",
+    "wired": "Câblé",
+    "unwired": "Non câblé",
+    "dragWire": "Glisser le câble",
+    "dropHere": "pour connecter ici",
+    "unwireBtn": "Décâbler",
+    "phaseR": "Phase R",
+    "phaseT": "Phase T",
+    "switchPhase": "Changer",
+    "routing": "Ranger",
+    "rerouting": "Re-ranger",
+    "unwireConfirm": "Voulez-vous retirer le câblage de ce circuit ? L'ancien câble sera jeté."
+  },
+  "status": {
+    "normal": "Normal",
+    "warning": "Surcharge",
+    "tripped": "Déclenché",
+    "burned": "Brûlé",
+    "neutralBurned": "Neutre brûlé",
+    "elcbTripped": "DDR déclenché",
+    "leakage": "Fuite !",
+    "mainTripped": "Disj. principal déclenché",
+    "overallStatus": "État général",
+    "statusLabel": "État",
+    "totalCurrent": "Courant total",
+    "wireLoad": "Charge du câble",
+    "wireHeat": "Température du câble",
+    "remainingTime": "Temps restant",
+    "costBudget": "Coût/Budget",
+    "overBudget": "Hors budget !",
+    "mainBreaker": "Disj. principal",
+    "phaseRCurrent": "Courant phase R",
+    "phaseTCurrent": "Courant phase T",
+    "neutralCurrent": "Courant neutre",
+    "neutralHeat": "Température neutre"
+  },
+  "result": {
+    "passed": "Réussi !",
+    "overBudget": "Hors budget !",
+    "tripped": "Déclenché !",
+    "burned": "Câble brûlé !",
+    "neutralBurned": "Neutre brûlé !",
+    "mainTripped": "Disj. principal déclenché !",
+    "leakage": "Électrocution !",
+    "powerTime": "Temps d'alimentation",
+    "wireCost": "Coût des câbles",
+    "budgetLabel": "Budget",
+    "remaining": "Restant",
+    "exceeded": "Dépassé",
+    "passedHint": "Câblage terminé dans le budget !",
+    "overBudgetHint": "Le circuit fonctionne, mais le coût ${{cost}} dépasse le budget ${{budget}}. Essayez des câbles moins chers ?",
+    "failType": "Type d'échec",
+    "failedCircuit": "Circuit en échec",
+    "nfbRating": "Calibre du disjoncteur",
+    "wireMaxCurrent": "Courant max du câble",
+    "breakerTrip": "Déclenchement disj.",
+    "wireBurn": "Câble brûlé",
+    "neutralOverload": "Neutre surchargé brûlé",
+    "mainOverload": "Disj. principal surchargé",
+    "leakageDanger": "Électrocution par fuite",
+    "trippedHint": "{{prefix}}Courant total {{current}}A dépasse le calibre {{rated}}A du disjoncteur, déclenchement de protection.",
+    "trippedHintPrefix": "{{label}} : ",
+    "burnedHint": "{{prefix}}Courant total {{current}}A dépasse le courant max {{maxCurrent}}A du câble {{crossSection}}mm². Surcharge prolongée causant brûlure. Essayez un câble plus épais ?",
+    "neutralBurnedHint": "Les charges des phases R et T sont très déséquilibrées. Le courant neutre a dépassé la capacité de 30A causant sa destruction. Essayez d'équilibrer les charges !",
+    "mainTrippedHint": "Le courant total du tableau dépasse le calibre du disjoncteur principal, déclenchement de protection. Tous les circuits sont coupés ! Repensez la configuration pour réduire la charge totale.",
+    "leakageHint": "{{label}} a subi une fuite de courant, mais aucun DDR n'est installé, risque d'électrocution ! Installez toujours un DDR pour les zones humides.",
+    "leakageHintDefault": "Circuit",
+    "neutralCapacity": "Capacité du neutre",
+    "aestheticsScore": "Score de rangement"
+  },
+  "star": {
+    "safePass": "Passage sûr",
+    "costMet": "Budget respecté",
+    "bonusGoal": "Objectif bonus",
+    "noWarning": "Zéro alerte",
+    "underBudgetRatio": "Coût ≤ {{ratio}}% du budget",
+    "timeMargin": "≥ {{margin}}s restantes",
+    "crimpQuality": "Qualité de sertissage ≥ {{quality}}",
+    "noTrip": "Zéro déclenchement",
+    "aestheticsScore": "Rangement ≥ {{score}}"
+  },
+  "wire": {
+    "title": "Choix du câble",
+    "maxCurrent": "Courant max",
+    "costPerMeter": "Coût",
+    "perMeter": "/m",
+    "dragHint": "Glisser vers le schéma"
+  },
+  "appliance": {
+    "title": "Appareils",
+    "pluggedIn": "Branché",
+    "pluggedInCircuit": "Branché sur {{label}}",
+    "clickToRemove": "Cliquer pour retirer",
+    "requiresVoltage": "Nécessite un circuit {{voltage}}V",
+    "hairDryer": "Sèche-cheveux",
+    "kettle": "Bouilloire",
+    "microwave": "Micro-ondes",
+    "underSinkHeater": "Chauffe-eau sous évier",
+    "dryer": "Sèche-linge",
+    "waterHeater": "Chauffe-eau",
+    "ihStove": "Plaque à induction",
+    "airCon": "Climatiseur",
+    "bathHeater": "Chauffage de salle de bain",
+    "fridge": "Réfrigérateur",
+    "heater": "Radiateur",
+    "oven": "Four",
+    "dehumidifier": "Déshumidificateur"
+  },
+  "elcb": {
+    "title": "DDR Disj. différentiel (${{cost}}/circuit)",
+    "label": "DDR Disj. différentiel",
+    "costTag": "${{cost}}"
+  },
+  "crimp": {
+    "title": "Cosse à sertir",
+    "selectTerminal": "Choisir le type de cosse",
+    "crimpAction": "Sertissage",
+    "stopAtSweet": "Arrêtez au point idéal",
+    "tapAnywhere": "TAP ANYWHERE",
+    "crimpResult": "Résultat du sertissage",
+    "excellent": "Sertissage parfait",
+    "good": "Bon sertissage",
+    "poor": "Mauvais sertissage",
+    "none": "Non serti",
+    "contactResistance": "Résistance de contact",
+    "effectiveCurrent": "Courant effectif",
+    "confirm": "Confirmer",
+    "incompatible": "Section incompatible",
+    "oRing": "Cosse ronde",
+    "yFork": "Cosse fourche"
+  },
+  "planner": {
+    "title": "Conception des circuits",
+    "addCircuit": "+ Ajouter un circuit",
+    "addCircuitTooltip": "Ajouter un circuit",
+    "slotsFull": "Emplacements pleins",
+    "empty": "Aucun circuit. Cliquez sur \"+ Ajouter un circuit\" pour commencer.",
+    "panelTitle": "Tableau",
+    "slots": "Emplacements",
+    "mainBreaker": "Disj. principal",
+    "applianceAssign": "Attribution",
+    "cost": "Coût",
+    "phaseEstimate": "Estimation des phases",
+    "nLine": "Ligne N",
+    "confirmConfig": "Confirmer",
+    "assignAllAppliances": "Attribuez tous les appareils aux circuits",
+    "selectAllWires": "Sélectionnez un câble pour chaque circuit",
+    "wetAreaNeedElcb": "Les circuits en zone humide nécessitent un DDR",
+    "circuitNum": "Circuit {{num}}",
+    "deleteCircuit": "Supprimer le circuit",
+    "voltage": "Tension",
+    "phase": "Phase",
+    "nfb": "Disj.",
+    "wireLabel": "Câble",
+    "selectWire": "Choisir un câble",
+    "assignedAppliances": "Appareils attribués",
+    "removeHint": "Cliquer pour retirer"
+  },
+  "room": {
+    "title": "Pièces / Appareils",
+    "wetArea": "Zone humide",
+    "circuitPrefix": "Circuit ",
+    "living": "Salon",
+    "kitchen": "Cuisine",
+    "bedroom": "Chambre",
+    "bathroom": "Salle de bain",
+    "laundry": "Buanderie",
+    "storage": "Rangement",
+    "balcony": "Balcon",
+    "acRoom": "Local clim.",
+    "mainCircuit": "Circuit principal",
+    "study": "Bureau",
+    "livingAc": "Clim. salon"
+  },
+  "panel": {
+    "title": "Intérieur du tableau",
+    "subtitle": "Glissez les câbles pour réarranger, éliminez les croisements, placez des colliers",
+    "step1Label": "Éliminer les croisements",
+    "step1Desc": "Glisser les câbles",
+    "step2Label": "Placer les colliers",
+    "step2Desc": "Cliquer entre les câbles",
+    "step3Label": "Terminer le rangement",
+    "step3Desc": "Appuyer sur Terminé",
+    "crossings": "Croisements",
+    "cableTies": "Colliers",
+    "aestheticsScore": "Rangement",
+    "doneBtn": "Terminé",
+    "dragHint": "← Glisser pour réordonner →",
+    "busbar": "Barre omnibus",
+    "routingZone": "Zone de câblage",
+    "circuits": "CIRCUITS",
+    "crossingNoTie": "Croisement — collier impossible",
+    "removeTie": "Cliquer pour retirer le collier",
+    "placeTie": "Cliquer pour placer un collier"
+  },
+  "cableTie": {
+    "title": "Serrage du collier",
+    "tight": "Parfait",
+    "good": "Bon",
+    "loose": "Trop lâche",
+    "overTight": "Trop serré",
+    "tapToLock": "TAP TO LOCK"
+  },
+  "breaker": {
+    "title": "Remplacement du disj.",
+    "wireMaxCurrent": "Courant max du câble",
+    "current": "Actuel",
+    "trip": "Décl."
+  },
+  "oldHouse": {
+    "nfbOverrated": "Disj. {{breaker}}A > Câble {{wire}}A",
+    "missingElcb": "Zone humide : DDR requis",
+    "problemsRemaining": "Réparez d'abord tous les circuits défectueux",
+    "wetAreaMissingElcb": "Les circuits en zone humide nécessitent un DDR",
+    "allWiresNeeded": "Terminez d'abord tout le câblage",
+    "crimpNeeded": "Terminez d'abord tous les sertissages",
+    "routingNeeded": "Terminez d'abord le rangement des câbles",
+    "appliancesNeeded": "Attribuez d'abord les appareils"
+  },
+  "beforeAfter": {
+    "title": "Comparaison des réparations",
+    "before": "Avant",
+    "after": "Après",
+    "bareWire": "Sans cosse",
+    "bareWireFixed": "Recâblé + Serti",
+    "oxidizedSplice": "Connexion oxydée",
+    "oxidizedFixed": "Recâblé + Serti",
+    "wrongGauge": "Section trop fine ({{size}}mm²)",
+    "wrongGaugeFixed": "Câble remplacé → {{size}}mm²",
+    "overratedBreaker": "Disj. surdimensionné ({{rating}}A)",
+    "overratedFixed": "Disj. remplacé {{old}}A → {{new}}A",
+    "missingElcb": "Sans protection différentielle",
+    "missingElcbFixed": "DDR installé"
+  },
+  "level": {
+    "L01": {
+      "name": "L01 Les bases",
+      "description": "Branchez un sèche-cheveux et alimentez. Comprenez P ÷ V = I."
+    },
+    "L02": {
+      "name": "L02 Piège à câble",
+      "description": "Sèche-cheveux et bouilloire ensemble. Choisissez bien votre câble !"
+    },
+    "L03": {
+      "name": "L03 Compromis de coût",
+      "description": "Mêmes appareils, budget serré. On ne peut pas toujours prendre le plus gros câble."
+    },
+    "L04": {
+      "name": "L04 Piège basse puissance",
+      "description": "Le chauffe-eau 800W semble inoffensif ? Ajoutez une bouilloire pendant 8 secondes."
+    },
+    "L05": {
+      "name": "L05 Endurance",
+      "description": "Radiateur + Bouilloire, total 30A. Il faut du câble épais pour tenir !"
+    },
+    "L06": {
+      "name": "L06 Circuits libres — Intro",
+      "description": "Première conception libre ! Deux pièces, trois appareils — à vous de décider."
+    },
+    "L07": {
+      "name": "L07 Haute puissance",
+      "description": "Radiateur 16,4A — le 1,6mm² ne suffit plus pour la première fois !"
+    },
+    "L08": {
+      "name": "L08 Circuits cuisine",
+      "description": "Bouilloire, micro-ondes, radiateur — trois appareils gourmands, comment répartir ?"
+    },
+    "L09": {
+      "name": "L09 Tensions mixtes",
+      "description": "Cuisine 110V + Buanderie 220V. Tensions différentes = circuits différents !"
+    },
+    "L10": {
+      "name": "L10 Maison complète",
+      "description": "Cinq pièces, sept appareils — votre première conception complète !"
+    },
+    "L11": {
+      "name": "L11 Équilibre des phases — Intro",
+      "description": "Le monophasé tripôle arrive ! Équilibrez R et T ou le neutre brûle."
+    },
+    "L12": {
+      "name": "L12 Équilibre des phases — Pro",
+      "description": "Plus d'appareils, commutation manuelle. Vous choisissez R ou T pour chaque circuit."
+    },
+    "L13": {
+      "name": "L13 DDR — Intro",
+      "description": "Les zones humides nécessitent un DDR. Sans DDR = électrocution !"
+    },
+    "L14": {
+      "name": "L14 DDR et budget",
+      "description": "DDR obligatoire pour la salle de bain, plus cuisine haute puissance — budget serré."
+    },
+    "L15": {
+      "name": "L15 Défi combiné",
+      "description": "Phases + DDR + multi-pièces. Toutes les mécaniques en circuits libres !"
+    },
+    "L16": {
+      "name": "L16 Sertissage — Intro",
+      "description": "Il faut sertir après le câblage pour alimenter. Apprenez sans pression."
+    },
+    "L17": {
+      "name": "L17 Test de qualité de sertissage",
+      "description": "Mauvais sertissage = haute résistance = surchauffe ! Sertissez bien les circuits puissants."
+    },
+    "L18": {
+      "name": "L18 Vieille maison : Diagnostic",
+      "description": "Ouvrez le vieux tableau — c1 n'a pas de cosse ! Recâblez et réparez."
+    },
+    "L19": {
+      "name": "L19 Vieille maison : Inspection",
+      "description": "Câble de cuisine trop fin, salon sans cosse. Deux circuits à problèmes !"
+    },
+    "L20": {
+      "name": "L20 Vieille maison : Danger",
+      "description": "Examen final ! Connexion oxydée, fil nu, mauvaise section — trois problèmes plus salle de bain et phases."
+    },
+    "L21": {
+      "name": "L21 Rangement — Intro",
+      "description": "Après la conception, rangez le tableau. Apprenez le rangement et les colliers."
+    },
+    "L22": {
+      "name": "L22 Labyrinthe de croisements",
+      "description": "5 pièces + tensions mixtes + phases manuelles. La conception impacte le rangement !"
+    },
+    "L23": {
+      "name": "L23 Tableau parfait",
+      "description": "Examen final ! Toutes les mécaniques — circuits + phases + DDR + sertissage + rangement."
+    },
+    "L24": {
+      "name": "L24 Vieille maison : Protection insuffisante",
+      "description": "Le disj. 30A de la cuisine ne protège pas le câble 20A ! Remplacez le disjoncteur."
+    },
+    "L25": {
+      "name": "L25 Vieille maison : Piège humide",
+      "description": "Pas de DDR pour la salle de bain ! Installez un DDR, réparez la connexion oxydée."
+    },
+    "L26": {
+      "name": "L26 Vieille maison : Les cinq fléaux",
+      "description": "Les 5 types de problèmes ! Diagnostiquez chaque circuit, réparez tout, équilibrez les phases."
+    },
+    "L27": {
+      "name": "L27 Vieille maison : Rénovation + Rangement",
+      "description": "Réparez puis rangez le tableau. Première expérience de rénovation complète !"
+    },
+    "L28": {
+      "name": "L28 Vieille maison : Épreuve ultime",
+      "description": "Examen final ! 5 circuits + 4 problèmes + phases + fuite + rangement = défi ultime."
+    }
+  },
+  "random": {
+    "title": "Défi maison ancienne aléatoire",
+    "beginner": "Débutant",
+    "beginnerDesc": "2-3 circuits, 1-2 problèmes (types de base)",
+    "intermediate": "Intermédiaire",
+    "intermediateDesc": "3-4 circuits, 2-3 problèmes (5 types + phases manuelles)",
+    "advanced": "Avancé",
+    "advancedDesc": "4-6 circuits, 3-5 problèmes (toutes mécaniques + rangement)",
+    "completions": "Terminé {{count}} fois",
+    "levelName": "Maison ancienne aléatoire ({{difficulty}})",
+    "levelDesc": "Maison ancienne générée — {{circuits}} circuits, {{problems}} problèmes"
+  },
+  "language": {
+    "zh-TW": "繁體中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어",
+    "fr": "Français",
+    "th": "ไทย"
+  }
+}

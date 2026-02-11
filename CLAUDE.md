@@ -2,13 +2,13 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 中英雙語 ✓。v0.9 PRD 已完成（平面圖模式）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。**
 
 ## Tech Stack
 
 - React 19 + TypeScript (strict mode)
 - Vite 7
-- react-i18next（中英雙語 i18n）
+- react-i18next（六語 i18n：zh-TW/en/ja/ko/fr/th）
 - SVG 視覺化（CircuitDiagram 元件）
 - Web Audio API 音效（無外部音檔）
 - 無狀態管理庫（useState + useRef + rAF loop）
@@ -29,7 +29,7 @@
   - `WireSelector.tsx` — 線材選擇卡片，拖曳來源（Pointer Events + 觸控長按）
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等 + 隨機老屋挑戰區塊）
-  - `LanguageSwitcher.tsx` — 語言切換按鈕（EN/中）
+  - `LanguageSwitcher.tsx` — 語言切換下拉選單（6 語：zh-TW/en/ja/ko/fr/th）
 - `src/types/` — TypeScript 型別定義
   - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse/randomDifficulty), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
@@ -41,9 +41,9 @@
 - `src/data/` — 遊戲資料
   - `levels.ts` — L01-L28 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理, L24-L25 老屋新問題, L26 五毒俱全, L27 翻修+整線, L28 終極考驗）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
   - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
-- `src/i18n.ts` — i18next 初始化（localStorage 持久化語言偏好 key: `rewire-lang`，預設 zh-TW）
+- `src/i18n.ts` — i18next 初始化 + SUPPORTED_LANGUAGES export（localStorage 持久化語言偏好 key: `rewire-lang`，預設 zh-TW）
 - `src/i18nHelpers.ts` — 翻譯輔助函式（tApplianceName, tRoomName, tStatus, tCrimpQuality 等）
-- `src/locales/` — 翻譯檔（zh-TW.json, en.json）
+- `src/locales/` — 翻譯檔（zh-TW.json, en.json, ja.json, ko.json, fr.json, th.json）
 - `docs/` — PRD 與設計文件
 - `openspec/` — OpenSpec 工作流程（changes、specs）
 
@@ -153,9 +153,9 @@
 - Before/After 佈局：CSS Grid 兩欄（>640px 並排、≤640px 堆疊），Before 紅色系 / After 綠色系
 - Before/After 動畫：整體 fadeIn 0.5s + After 側 ✓ 逐項 popIn（staggered delay 0.15s）
 - 修復摘要：generateRepairItems 純函式，依 5 種問題類型生成 before 描述和 after 修復描述
-- i18n：react-i18next，zh-TW（預設）+ en 雙語，語言偏好 localStorage key=`rewire-lang`
+- i18n：react-i18next，zh-TW（預設）+ en/ja/ko/fr/th 六語，語言偏好 localStorage key=`rewire-lang`
 - i18n 翻譯輔助：i18nHelpers.ts 提供 tApplianceName/tRoomName/tStatus 等便利函式
-- 語言切換器：LevelSelect 標題旁 EN/中 按鈕，LanguageSwitcher 元件
+- 語言切換器：LevelSelect 標題旁下拉選單（SUPPORTED_LANGUAGES 驅動，點擊外部收合）
 - v0.9 平面圖模式：FloorPlanView 取代 CircuitDiagram 作為主視圖
 - 平面圖房型：S(4×4套房)/M(6×4兩房)/L(8×6三房)/XL(10×6豪宅)，色塊方格渲染
 - 空間走線：RoutingGraph 沿牆路徑圖 + Dijkstra 自動路由 + 星形/串聯候選選擇

@@ -1,0 +1,389 @@
+{
+  "app": {
+    "title": "Project Rewire",
+    "subtitle": "分電盤シミュレーター"
+  },
+  "nav": {
+    "back": "戻る",
+    "backToLevels": "ステージ選択に戻る",
+    "retry": "リトライ"
+  },
+  "levelSelect": {
+    "selectLevel": "ステージ選択",
+    "appliances": "電気機器",
+    "budget": "予算",
+    "powerGoal": "通電目標",
+    "seconds": "秒"
+  },
+  "game": {
+    "powerTime": "通電 {{time}}秒",
+    "powerTimeBudget": "通電 {{time}}秒 / 予算 ${{budget}}",
+    "powered": "通電中",
+    "wired": "配線済み",
+    "unwired": "未配線",
+    "dragWire": "電線をドラッグ",
+    "dropHere": "ここに接続",
+    "unwireBtn": "配線解除",
+    "phaseR": "R相",
+    "phaseT": "T相",
+    "switchPhase": "切替",
+    "routing": "配線整理",
+    "rerouting": "再整理",
+    "unwireConfirm": "この回路の配線を取り外しますか？古い電線は廃棄されます。"
+  },
+  "status": {
+    "normal": "正常",
+    "warning": "過負荷警告",
+    "tripped": "トリップ",
+    "burned": "焼損",
+    "neutralBurned": "中性線焼損",
+    "elcbTripped": "ELCB トリップ",
+    "leakage": "漏電！",
+    "mainTripped": "主開閉器トリップ",
+    "overallStatus": "全体状態",
+    "statusLabel": "状態",
+    "totalCurrent": "総電流",
+    "wireLoad": "電線負荷",
+    "wireHeat": "電線温度",
+    "remainingTime": "残り時間",
+    "costBudget": "コスト/予算",
+    "overBudget": "予算超過！",
+    "mainBreaker": "主開閉器",
+    "phaseRCurrent": "R相電流",
+    "phaseTCurrent": "T相電流",
+    "neutralCurrent": "中性線電流",
+    "neutralHeat": "中性線温度"
+  },
+  "result": {
+    "passed": "クリア！",
+    "overBudget": "予算超過！",
+    "tripped": "トリップ！",
+    "burned": "電線焼損！",
+    "neutralBurned": "中性線焼損！",
+    "mainTripped": "主開閉器トリップ！",
+    "leakage": "感電！",
+    "powerTime": "通電時間",
+    "wireCost": "電線コスト",
+    "budgetLabel": "予算",
+    "remaining": "残り",
+    "exceeded": "超過",
+    "passedHint": "予算内で配電を完了しました！",
+    "overBudgetHint": "回路は正常に動作していますが、電線コスト ${{cost}} が予算 ${{budget}} を超えています。もっと安い電線を試しますか？",
+    "failType": "失敗タイプ",
+    "failedCircuit": "失敗した回路",
+    "nfbRating": "NFB 定格",
+    "wireMaxCurrent": "電線の許容電流",
+    "breakerTrip": "ブレーカートリップ",
+    "wireBurn": "電線焼損",
+    "neutralOverload": "中性線過負荷焼損",
+    "mainOverload": "主開閉器過負荷トリップ",
+    "leakageDanger": "漏電感電",
+    "trippedHint": "{{prefix}}総電流 {{current}}A が NFB 定格 {{rated}}A を超え、ブレーカーが作動しました。",
+    "trippedHintPrefix": "{{label}}の",
+    "burnedHint": "{{prefix}}総電流 {{current}}A が {{crossSection}}mm² 電線の許容電流 {{maxCurrent}}A を超えました。長時間の過負荷で焼損しました。もっと太い電線を試しますか？",
+    "neutralBurnedHint": "R相とT相の負荷が大きく不均衡です。中性線電流が安全容量 30A を超え焼損しました。両相の負荷を均等に分配してみましょう！",
+    "mainTrippedHint": "分電盤の総電流が主開閉器の定格を超え、トリップしました。全回路が停電！回路構成を見直し、同時使用の総負荷を減らしてください。",
+    "leakageHint": "{{label}}で漏電が発生しましたが、ELCB が設置されておらず感電の危険があります！湿潤区域の回路には必ず ELCB を設置してください。",
+    "leakageHintDefault": "回路",
+    "neutralCapacity": "中性線容量",
+    "aestheticsScore": "配線整理スコア"
+  },
+  "star": {
+    "safePass": "安全クリア",
+    "costMet": "予算達成",
+    "bonusGoal": "ボーナス目標",
+    "noWarning": "警告ゼロ",
+    "underBudgetRatio": "コスト ≤ 予算の {{ratio}}%",
+    "timeMargin": "残り ≥ {{margin}} 秒",
+    "crimpQuality": "圧着品質 ≥ {{quality}}",
+    "noTrip": "トリップゼロ",
+    "aestheticsScore": "整理スコア ≥ {{score}}"
+  },
+  "wire": {
+    "title": "電線選択",
+    "maxCurrent": "許容電流",
+    "costPerMeter": "コスト",
+    "perMeter": "/m",
+    "dragHint": "回路図にドラッグして接続"
+  },
+  "appliance": {
+    "title": "電気機器",
+    "pluggedIn": "接続済み",
+    "pluggedInCircuit": "{{label}} に接続済み",
+    "clickToRemove": "クリックで取り外し",
+    "requiresVoltage": "{{voltage}}V 回路が必要",
+    "hairDryer": "ドライヤー",
+    "kettle": "電気ケトル",
+    "microwave": "電子レンジ",
+    "underSinkHeater": "小型温水器",
+    "dryer": "乾燥機",
+    "waterHeater": "電気温水器",
+    "ihStove": "IH コンロ",
+    "airCon": "エアコン",
+    "bathHeater": "浴室暖房乾燥機",
+    "fridge": "冷蔵庫",
+    "heater": "電気ヒーター",
+    "oven": "オーブン",
+    "dehumidifier": "除湿機"
+  },
+  "elcb": {
+    "title": "ELCB 漏電遮断器 (${{cost}}/回路)",
+    "label": "ELCB 漏電遮断器",
+    "costTag": "${{cost}}"
+  },
+  "crimp": {
+    "title": "圧着端子",
+    "selectTerminal": "端子タイプを選択",
+    "crimpAction": "圧着操作",
+    "stopAtSweet": "スイートスポットで停止",
+    "tapAnywhere": "TAP ANYWHERE",
+    "crimpResult": "圧着結果",
+    "excellent": "完璧な圧着",
+    "good": "良好な圧着",
+    "poor": "不良な圧着",
+    "none": "未圧着",
+    "contactResistance": "接触抵抗倍率",
+    "effectiveCurrent": "実効電流倍率",
+    "confirm": "確認",
+    "incompatible": "この線径に非対応",
+    "oRing": "丸型端子",
+    "yFork": "Y型端子"
+  },
+  "planner": {
+    "title": "回路設計",
+    "addCircuit": "＋ 回路追加",
+    "addCircuitTooltip": "回路を追加",
+    "slotsFull": "スロット満杯",
+    "empty": "回路がありません。「＋ 回路追加」をクリックして設計を始めましょう",
+    "panelTitle": "分電盤",
+    "slots": "スロット",
+    "mainBreaker": "主開閉器",
+    "applianceAssign": "機器割当",
+    "cost": "コスト",
+    "phaseEstimate": "相バランス予測",
+    "nLine": "N線",
+    "confirmConfig": "構成を確定",
+    "assignAllAppliances": "すべての機器を回路に割り当ててください",
+    "selectAllWires": "各回路の電線を選択してください",
+    "wetAreaNeedElcb": "湿潤区域の回路には ELCB が必要です",
+    "circuitNum": "回路 {{num}}",
+    "deleteCircuit": "回路を削除",
+    "voltage": "電圧",
+    "phase": "相",
+    "nfb": "NFB",
+    "wireLabel": "電線",
+    "selectWire": "電線を選択",
+    "assignedAppliances": "割当済み機器",
+    "removeHint": "クリックで取り外し"
+  },
+  "room": {
+    "title": "部屋 / 電気機器",
+    "wetArea": "湿潤区域",
+    "circuitPrefix": "回路 ",
+    "living": "リビング",
+    "kitchen": "キッチン",
+    "bedroom": "寝室",
+    "bathroom": "浴室",
+    "laundry": "ランドリー",
+    "storage": "物置",
+    "balcony": "バルコニー",
+    "acRoom": "エアコン室",
+    "mainCircuit": "メイン回路",
+    "study": "書斎",
+    "livingAc": "リビングエアコン"
+  },
+  "panel": {
+    "title": "分電盤内部",
+    "subtitle": "電線をドラッグして並べ替え、交差を解消し、ケーブルタイを設置",
+    "step1Label": "交差を解消",
+    "step1Desc": "電線を左右にドラッグ",
+    "step2Label": "ケーブルタイ設置",
+    "step2Desc": "電線の間をクリック",
+    "step3Label": "整理完了",
+    "step3Desc": "完了ボタンを押す",
+    "crossings": "交差数",
+    "cableTies": "ケーブルタイ",
+    "aestheticsScore": "整理スコア",
+    "doneBtn": "整理完了",
+    "dragHint": "← ドラッグで並べ替え →",
+    "busbar": "ブスバー",
+    "routingZone": "配線エリア",
+    "circuits": "CIRCUITS",
+    "crossingNoTie": "交差あり — タイ不可",
+    "removeTie": "クリックでタイ除去",
+    "placeTie": "クリックでタイ設置"
+  },
+  "cableTie": {
+    "title": "ケーブルタイ締め付け",
+    "tight": "完璧",
+    "good": "良好",
+    "loose": "緩すぎ",
+    "overTight": "締めすぎ",
+    "tapToLock": "TAP TO LOCK"
+  },
+  "breaker": {
+    "title": "NFB 交換",
+    "wireMaxCurrent": "電線の許容電流",
+    "current": "現在",
+    "trip": "トリップ"
+  },
+  "oldHouse": {
+    "nfbOverrated": "NFB {{breaker}}A > 電線 {{wire}}A",
+    "missingElcb": "湿潤区域に ELCB が必要",
+    "problemsRemaining": "すべての問題回路を先に修復してください",
+    "wetAreaMissingElcb": "湿潤区域の回路に ELCB が必要です",
+    "allWiresNeeded": "すべての回路の配線を完了してください",
+    "crimpNeeded": "すべての回路の圧着を完了してください",
+    "routingNeeded": "配線整理を完了してください",
+    "appliancesNeeded": "先に機器を割り当ててください"
+  },
+  "beforeAfter": {
+    "title": "修復比較",
+    "before": "修復前",
+    "after": "修復後",
+    "bareWire": "端子なし",
+    "bareWireFixed": "再配線 + 圧着",
+    "oxidizedSplice": "酸化接点",
+    "oxidizedFixed": "再配線 + 圧着",
+    "wrongGauge": "線径不足 ({{size}}mm²)",
+    "wrongGaugeFixed": "電線交換 → {{size}}mm²",
+    "overratedBreaker": "NFB 過大 ({{rating}}A)",
+    "overratedFixed": "NFB 交換 {{old}}A → {{new}}A",
+    "missingElcb": "漏電保護なし",
+    "missingElcbFixed": "ELCB 設置済み"
+  },
+  "level": {
+    "L01": {
+      "name": "L01 基礎教程",
+      "description": "ドライヤーを接続して通電。P ÷ V = I を理解しよう。"
+    },
+    "L02": {
+      "name": "L02 焼損の罠",
+      "description": "ドライヤーとケトルを同時使用。電線選びは慎重に！"
+    },
+    "L03": {
+      "name": "L03 コストの駆け引き",
+      "description": "同じ機器でも予算が厳しい。一番太い線を選ぶだけではダメ。"
+    },
+    "L04": {
+      "name": "L04 低電力の罠",
+      "description": "小型温水器は 800W で無害に見える？ケトルを追加して 8 秒試してみよう。"
+    },
+    "L05": {
+      "name": "L05 長時間耐久",
+      "description": "ヒーター + ケトル、合計 30A。太い電線でないと持たない！"
+    },
+    "L06": {
+      "name": "L06 自由回路入門",
+      "description": "初めての自由回路設計！2 部屋・3 台の機器 — 配分はあなた次第。"
+    },
+    "L07": {
+      "name": "L07 高電力体験",
+      "description": "電気ヒーター 16.4A — 1.6mm² では足りない初めての機器！"
+    },
+    "L08": {
+      "name": "L08 キッチン分岐回路",
+      "description": "ケトル・レンジ・ヒーター — 高電力機器 3 台、どう分ける？"
+    },
+    "L09": {
+      "name": "L09 混合電圧",
+      "description": "キッチン 110V + ランドリー 220V。電圧が違えば回路も別！"
+    },
+    "L10": {
+      "name": "L10 全館配電",
+      "description": "5 部屋・7 台の機器 — 初めての全館配電設計！"
+    },
+    "L11": {
+      "name": "L11 相バランス入門",
+      "description": "単相三線式登場！R相とT相を均等に配分しないと中性線が焼損。"
+    },
+    "L12": {
+      "name": "L12 相バランス上級",
+      "description": "機器が増え、手動相切替も。各回路の R 相・T 相はあなたが決める。"
+    },
+    "L13": {
+      "name": "L13 ELCB 入門",
+      "description": "浴室の湿潤区域には ELCB 必須。未設置 = 感電！"
+    },
+    "L14": {
+      "name": "L14 ELCB と予算",
+      "description": "浴室 ELCB 必須、キッチンの高電力機器も。予算が厳しい。"
+    },
+    "L15": {
+      "name": "L15 総合チャレンジ",
+      "description": "相バランス + ELCB + 複数部屋。v0.4 の全メカニクスを自由回路で！"
+    },
+    "L16": {
+      "name": "L16 圧着端子入門",
+      "description": "配線後に圧着しないと通電できない。低プレッシャーで圧着を学ぼう。"
+    },
+    "L17": {
+      "name": "L17 圧着品質テスト",
+      "description": "圧着不良 = 接触抵抗大 = 過熱加速！高電力回路は丁寧に。"
+    },
+    "L18": {
+      "name": "L18 古い家：初診",
+      "description": "古い分電盤を開けたら c1 に端子がない！問題の配線をやり直そう。"
+    },
+    "L19": {
+      "name": "L19 古い家：全面点検",
+      "description": "キッチンの線が細い、リビングに端子がない。2 つの問題回路！"
+    },
+    "L20": {
+      "name": "L20 古い家：危機的状況",
+      "description": "卒業試験！酸化接点・裸線・線径不足 — 3 つの問題に浴室と相バランスも。"
+    },
+    "L21": {
+      "name": "L21 配線整理入門",
+      "description": "回路設計後に分電盤の配線を整理。レーン配列とケーブルタイを学ぼう。"
+    },
+    "L22": {
+      "name": "L22 交差の迷宮",
+      "description": "5 部屋 + 混合電圧 + 手動相切替。回路計画が整理の難易度に直結！"
+    },
+    "L23": {
+      "name": "L23 完璧な分電盤",
+      "description": "卒業試験！全メカニクス — 自由回路 + 相 + ELCB + 圧着 + 整理。"
+    },
+    "L24": {
+      "name": "L24 古い家：保護不足",
+      "description": "キッチンの 30A NFB では 20A 電線を守れない！正しい NFB に交換。"
+    },
+    "L25": {
+      "name": "L25 古い家：湿潤の罠",
+      "description": "浴室回路に ELCB がない！生命を守る ELCB を設置し、酸化接点を修復。"
+    },
+    "L26": {
+      "name": "L26 古い家：五重苦",
+      "description": "5 種類すべての問題が登場！各回路を診断し、修復後に相バランスを取って通電。"
+    },
+    "L27": {
+      "name": "L27 古い家：改修 + 整理",
+      "description": "問題を修復したら分電盤の配線を整理。初めての「修復 + 整理」完全改修！"
+    },
+    "L28": {
+      "name": "L28 古い家：究極の試練",
+      "description": "卒業試験！5 回路 + 4 問題 + 相 + 漏電 + 整理 = 究極の総合チャレンジ。"
+    }
+  },
+  "random": {
+    "title": "ランダム古い家チャレンジ",
+    "beginner": "初級",
+    "beginnerDesc": "2-3 回路、1-2 問題（基本タイプ）",
+    "intermediate": "中級",
+    "intermediateDesc": "3-4 回路、2-3 問題（全 5 タイプ + 手動相切替）",
+    "advanced": "上級",
+    "advancedDesc": "4-6 回路、3-5 問題（全メカニクス + 配線整理）",
+    "completions": "クリア {{count}} 回",
+    "levelName": "ランダム古い家（{{difficulty}}）",
+    "levelDesc": "ランダム生成の古い家 — {{circuits}} 回路、{{problems}} 問題"
+  },
+  "language": {
+    "zh-TW": "繁體中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어",
+    "fr": "Français",
+    "th": "ไทย"
+  }
+}

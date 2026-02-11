@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: i18n Framework
 
@@ -68,25 +68,6 @@
 - **THEN** `language` 區塊 MUST 包含 6 種語言的原生名稱
 - **AND** key 為語言代碼（zh-TW, en, ja, ko, fr, th）
 
-### Requirement: Translation helpers
-
-`src/i18nHelpers.ts` MUST 提供動態文字翻譯輔助函式。
-
-#### Scenario: 電器名稱翻譯
-
-- **WHEN** 呼叫 tApplianceName(t, applianceId)
-- **THEN** MUST 返回對應語言的電器名稱
-
-#### Scenario: 房間名稱翻譯
-
-- **WHEN** 呼叫 tRoomName(t, roomName)
-- **THEN** MUST 返回對應語言的房間名稱
-
-#### Scenario: 狀態翻譯
-
-- **WHEN** 呼叫 tStatus(t, status)
-- **THEN** MUST 返回對應語言的模擬狀態名稱
-
 ### Requirement: Language switcher
 
 LevelSelect MUST 顯示支援多語的語言切換器。
@@ -114,19 +95,3 @@ LevelSelect MUST 顯示支援多語的語言切換器。
 
 - **WHEN** 選單展開且玩家點擊選單外部區域
 - **THEN** 選單 MUST 自動收合
-
-### Requirement: Component text extraction
-
-所有元件的硬編碼文字 MUST 替換為 t() 呼叫。
-
-#### Scenario: 15 個元件 + 2 個引擎
-
-- **WHEN** 任何 UI 元件渲染
-- **THEN** 所有使用者可見文字 MUST 使用 useTranslation / t() 取得
-- **AND** MUST NOT 有硬編碼的中文或英文字串
-
-#### Scenario: GameBoard rAF closure
-
-- **WHEN** GameBoard rAF loop 中需要翻譯文字
-- **THEN** MUST 使用 tRef = useRef(t) 取得最新的 t 函式
-- **AND** MUST NOT 直接使用 closure 中的 t（可能 stale）
