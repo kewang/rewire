@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓。**
 
 ## Tech Stack
 
@@ -38,6 +38,7 @@
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
+  - `routing.ts` — 走線路由引擎（Dijkstra 最短路徑 + 星形/串聯候選方案 + 距離成本計算）
   - `randomOldHouse.ts` — 隨機老屋生成器（3 難度等級 + 可解性驗證）
 - `src/data/` — 遊戲資料
   - `levels.ts` — L01-L28 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理, L24-L25 老屋新問題, L26 五毒俱全, L27 翻修+整線, L28 終極考驗）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
@@ -62,6 +63,10 @@
 - PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`、`docs/project-rewire-prd-v0.9.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
 - **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
+- **Archive 後 MUST 更新相關文件並 commit**：每次 `opsx:archive` 完成後，MUST 執行以下步驟：
+  1. 更新 `CLAUDE.md`（版本進度、Project Structure、Key Design Decisions 等相關段落）
+  2. 更新 `MEMORY.md`（同步專案概覽、已完成的 Changes、關鍵架構等）
+  3. 將所有變更（程式碼 + archive + 文件更新）一起 commit
 - **Change 實作完成後 MUST 提供人工測試指引**：每個 change 的所有 task 完成後，MUST 輸出一份簡明的手動測試步驟清單，包含：
   1. 啟動方式（`npm run dev`）
   2. **正向測試**：列出具體關卡編號 + 操作步驟 + 預期結果（看到什麼）
