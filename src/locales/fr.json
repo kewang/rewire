@@ -190,7 +190,15 @@
     "acRoom": "Local clim.",
     "mainCircuit": "Circuit principal",
     "study": "Bureau",
-    "livingAc": "Clim. salon"
+    "livingAc": "Clim. salon",
+    "masterBedroom": "Ch. principale",
+    "secondBedroom": "Ch. secondaire",
+    "entrance": "Entrée",
+    "dining": "Salle à manger",
+    "masterBathroom": "SdB principale",
+    "guestBathroom": "SdB invités",
+    "walkInCloset": "Dressing",
+    "kidsRoom": "Ch. enfant"
   },
   "panel": {
     "title": "Intérieur du tableau",

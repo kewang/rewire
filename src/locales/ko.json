@@ -190,7 +190,15 @@
     "acRoom": "에어컨실",
     "mainCircuit": "메인 회로",
     "study": "서재",
-    "livingAc": "거실 에어컨"
+    "livingAc": "거실 에어컨",
+    "masterBedroom": "안방",
+    "secondBedroom": "작은방",
+    "entrance": "현관",
+    "dining": "식당",
+    "masterBathroom": "안방 욕실",
+    "guestBathroom": "손님 욕실",
+    "walkInCloset": "드레스룸",
+    "kidsRoom": "아이방"
   },
   "panel": {
     "title": "분전반 내부",

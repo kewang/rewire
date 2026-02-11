@@ -190,7 +190,15 @@
     "acRoom": "エアコン室",
     "mainCircuit": "メイン回路",
     "study": "書斎",
-    "livingAc": "リビングエアコン"
+    "livingAc": "リビングエアコン",
+    "masterBedroom": "主寝室",
+    "secondBedroom": "次寝室",
+    "entrance": "玄関",
+    "dining": "ダイニング",
+    "masterBathroom": "主浴室",
+    "guestBathroom": "客用浴室",
+    "walkInCloset": "WIC",
+    "kidsRoom": "子供部屋"
   },
   "panel": {
     "title": "分電盤内部",

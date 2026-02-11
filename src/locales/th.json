@@ -190,7 +190,15 @@
     "acRoom": "ห้องแอร์",
     "mainCircuit": "วงจรหลัก",
     "study": "ห้องทำงาน",
-    "livingAc": "แอร์ห้องนั่งเล่น"
+    "livingAc": "แอร์ห้องนั่งเล่น",
+    "masterBedroom": "ห้องนอนใหญ่",
+    "secondBedroom": "ห้องนอนรอง",
+    "entrance": "ทางเข้า",
+    "dining": "ห้องอาหาร",
+    "masterBathroom": "ห้องน้ำหลัก",
+    "guestBathroom": "ห้องน้ำรอง",
+    "walkInCloset": "ห้องแต่งตัว",
+    "kidsRoom": "ห้องเด็ก"
   },
   "panel": {
     "title": "ภายในตู้สวิตช์",

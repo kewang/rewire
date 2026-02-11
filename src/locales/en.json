@@ -190,7 +190,15 @@
     "acRoom": "AC Room",
     "mainCircuit": "Main Circuit",
     "study": "Study",
-    "livingAc": "Living AC"
+    "livingAc": "Living AC",
+    "masterBedroom": "Master Bedroom",
+    "secondBedroom": "Second Bedroom",
+    "entrance": "Entrance",
+    "dining": "Dining Room",
+    "masterBathroom": "Master Bath",
+    "guestBathroom": "Guest Bath",
+    "walkInCloset": "Walk-in Closet",
+    "kidsRoom": "Kids Room"
   },
   "panel": {
     "title": "Panel Interior",

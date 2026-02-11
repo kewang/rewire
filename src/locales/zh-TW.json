@@ -190,7 +190,15 @@
     "acRoom": "冷氣間",
     "mainCircuit": "主迴路",
     "study": "書房",
-    "livingAc": "客廳冷氣"
+    "livingAc": "客廳冷氣",
+    "masterBedroom": "主臥",
+    "secondBedroom": "次臥",
+    "entrance": "玄關",
+    "dining": "餐廳",
+    "masterBathroom": "主浴",
+    "guestBathroom": "客浴",
+    "walkInCloset": "更衣室",
+    "kidsRoom": "小孩房"
   },
   "panel": {
     "title": "配電箱內部",

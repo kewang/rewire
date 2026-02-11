@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓ → floor-plan-renderer ✓。**
 
 ## Tech Stack
 
@@ -30,6 +30,8 @@
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等 + 隨機老屋挑戰區塊）
   - `LanguageSwitcher.tsx` — 語言切換下拉選單（6 語：zh-TW/en/ja/ko/fr/th）
+  - `FloorPlanView.tsx` — 平面圖 SVG 渲染元件（房間色塊+名稱+💧潮濕標記+插座圓形+⚡配電箱+走線路徑+距離標籤+共用牆段偏移+響應式 viewBox）
+  - `FloorPlanPreview.tsx` — 開發驗證用平面圖預覽（4 種房型 + mock 迴路分配 + 走線路徑展示）
 - `src/types/` — TypeScript 型別定義
   - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse/randomDifficulty), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
@@ -169,6 +171,13 @@
 - 走線距離影響成本：cost = wire.costPerMeter × routeDistance（取代固定 DEFAULT_WIRE_LENGTH）
 - 配電箱操作：點擊平面圖上的配電箱 → PanelInteriorView overlay 展開
 - RoutingGraph 通用設計：FloorPlanOutlet.type 含 'power' | 'network'，為 v1.0 弱電預留
+- FloorPlanView SVG：cellSize=80px grid→pixel 轉換、ROOM_GAP=3px 內牆間隙、WALL_PADDING=4px 外圍、WALL_THICKNESS=5px 外牆
+- FloorPlanView 房間狀態：未指派（#1a1f2e + 灰色虛線邊框）/ 已指派（迴路色邊框 + 透明迴路色填充）
+- FloorPlanView 路徑渲染：候選路徑（虛線 opacity=0.4 + 距離標籤）/ 已選路徑（實線 opacity=0.8 + wireColor + glow underlay）
+- FloorPlanView 共用牆段偏移：buildSegSharing 偵測 + PATH_OFFSET_STEP=4px 垂直偏移
+- CIRCUIT_COLORS：8 色迴路調色盤（amber/blue/emerald/rose/violet/cyan/orange/lime）
+- 配電箱圖示：SVG rect + ⚡ + hover glow filter（feGaussianBlur + feFlood amber）
+- FloorPlanView i18n：tRoomName 新增 8 房間（主臥/次臥/玄關/餐廳/主浴/客浴/更衣室/小孩房）
 
 ## Testing Workflow
 

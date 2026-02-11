@@ -18,6 +18,7 @@ import LevelSelect from './LevelSelect';
 import CircuitDiagram from './CircuitDiagram';
 import CrimpMiniGame from './CrimpMiniGame';
 import PanelInteriorView from './PanelInteriorView';
+import FloorPlanPreview from './FloorPlanPreview';
 import CircuitPlanner from './CircuitPlanner';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
@@ -1190,7 +1191,12 @@ export default function GameBoard() {
 
   // Level select screen
   if (!currentLevel) {
-    return <LevelSelect levels={LEVELS} onSelect={handleSelectLevel} />;
+    return (
+      <>
+        <LevelSelect levels={LEVELS} onSelect={handleSelectLevel} />
+        <FloorPlanPreview />
+      </>
+    );
   }
 
   // Planning phase for free circuit levels

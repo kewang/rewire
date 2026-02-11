@@ -36,6 +36,14 @@ const ROOM_KEY_MAP: Record<string, string> = {
   '主迴路': 'room.mainCircuit',
   '書房': 'room.study',
   '客廳冷氣': 'room.livingAc',
+  '主臥': 'room.masterBedroom',
+  '次臥': 'room.secondBedroom',
+  '玄關': 'room.entrance',
+  '餐廳': 'room.dining',
+  '主浴': 'room.masterBathroom',
+  '客浴': 'room.guestBathroom',
+  '更衣室': 'room.walkInCloset',
+  '小孩房': 'room.kidsRoom',
 };
 
 export function tRoomName(t: TFunction, name: string): string {
