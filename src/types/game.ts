@@ -1,3 +1,5 @@
+import type { FloorPlan } from './floorPlan';
+
 /** 線材 */
 export interface Wire {
   /** 線徑 (mm²) */
@@ -272,6 +274,8 @@ export interface FixedCircuitLevel {
   readonly oldHouse?: OldHouseConfig;
   /** 隨機老屋難度（僅隨機生成的關卡有此欄位） */
   readonly randomDifficulty?: 1 | 2 | 3;
+  /** 平面圖定義（v0.9，缺少時 fallback 到 CircuitDiagram） */
+  readonly floorPlan?: FloorPlan;
 }
 
 /** 自由配迴路關卡定義（L06-L17, L21-L23） */
@@ -300,6 +304,8 @@ export interface FreeCircuitLevel {
   readonly requiresRouting?: boolean;
   /** 第三星獎勵目標條件 */
   readonly bonusCondition?: BonusCondition;
+  /** 平面圖定義（v0.9，缺少時 fallback 到 CircuitDiagram） */
+  readonly floorPlan?: FloorPlan;
 }
 
 /** 關卡定義（固定迴路 | 自由配迴路） */

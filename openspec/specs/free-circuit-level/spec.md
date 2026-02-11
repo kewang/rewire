@@ -75,11 +75,31 @@
   - `requiresCrimp?: boolean`
   - `requiresRouting?: boolean`
   - `bonusCondition?: BonusCondition`
+  - `floorPlan?: FloorPlan`
+
+#### Scenario: FreeCircuitLevel 無 floorPlan 時 fallback
+
+- **WHEN** FreeCircuitLevel 的 floorPlan 欄位為 undefined
+- **THEN** 系統 MUST fallback 到舊 CircuitDiagram 視圖（向後相容）
 
 #### Scenario: FreeCircuitLevel 所有屬性為 readonly
 
 - **WHEN** 建立 FreeCircuitLevel 後嘗試修改屬性
 - **THEN** TypeScript MUST 在編譯時報錯
+
+### Requirement: FixedCircuitLevel floorPlan 擴充
+
+系統 MUST 擴充 `FixedCircuitLevel` interface，新增可選 `floorPlan` 欄位。
+
+#### Scenario: FixedCircuitLevel 支援 floorPlan
+
+- **WHEN** 建立一個 FixedCircuitLevel 物件
+- **THEN** MUST 可包含 `floorPlan?: FloorPlan` 可選欄位
+
+#### Scenario: FixedCircuitLevel 無 floorPlan 時 fallback
+
+- **WHEN** FixedCircuitLevel 的 floorPlan 欄位為 undefined
+- **THEN** 系統 MUST fallback 到舊 CircuitDiagram 視圖（向後相容）
 
 ### Requirement: isFreeCircuitLevel type guard
 

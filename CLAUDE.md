@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓。**
 
 ## Tech Stack
 
@@ -33,6 +33,7 @@
 - `src/types/` — TypeScript 型別定義
   - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse/randomDifficulty), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
+  - `floorPlan.ts` — FloorPlanOutlet, FloorPlanRoom, RoutingNode, RoutingEdge, RoutingGraph, FloorPlan 型別定義
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
@@ -41,6 +42,7 @@
 - `src/data/` — 遊戲資料
   - `levels.ts` — L01-L28 關卡定義（L01-L05 單迴路教學, L06-L10 多迴路, L11-L12 相位平衡, L13-L15 ELCB, L16-L17 壓接端子, L18-L20 老屋驚魂, L21-L23 走線整理, L24-L25 老屋新問題, L26 五毒俱全, L27 翻修+整線, L28 終極考驗）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
   - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
+  - `floorPlans.ts` — 4 種預設房型常數（FLOOR_PLAN_S/M/L/XL）+ RoutingGraph 定義
 - `src/i18n.ts` — i18next 初始化 + SUPPORTED_LANGUAGES export（localStorage 持久化語言偏好 key: `rewire-lang`，預設 zh-TW）
 - `src/i18nHelpers.ts` — 翻譯輔助函式（tApplianceName, tRoomName, tStatus, tCrimpQuality 等）
 - `src/locales/` — 翻譯檔（zh-TW.json, en.json, ja.json, ko.json, fr.json, th.json）
