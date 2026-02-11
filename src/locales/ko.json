@@ -386,6 +386,14 @@
     "levelName": "랜덤 오래된 집 ({{difficulty}})",
     "levelDesc": "랜덤 생성 오래된 집 — {{circuits}}개 회로, {{problems}}개 문제"
   },
+  "routing": {
+    "selectStrategy": "배선 방식 선택",
+    "star": "스타형",
+    "daisyChain": "직렬형",
+    "distance": "거리",
+    "cost": "예상 비용",
+    "cancel": "취소"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

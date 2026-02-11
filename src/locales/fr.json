@@ -386,6 +386,14 @@
     "levelName": "Maison ancienne aléatoire ({{difficulty}})",
     "levelDesc": "Maison ancienne générée — {{circuits}} circuits, {{problems}} problèmes"
   },
+  "routing": {
+    "selectStrategy": "Choisir le type de câblage",
+    "star": "Étoile",
+    "daisyChain": "En série",
+    "distance": "Distance",
+    "cost": "Coût est.",
+    "cancel": "Annuler"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

@@ -54,6 +54,14 @@ export interface FloorPlanViewProps {
   connectedPaths?: readonly ConnectedPathGroup[];
   /** Called when user clicks the panel (配電箱) icon */
   onPanelClick?: () => void;
+  /** Called when user clicks on a room */
+  onRoomClick?: (roomId: string) => void;
+  /** Called when pointer enters/leaves a room (null = left all rooms) */
+  onRoomHover?: (roomId: string | null) => void;
+  /** Currently highlighted room ID (hover/drag target) */
+  highlightedRoomId?: string | null;
+  /** Whether a wire drag is currently active */
+  dragActive?: boolean;
 }
 
 // ─── Coordinate Helpers ──────────────────────────────────
@@ -186,6 +194,10 @@ export default function FloorPlanView({
   candidatePaths,
   connectedPaths,
   onPanelClick,
+  onRoomClick,
+  onRoomHover,
+  highlightedRoomId,
+  dragActive,
 }: FloorPlanViewProps) {
   const { t } = useTranslation();
   const [panelHover, setPanelHover] = useState(false);
@@ -229,6 +241,24 @@ export default function FloorPlanView({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <filter id="fp-room-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feFlood floodColor="#f59e0b" floodOpacity="0.5" result="color" />
+          <feComposite in="color" in2="blur" operator="in" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="fp-room-invalid" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feFlood floodColor="#ef4444" floodOpacity="0.4" result="color" />
+          <feComposite in="color" in2="blur" operator="in" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
 
       {/* ── External Walls ───────────────────────────── */}
@@ -250,16 +280,43 @@ export default function FloorPlanView({
         const cx = r.x + r.w / 2;
         const cy = r.y + r.h / 2;
         const assigned = !!asgn;
+        const isHighlighted = highlightedRoomId === room.id && dragActive;
+        const highlightValid = isHighlighted && assigned;
+        const highlightInvalid = isHighlighted && !assigned;
+
+        // Determine stroke and fill based on highlight state
+        let roomFill = assigned ? `${asgn.color}15` : '#1a1f2e';
+        let roomStroke = assigned ? asgn.color : '#374151';
+        let roomStrokeWidth = assigned ? 2 : 1;
+        let roomFilter: string | undefined;
+
+        if (highlightValid) {
+          roomFill = `${asgn!.color}30`;
+          roomStrokeWidth = 3;
+          roomFilter = 'url(#fp-room-glow)';
+        } else if (highlightInvalid) {
+          roomStroke = '#ef4444';
+          roomStrokeWidth = 2;
+          roomFilter = 'url(#fp-room-invalid)';
+        }
 
         return (
-          <g key={room.id} className="floor-plan-room">
+          <g
+            key={room.id}
+            className="floor-plan-room"
+            onClick={() => onRoomClick?.(room.id)}
+            onPointerEnter={dragActive ? () => onRoomHover?.(room.id) : undefined}
+            onPointerLeave={dragActive ? () => onRoomHover?.(null) : undefined}
+            style={{ cursor: dragActive && assigned ? 'pointer' : undefined }}
+          >
             {/* Room background */}
             <rect
               x={r.x} y={r.y} width={r.w} height={r.h} rx={4}
-              fill={assigned ? `${asgn.color}15` : '#1a1f2e'}
-              stroke={assigned ? asgn.color : '#374151'}
-              strokeWidth={assigned ? 2 : 1}
-              strokeDasharray={assigned ? undefined : '4 2'}
+              fill={roomFill}
+              stroke={roomStroke}
+              strokeWidth={roomStrokeWidth}
+              strokeDasharray={assigned || isHighlighted ? undefined : '4 2'}
+              filter={roomFilter}
             />
             {/* Wet area blue tint overlay */}
             {room.wetArea && (

@@ -19,9 +19,14 @@ import CircuitDiagram from './CircuitDiagram';
 import CrimpMiniGame from './CrimpMiniGame';
 import PanelInteriorView from './PanelInteriorView';
 import FloorPlanPreview from './FloorPlanPreview';
+import FloorPlanView from './FloorPlanView';
+import type { CircuitAssignment, ConnectedPathGroup } from './FloorPlanView';
+import RoutingStrategyPicker from './RoutingStrategyPicker';
 import CircuitPlanner from './CircuitPlanner';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
+import { calcRouteCandidates } from '../engine/routing';
+import type { RoutePath, RouteCandidate } from '../engine/routing';
 import { tLevelName, tLevelDesc, tRoomName } from '../i18nHelpers';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
@@ -85,6 +90,14 @@ export default function GameBoard() {
   const [circuitBreakers, setCircuitBreakers] = useState<Record<CircuitId, Breaker>>({});
   const [oldHouseSnapshot, setOldHouseSnapshot] = useState<OldHouseSnapshot | null>(null);
 
+  // Floor plan wiring interaction state
+  const [/* circuitRoutingStrategies */, setCircuitRoutingStrategies] = useState<Record<CircuitId, 'direct' | 'star' | 'daisy-chain'>>({});
+  const [circuitRouteDistances, setCircuitRouteDistances] = useState<Record<CircuitId, number>>({});
+  const [circuitRoutePaths, setCircuitRoutePaths] = useState<Record<CircuitId, RoutePath[]>>({});
+  const [pendingRoutingCircuit, setPendingRoutingCircuit] = useState<{ circuitId: CircuitId; wire: Wire } | null>(null);
+  const [candidateRoutes, setCandidateRoutes] = useState<readonly RouteCandidate[]>([]);
+  const [floorPlanHighlightedRoom, setFloorPlanHighlightedRoom] = useState<string | null>(null);
+
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
   const hasTripRef = useRef(false);
@@ -134,6 +147,9 @@ export default function GameBoard() {
   const circuitWiresRef = useRef(circuitWires);
   useEffect(() => { circuitWiresRef.current = circuitWires; }, [circuitWires]);
 
+  const circuitRouteDistancesRef = useRef(circuitRouteDistances);
+  useEffect(() => { circuitRouteDistancesRef.current = circuitRouteDistances; }, [circuitRouteDistances]);
+
   const circuitElcbRef = useRef(circuitElcb);
   useEffect(() => { circuitElcbRef.current = circuitElcb; }, [circuitElcb]);
 
@@ -145,6 +161,76 @@ export default function GameBoard() {
 
   // Is this a free circuit level?
   const isFreeLevel = currentLevel != null && isFreeCircuitLevel(currentLevel);
+
+  // Floor plan: detect if current level has a floorPlan
+  const currentFloorPlan = currentLevel?.floorPlan ?? null;
+
+  // Floor plan: room→circuit mapping from plannerCircuits (free levels) or circuitConfigs (fixed levels)
+  const roomToCircuitMap = useMemo(() => {
+    const map = new Map<string, CircuitId>();
+    if (!currentFloorPlan) return map;
+    if (isFreeLevel && plannerCircuits.length > 0) {
+      plannerCircuits.forEach((pc, idx) => {
+        const cid = `c${idx + 1}` as CircuitId;
+        for (const a of pc.assignedAppliances) {
+          if (!map.has(a.roomId)) map.set(a.roomId, cid);
+        }
+      });
+    } else if (currentLevel && isFixedCircuitLevel(currentLevel)) {
+      for (const config of currentLevel.circuitConfigs) {
+        const room = currentFloorPlan.rooms.find(r => r.id === config.label || r.label === config.label);
+        if (room) map.set(room.id, config.id);
+      }
+    }
+    return map;
+  }, [currentFloorPlan, currentLevel, isFreeLevel, plannerCircuits]);
+
+  // Floor plan: circuitAssignments map for FloorPlanView
+  const floorPlanCircuitAssignments = useMemo(() => {
+    const map = new Map<string, CircuitAssignment>();
+    if (!currentFloorPlan) return map;
+    const CIRCUIT_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#f43f5e', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
+    const circuitIdToIndex = new Map<CircuitId, number>();
+    circuitIds.forEach((id, idx) => { circuitIdToIndex.set(id, idx); });
+    for (const [roomId, cid] of roomToCircuitMap) {
+      const idx = circuitIdToIndex.get(cid) ?? 0;
+      map.set(roomId, { circuitIndex: idx, color: CIRCUIT_COLORS[idx % CIRCUIT_COLORS.length] });
+    }
+    return map;
+  }, [currentFloorPlan, roomToCircuitMap, circuitIds]);
+
+  // Floor plan: connectedPaths derived from circuitWires + circuitRoutePaths
+  const floorPlanConnectedPaths = useMemo((): readonly ConnectedPathGroup[] => {
+    if (!currentFloorPlan) return [];
+    const CIRCUIT_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#f43f5e', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
+    const WIRE_COLORS: Record<number, string> = { 1.6: '#60a5fa', 2.0: '#86efac', 3.5: '#fde047', 5.5: '#fb923c', 8: '#f87171', 14: '#c084fc' };
+    const groups: ConnectedPathGroup[] = [];
+    for (const [idx, cid] of circuitIds.entries()) {
+      if (!wiring.circuits[cid]?.isWired) continue;
+      const paths = circuitRoutePaths[cid];
+      if (!paths || paths.length === 0) continue;
+      const wire = circuitWires[cid];
+      const wireColor = wire ? (WIRE_COLORS[wire.crossSection] ?? CIRCUIT_COLORS[idx % CIRCUIT_COLORS.length]) : CIRCUIT_COLORS[idx % CIRCUIT_COLORS.length];
+      const pathMap = new Map<string, RoutePath>();
+      const rooms: string[] = [];
+      for (const [roomId, circuitId] of roomToCircuitMap) {
+        if (circuitId === cid) rooms.push(roomId);
+      }
+      rooms.forEach((roomId, i) => {
+        if (i < paths.length) pathMap.set(roomId, paths[i]);
+      });
+      if (pathMap.size > 0) {
+        groups.push({ circuitIndex: idx, wireColor, paths: pathMap });
+      }
+    }
+    return groups;
+  }, [currentFloorPlan, circuitIds, wiring.circuits, circuitRoutePaths, circuitWires, roomToCircuitMap]);
+
+  // Floor plan: candidate paths for RoutingStrategyPicker display
+  const floorPlanCandidatePaths = useMemo((): readonly RouteCandidate[] => {
+    if (!pendingRoutingCircuit) return [];
+    return candidateRoutes;
+  }, [pendingRoutingCircuit, candidateRoutes]);
 
   // Translated level name/description
   const currentLevelIndex = currentLevel ? LEVELS.indexOf(currentLevel) : -1;
@@ -165,12 +251,14 @@ export default function GameBoard() {
       const elcbCost = circuitElcb[id] ? ELCB_COST : 0;
       if (preWiredCircuitIds.has(id)) return sum + elcbCost;
       const wire = circuitWires[id] ?? DEFAULT_WIRES[0];
-      const wireCost = wire.costPerMeter * DEFAULT_WIRE_LENGTH;
+      // Use route distance if available (floor plan mode), fallback to DEFAULT_WIRE_LENGTH
+      const wireLength = circuitRouteDistances[id] ?? DEFAULT_WIRE_LENGTH;
+      const wireCost = wire.costPerMeter * wireLength;
       const config = circuitConfigs.find(c => c.id === id);
       const nfbCost = isFreeLevel && config ? (NFB_COSTS[config.breaker.ratedCurrent] ?? 0) : 0;
       return sum + wireCost + elcbCost + nfbCost;
     }, 0);
-  }, [circuitIds, circuitWires, circuitElcb, preWiredCircuitIds, circuitConfigs, isFreeLevel]);
+  }, [circuitIds, circuitWires, circuitElcb, preWiredCircuitIds, circuitConfigs, isFreeLevel, circuitRouteDistances]);
 
   // All appliances across all circuits (for sound)
   const allAppliances = useMemo(() => {
@@ -362,13 +450,15 @@ export default function GameBoard() {
       const elcbs = circuitElcbRef.current;
       const configs = resolvedConfigsRef.current;
       const isFreeLvl = level != null && isFreeCircuitLevel(level);
+      const routeDistances = circuitRouteDistancesRef.current;
       const finalCost = Object.entries(wires).reduce(
         (sum, [id, w]) => {
           const elcbCost = elcbs[id] ? ELCB_COST : 0;
           const config = configs.find(c => c.id === id);
           const nfbCost = isFreeLvl && config ? (NFB_COSTS[config.breaker.ratedCurrent] ?? 0) : 0;
           if (preWiredCircuitIdsRef.current.has(id)) return sum + elcbCost;
-          return sum + w.costPerMeter * DEFAULT_WIRE_LENGTH + elcbCost + nfbCost;
+          const wireLength = routeDistances[id] ?? DEFAULT_WIRE_LENGTH;
+          return sum + w.costPerMeter * wireLength + elcbCost + nfbCost;
         }, 0
       );
       const gameResult = finalCost > level.budget ? 'over-budget' : 'won';
@@ -463,6 +553,13 @@ export default function GameBoard() {
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
+    // Clear floor plan wiring state
+    setCircuitRoutingStrategies({});
+    setCircuitRouteDistances({});
+    setCircuitRoutePaths({});
+    setPendingRoutingCircuit(null);
+    setCandidateRoutes([]);
+    setFloorPlanHighlightedRoom(null);
 
     if (currentLevel && isFreeCircuitLevel(currentLevel)) {
       // Free circuit level: reset to planning phase
@@ -579,6 +676,12 @@ export default function GameBoard() {
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
+    setCircuitRoutingStrategies({});
+    setCircuitRouteDistances({});
+    setCircuitRoutePaths({});
+    setPendingRoutingCircuit(null);
+    setCandidateRoutes([]);
+    setFloorPlanHighlightedRoom(null);
     setGamePhase('active');
     setResolvedConfigs([]);
     setPlannerCircuits([]);
@@ -617,6 +720,12 @@ export default function GameBoard() {
       setRoutingCompleted(false);
       setShowRoutingOverlay(false);
       setFinalAestheticsScore(undefined);
+      setCircuitRoutingStrategies({});
+      setCircuitRouteDistances({});
+      setCircuitRoutePaths({});
+      setPendingRoutingCircuit(null);
+      setCandidateRoutes([]);
+      setFloorPlanHighlightedRoom(null);
       setOldHouseSnapshot(null);
       return;
     }
@@ -736,6 +845,12 @@ export default function GameBoard() {
     setRoutingCompleted(false);
     setShowRoutingOverlay(false);
     setFinalAestheticsScore(undefined);
+    setCircuitRoutingStrategies({});
+    setCircuitRouteDistances({});
+    setCircuitRoutePaths({});
+    setPendingRoutingCircuit(null);
+    setCandidateRoutes([]);
+    setFloorPlanHighlightedRoom(null);
   }, []);
 
   // === Planner handlers (free circuit levels) ===
@@ -981,7 +1096,107 @@ export default function GameBoard() {
     setWiring(prev => ({ ...prev, cursorPos: pos }));
   }, []);
 
+  // Helper: complete wiring for a circuit (after routing strategy selection or direct)
+  const completeFloorPlanWiring = useCallback((circuitId: CircuitId, wire: Wire, strategy: 'direct' | 'star' | 'daisy-chain', routePaths: RoutePath[], totalDistance: number) => {
+    // Store routing info
+    setCircuitRoutingStrategies(prev => ({ ...prev, [circuitId]: strategy }));
+    setCircuitRouteDistances(prev => ({ ...prev, [circuitId]: totalDistance }));
+    setCircuitRoutePaths(prev => ({ ...prev, [circuitId]: routePaths }));
+    // Store wire
+    setCircuitWires(w => ({ ...w, [circuitId]: wire }));
+    // Clear old crimp result
+    setCircuitCrimps(c => { const next = { ...c }; delete next[circuitId]; return next; });
+
+    if (currentLevel?.requiresCrimp) {
+      // Trigger crimp mini-game (wiring not complete until crimp done)
+      setPendingCrimpCircuitId(circuitId);
+      setPendingCrimpWire(wire);
+    } else {
+      // Mark circuit as wired immediately
+      setWiring(prev => {
+        const newCircuits = { ...prev.circuits };
+        newCircuits[circuitId] = { isWired: true, connectedWire: wire };
+        const allWired = Object.values(newCircuits).every(c => c.isWired);
+        return { ...prev, isWired: allWired, connectedWire: wire, circuits: newCircuits };
+      });
+    }
+  }, [currentLevel?.requiresCrimp]);
+
+  // Floor plan: initiate wiring for a circuit (handles single vs multi room)
+  const initiateFloorPlanWiring = useCallback((circuitId: CircuitId, wire: Wire) => {
+    if (!currentFloorPlan) return;
+    // Find rooms belonging to this circuit
+    const rooms: string[] = [];
+    for (const [roomId, cid] of roomToCircuitMap) {
+      if (cid === circuitId) rooms.push(roomId);
+    }
+    if (rooms.length === 0) return;
+
+    if (rooms.length === 1) {
+      // Single room: auto direct routing
+      const { candidates } = calcRouteCandidates(currentFloorPlan, rooms);
+      const direct = candidates.find(c => c.strategy === 'direct');
+      if (direct) {
+        const paths = Array.from(direct.paths.values());
+        completeFloorPlanWiring(circuitId, wire, 'direct', paths, direct.totalDistance);
+      }
+    } else {
+      // Multi room: show strategy picker
+      const { candidates } = calcRouteCandidates(currentFloorPlan, rooms);
+      if (candidates.length > 0) {
+        setPendingRoutingCircuit({ circuitId, wire });
+        setCandidateRoutes(candidates);
+      }
+    }
+  }, [currentFloorPlan, roomToCircuitMap, completeFloorPlanWiring]);
+
+  // Floor plan: handle routing strategy selection
+  const handleSelectRoutingStrategy = useCallback((strategy: 'star' | 'daisy-chain') => {
+    if (!pendingRoutingCircuit) return;
+    const candidate = candidateRoutes.find(c => c.strategy === strategy);
+    if (!candidate) return;
+    const paths = Array.from(candidate.paths.values());
+    completeFloorPlanWiring(pendingRoutingCircuit.circuitId, pendingRoutingCircuit.wire, strategy, paths, candidate.totalDistance);
+    setPendingRoutingCircuit(null);
+    setCandidateRoutes([]);
+  }, [pendingRoutingCircuit, candidateRoutes, completeFloorPlanWiring]);
+
+  // Floor plan: cancel routing strategy selection
+  const handleCancelRoutingStrategy = useCallback(() => {
+    setPendingRoutingCircuit(null);
+    setCandidateRoutes([]);
+  }, []);
+
+  // Floor plan: handle room hover during drag
+  const handleFloorPlanRoomHover = useCallback((roomId: string | null) => {
+    setFloorPlanHighlightedRoom(roomId);
+    // Also update wiring targetCircuitId for compatibility
+    if (roomId) {
+      const cid = roomToCircuitMap.get(roomId) ?? null;
+      setWiring(prev => ({ ...prev, targetCircuitId: cid }));
+    } else {
+      setWiring(prev => ({ ...prev, targetCircuitId: null }));
+    }
+  }, [roomToCircuitMap]);
+
   const handleDragEnd = useCallback((dropped: boolean) => {
+    // Floor plan mode: use highlighted room to resolve target circuit
+    if (currentFloorPlan && dropped && wiring.dragWire && floorPlanHighlightedRoom) {
+      const cid = roomToCircuitMap.get(floorPlanHighlightedRoom);
+      if (cid) {
+        initiateFloorPlanWiring(cid, wiring.dragWire);
+      }
+      setFloorPlanHighlightedRoom(null);
+      setWiring(prev => ({
+        ...prev,
+        isDragging: false,
+        dragWire: null,
+        cursorPos: null,
+        targetCircuitId: null,
+      }));
+      return;
+    }
+
     setWiring(prev => {
       const tid = prev.targetCircuitId;
       if (dropped && prev.dragWire && tid) {
@@ -1022,7 +1237,7 @@ export default function GameBoard() {
       }
       return { ...prev, isDragging: false, dragWire: null, cursorPos: null, targetCircuitId: null };
     });
-  }, [currentLevel?.requiresCrimp]);
+  }, [currentLevel?.requiresCrimp, currentFloorPlan, wiring.dragWire, floorPlanHighlightedRoom, roomToCircuitMap, initiateFloorPlanWiring]);
 
   // Crimp mini-game complete callback
   const handleCrimpComplete = useCallback((result: CrimpResult) => {
@@ -1268,27 +1483,40 @@ export default function GameBoard() {
         </section>
 
         <section className="panel-center">
-          <CircuitDiagram
-            circuits={circuits}
-            multiState={multiState}
-            isPowered={isPowered}
-            wiring={wiring}
-            onPowerToggle={handlePowerToggle}
-            leverDisabled={!canPowerOn && !isPowered}
-            leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded')) : undefined}
-            onTargetCircuitChange={handleTargetCircuitChange}
-            phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
-            phaseMode={currentLevel?.phaseMode}
-            onTogglePhase={handleTogglePhase}
-            circuitCrimps={Object.keys(circuitCrimps).length > 0 ? circuitCrimps : undefined}
-            problemCircuits={problemCircuits}
-            preWiredCircuitIds={preWiredCircuitIds}
-            onUnwire={handleUnwire}
-            isOldHouse={isOldHouse}
-            oldHouseProblems={oldHouseProblems}
-            onChangeBreaker={isOldHouse ? handleChangeBreaker : undefined}
-            circuitWires={isOldHouse ? circuitWires : undefined}
-          />
+          {currentFloorPlan ? (
+            <FloorPlanView
+              floorPlan={currentFloorPlan}
+              circuitAssignments={floorPlanCircuitAssignments}
+              candidatePaths={floorPlanCandidatePaths}
+              connectedPaths={floorPlanConnectedPaths}
+              onPanelClick={() => setShowRoutingOverlay(true)}
+              onRoomHover={wiring.isDragging ? handleFloorPlanRoomHover : undefined}
+              highlightedRoomId={floorPlanHighlightedRoom}
+              dragActive={wiring.isDragging}
+            />
+          ) : (
+            <CircuitDiagram
+              circuits={circuits}
+              multiState={multiState}
+              isPowered={isPowered}
+              wiring={wiring}
+              onPowerToggle={handlePowerToggle}
+              leverDisabled={!canPowerOn && !isPowered}
+              leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded')) : undefined}
+              onTargetCircuitChange={handleTargetCircuitChange}
+              phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
+              phaseMode={currentLevel?.phaseMode}
+              onTogglePhase={handleTogglePhase}
+              circuitCrimps={Object.keys(circuitCrimps).length > 0 ? circuitCrimps : undefined}
+              problemCircuits={problemCircuits}
+              preWiredCircuitIds={preWiredCircuitIds}
+              onUnwire={handleUnwire}
+              isOldHouse={isOldHouse}
+              oldHouseProblems={oldHouseProblems}
+              onChangeBreaker={isOldHouse ? handleChangeBreaker : undefined}
+              circuitWires={isOldHouse ? circuitWires : undefined}
+            />
+          )}
           {routingReady && !isPowered && (
             <button
               className="routing-button"
@@ -1355,6 +1583,15 @@ export default function GameBoard() {
           cableTies={cableTies}
           onToggleCableTie={handleToggleCableTie}
           aestheticsScore={currentAestheticsScore}
+        />
+      )}
+
+      {pendingRoutingCircuit && candidateRoutes.length > 0 && (
+        <RoutingStrategyPicker
+          candidates={candidateRoutes}
+          wire={pendingRoutingCircuit.wire}
+          onSelect={handleSelectRoutingStrategy}
+          onCancel={handleCancelRoutingStrategy}
         />
       )}
 

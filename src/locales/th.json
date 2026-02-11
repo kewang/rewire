@@ -386,6 +386,14 @@
     "levelName": "บ้านเก่าสุ่ม ({{difficulty}})",
     "levelDesc": "บ้านเก่าสุ่ม — {{circuits}} วงจร, {{problems}} ปัญหา"
   },
+  "routing": {
+    "selectStrategy": "เลือกรูปแบบการเดินสาย",
+    "star": "แบบดาว",
+    "daisyChain": "แบบอนุกรม",
+    "distance": "ระยะทาง",
+    "cost": "ต้นทุนโดยประมาณ",
+    "cancel": "ยกเลิก"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

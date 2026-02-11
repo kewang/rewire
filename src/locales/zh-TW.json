@@ -386,6 +386,14 @@
     "levelName": "隨機老屋（{{difficulty}}）",
     "levelDesc": "隨機生成的老屋挑戰 — {{circuits}} 條迴路、{{problems}} 個問題"
   },
+  "routing": {
+    "selectStrategy": "選擇走線策略",
+    "star": "星形",
+    "daisyChain": "串聯",
+    "distance": "距離",
+    "cost": "預估成本",
+    "cancel": "取消"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

@@ -386,6 +386,14 @@
     "levelName": "Random Old House ({{difficulty}})",
     "levelDesc": "Randomly generated old house — {{circuits}} circuits, {{problems}} problems"
   },
+  "routing": {
+    "selectStrategy": "Select Routing Strategy",
+    "star": "Star",
+    "daisyChain": "Daisy Chain",
+    "distance": "Distance",
+    "cost": "Est. Cost",
+    "cancel": "Cancel"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

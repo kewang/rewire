@@ -386,6 +386,14 @@
     "levelName": "ランダム古い家（{{difficulty}}）",
     "levelDesc": "ランダム生成の古い家 — {{circuits}} 回路、{{problems}} 問題"
   },
+  "routing": {
+    "selectStrategy": "配線方式を選択",
+    "star": "スター型",
+    "daisyChain": "直列型",
+    "distance": "距離",
+    "cost": "推定コスト",
+    "cancel": "キャンセル"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",
