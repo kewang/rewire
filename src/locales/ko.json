@@ -421,6 +421,12 @@
     "unassigned": "미할당",
     "unassignRoom": "방 할당 해제"
   },
+  "error": {
+    "title": "오류가 발생했습니다",
+    "message": "게임에서 예기치 않은 오류가 발생했습니다.",
+    "backToLevels": "레벨 선택으로 돌아가기",
+    "reload": "페이지 새로고침"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

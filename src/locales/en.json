@@ -421,6 +421,12 @@
     "unassigned": "Unassigned",
     "unassignRoom": "Unassign room"
   },
+  "error": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred in the game.",
+    "backToLevels": "Back to Level Select",
+    "reload": "Reload Page"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

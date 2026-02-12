@@ -4389,3 +4389,80 @@ h3, h4 {
     font-size: 0.68rem;
   }
 }
+
+/* ── Error Fallback ──────────────────────────────────────────── */
+
+.error-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--space-2xl);
+  text-align: center;
+  gap: var(--space-md);
+}
+
+.error-fallback__icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.error-fallback__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+}
+
+.error-fallback__message {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  max-width: 400px;
+}
+
+.error-fallback__detail {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  max-width: 500px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-fallback__btn {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-xl);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-bg-primary);
+  background: var(--color-accent-amber);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.error-fallback__btn:hover {
+  background: #d4a106;
+}
+
+.error-fallback__btn:active {
+  transform: scale(0.97);
+}
+
+.error-fallback__btn:focus-visible {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}

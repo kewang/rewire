@@ -421,6 +421,12 @@
     "unassigned": "未割当",
     "unassignRoom": "割当解除"
   },
+  "error": {
+    "title": "エラーが発生しました",
+    "message": "ゲームで予期しないエラーが発生しました。",
+    "backToLevels": "レベル選択に戻る",
+    "reload": "ページを再読み込み"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

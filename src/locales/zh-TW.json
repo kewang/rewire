@@ -421,6 +421,12 @@
     "unassigned": "未指派",
     "unassignRoom": "取消指派"
   },
+  "error": {
+    "title": "發生錯誤",
+    "message": "遊戲發生了意外錯誤。",
+    "backToLevels": "回到關卡選擇",
+    "reload": "重新整理頁面"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

@@ -421,6 +421,12 @@
     "unassigned": "Non assigné",
     "unassignRoom": "Désassigner la pièce"
   },
+  "error": {
+    "title": "Une erreur est survenue",
+    "message": "Une erreur inattendue s'est produite dans le jeu.",
+    "backToLevels": "Retour à la sélection",
+    "reload": "Recharger la page"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",
