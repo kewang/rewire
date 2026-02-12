@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Wire, WiringState } from '../types/game';
 
@@ -34,6 +34,8 @@ export default function WireToolbar({
   isPowered, canPowerOn, onPowerToggle, powerTooltip,
 }: WireToolbarProps) {
   const { t } = useTranslation();
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draggingRef = useRef(false);
   const startPos = useRef<{ x: number; y: number } | null>(null);
@@ -81,6 +83,17 @@ export default function WireToolbar({
       document.removeEventListener('pointercancel', handleGlobalUp);
     };
   }, [onDragMove, onDragEnd]);
+
+  // Detect if cards overflow for scroll affordance
+  useEffect(() => {
+    const el = cardsRef.current;
+    if (!el) return;
+    const check = () => setIsScrollable(el.scrollWidth > el.clientWidth + 2);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [wires.length]);
 
   const beginDrag = useCallback((wire: Wire, el: HTMLElement) => {
     draggingRef.current = true;
@@ -137,7 +150,8 @@ export default function WireToolbar({
 
   return (
     <div className="wire-toolbar">
-      <div className="wire-toolbar__cards">
+      <div className={`wire-toolbar__cards-wrap${isScrollable ? ' wire-toolbar__cards-wrap--scrollable' : ''}`}>
+      <div className="wire-toolbar__cards" ref={cardsRef}>
         {wires.map((w) => {
           const wireColor = WIRE_COLORS[w.crossSection] ?? '#888';
           const isSelected = wiring.connectedWire?.crossSection === w.crossSection;
@@ -163,6 +177,7 @@ export default function WireToolbar({
             </div>
           );
         })}
+      </div>
       </div>
 
       <button

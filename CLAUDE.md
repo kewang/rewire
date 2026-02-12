@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓ → floor-plan-renderer ✓ → floor-plan-wiring-interaction ✓ → floor-plan-game-integration ✓ → floor-plan-planner ✓ → floor-plan-levels ✓ → floor-plan-random-old-house ✓。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。**
 
 ## Tech Stack
 
@@ -222,6 +222,14 @@
 - 隨機老屋 room 分配：從 FloorPlan rooms 隨機選取，wetArea 迴路分配到 wetArea 房間，label 使用 room.id
 - 隨機老屋距離成本：findShortestPath(routingGraph, 'panel', 'outlet-{roomId}') 取代 DEFAULT_WIRE_LENGTH，fallback 保留
 - GameBoard problemCircuits：useMemo 衍生（非 useState + useEffect），避免 cascading render
+- v0.9 floor-plan-polish 響應式：fp-layout @media 640px（垂直堆疊）/ 1024px（sidebar 220px）
+- Sidebar mobile auto-collapse：GameBoard useState(() => window.innerWidth <= 640) 初始化（避免 React strict mode toggle 問題）
+- Sidebar mobile overlay：fixed 定位 z-index:200 + .sidebar-backdrop rgba(0,0,0,0.5) + 點擊收合
+- WireToolbar scroll 提示：.wire-toolbar__cards-wrap::after 漸層遮罩 + ResizeObserver 偵測溢出
+- Popover 入場動畫：translateY(8px→0) + opacity(0→1), 0.15s ease-out
+- Popover viewport clamping：8px safe margin + fitsBelow 判斷翻轉
+- Power button pulse：:active scale(1→1.05→1) @keyframes power-pulse 0.2s
+- 距離標籤背景：rx=4 圓角 + rgba(0,0,0,0.8) + stroke rgba(255,255,255,0.12) 微邊框
 
 ## Testing Workflow
 

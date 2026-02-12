@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Appliance, Wire, Breaker, FreeCircuitLevel, PlannerCircuit } from '../types/game';
 import { DEFAULT_WIRES, BREAKER_15A, BREAKER_20A, BREAKER_30A, NEUTRAL_MAX_CURRENT, NFB_COSTS, ELCB_COST, DEFAULT_WIRE_LENGTH } from '../data/constants';
@@ -43,6 +43,19 @@ export default function CircuitPlannerSidebar({
 }: CircuitPlannerSidebarProps) {
   const { t } = useTranslation();
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
+
+  // Track mobile viewport changes
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 640px)');
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  const handleBackdropClick = useCallback(() => {
+    if (!collapsed) onToggleCollapse();
+  }, [collapsed, onToggleCollapse]);
 
   const slotsUsed = circuits.length;
   const slotsMax = level.panel.maxSlots;
@@ -107,6 +120,8 @@ export default function CircuitPlannerSidebar({
   }
 
   return (
+    <>
+    {isMobile && <div className="sidebar-backdrop" onClick={handleBackdropClick} />}
     <div className="sidebar-planner">
       <div className="sidebar-planner__header">
         <h3>{t('planner.panelTitle')}</h3>
@@ -378,5 +393,6 @@ export default function CircuitPlannerSidebar({
         </button>
       </div>
     </div>
+    </>
   );
 }

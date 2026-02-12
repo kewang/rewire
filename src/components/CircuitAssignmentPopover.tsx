@@ -33,11 +33,20 @@ export default function CircuitAssignmentPopover({
     return () => document.removeEventListener('pointerdown', handleClickOutside);
   }, [onClose]);
 
-  // Clamp position to stay within viewport
+  // Clamp position to stay within viewport with safe margins
+  const MARGIN = 8;
+  const POPOVER_W = 220;
+  const POPOVER_H_ESTIMATE = 40 + circuits.length * 32 + 48; // title + items + add btn
+  const maxH = Math.min(POPOVER_H_ESTIMATE, 320);
+  const fitsBelow = position.y + maxH + MARGIN <= window.innerHeight;
+  const clampedLeft = Math.max(MARGIN, Math.min(position.x, window.innerWidth - POPOVER_W - MARGIN));
+  const clampedTop = fitsBelow
+    ? Math.max(MARGIN, Math.min(position.y, window.innerHeight - maxH - MARGIN))
+    : Math.max(MARGIN, position.y - maxH);
   const style: React.CSSProperties = {
     position: 'fixed',
-    left: Math.min(position.x, window.innerWidth - 220),
-    top: Math.min(position.y, window.innerHeight - 300),
+    left: clampedLeft,
+    top: clampedTop,
     zIndex: 1000,
   };
 

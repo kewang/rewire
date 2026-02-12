@@ -93,7 +93,7 @@ export default function GameBoard() {
   const [oldHouseSnapshot, setOldHouseSnapshot] = useState<OldHouseSnapshot | null>(null);
 
   // Floor plan sidebar + popover state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 640);
   const [roomPopover, setRoomPopover] = useState<{ roomId: string; roomName: string; pos: { x: number; y: number }; currentCircuitId: string | null } | null>(null);
 
   // Floor plan wiring interaction state

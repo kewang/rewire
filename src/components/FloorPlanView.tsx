@@ -510,9 +510,11 @@ export default function FloorPlanView({
                 {mid && (
                   <>
                     <rect
-                      x={mid[0] - 18} y={mid[1] - 8}
-                      width={36} height={16} rx={3}
-                      fill="rgba(0,0,0,0.75)"
+                      x={mid[0] - 20} y={mid[1] - 9}
+                      width={40} height={18} rx={4}
+                      fill="rgba(0,0,0,0.8)"
+                      stroke="rgba(255,255,255,0.12)"
+                      strokeWidth={0.5}
                     />
                     <text
                       x={mid[0]} y={mid[1]}
