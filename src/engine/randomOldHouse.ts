@@ -1,7 +1,9 @@
 import i18next from 'i18next';
 import type { FixedCircuitLevel, CircuitConfig, OldHouseProblem, PreWiredCircuit, OldHouseConfig, Wire, Appliance, Breaker, CircuitId, OldHouseProblemType, CrimpQuality } from '../types/game';
+import type { FloorPlan, FloorPlanRoom } from '../types/floorPlan';
 import { DEFAULT_WIRES, DEFAULT_APPLIANCES, BREAKER_15A, BREAKER_20A, BREAKER_30A, DEFAULT_WIRE_LENGTH, ELCB_COST } from '../data/constants';
-import { tRoomName } from '../i18nHelpers';
+import { FLOOR_PLAN_S, FLOOR_PLAN_M, FLOOR_PLAN_L } from '../data/floorPlans';
+import { findShortestPath } from './routing';
 
 const ALL_BREAKERS: Breaker[] = [BREAKER_15A, BREAKER_20A, BREAKER_30A];
 
@@ -99,7 +101,54 @@ function findOverratedBreaker(wire: Wire): Breaker | null {
   return null;
 }
 
-const CIRCUIT_LABEL_KEYS = ['廚房', '客廳', '臥室', '浴室', '儲藏室', '陽台', '書房', '洗衣間'];
+/** Difficulty → FloorPlan mapping */
+const DIFFICULTY_FLOOR_PLANS: Record<Difficulty, FloorPlan> = {
+  1: FLOOR_PLAN_S,
+  2: FLOOR_PLAN_M,
+  3: FLOOR_PLAN_L,
+};
+
+/** Get routing distance from panel to a room's outlet via Dijkstra */
+function getRouteDistance(floorPlan: FloorPlan, roomId: string): number {
+  const path = findShortestPath(floorPlan.routingGraph, 'panel', `outlet-${roomId}`);
+  return path ? path.distance : DEFAULT_WIRE_LENGTH;
+}
+
+/**
+ * Select rooms from the floor plan for the given circuits.
+ * wetArea circuits are assigned to rooms with wetArea=true.
+ */
+function selectRooms(
+  floorPlan: FloorPlan,
+  numCircuits: number,
+  wetAreaIndices: Set<number>,
+): FloorPlanRoom[] {
+  const wetRooms = shuffle(floorPlan.rooms.filter(r => r.wetArea === true));
+  const dryRooms = shuffle(floorPlan.rooms.filter(r => !r.wetArea));
+
+  const selected: FloorPlanRoom[] = Array(numCircuits);
+  let wetIdx = 0;
+  let dryIdx = 0;
+
+  // First pass: assign wetArea circuits to wetArea rooms
+  for (let i = 0; i < numCircuits; i++) {
+    if (wetAreaIndices.has(i)) {
+      selected[i] = wetIdx < wetRooms.length ? wetRooms[wetIdx++] : dryRooms[dryIdx++];
+    }
+  }
+  // Second pass: assign remaining circuits to dry rooms, then overflow to unused wet rooms
+  for (let i = 0; i < numCircuits; i++) {
+    if (!wetAreaIndices.has(i)) {
+      if (dryIdx < dryRooms.length) {
+        selected[i] = dryRooms[dryIdx++];
+      } else {
+        selected[i] = wetRooms[wetIdx++];
+      }
+    }
+  }
+
+  return selected;
+}
 
 
 /**
@@ -110,10 +159,10 @@ export function generateRandomOldHouse(difficulty: Difficulty): FixedCircuitLeve
   const config = DIFFICULTY_CONFIGS[difficulty];
   const numCircuits = randInt(config.circuitRange[0], config.circuitRange[1]);
   const numProblems = Math.min(randInt(config.problemRange[0], config.problemRange[1]), numCircuits);
-
-  // Generate circuits
+  // Select floor plan for this difficulty
+  const floorPlan = DIFFICULTY_FLOOR_PLANS[difficulty];
   const t = i18next.t.bind(i18next);
-  const labels = shuffle([...CIRCUIT_LABEL_KEYS]).slice(0, numCircuits).map(name => tRoomName(t, name));
+
   const circuitIds: CircuitId[] = [];
   const circuitConfigs: CircuitConfig[] = [];
   const problems: OldHouseProblem[] = [];
@@ -148,6 +197,9 @@ export function generateRandomOldHouse(difficulty: Difficulty): FixedCircuitLeve
       wetAreaIndices.add(pick(idx220));
     }
   }
+
+  // Select rooms from floor plan (wetArea circuits → wetArea rooms)
+  const selectedRooms = selectRooms(floorPlan, numCircuits, wetAreaIndices);
 
   // Assign appliances to circuits
   const circuitAppliances: Appliance[][] = [];
@@ -221,10 +273,14 @@ export function generateRandomOldHouse(difficulty: Difficulty): FixedCircuitLeve
   for (let i = 0; i < numCircuits; i++) {
     const cid = `c${i + 1}` as CircuitId;
     circuitIds.push(cid);
-    const label = labels[i];
+    const room = selectedRooms[i];
+    const label = room.id; // Use room.id for GameBoard roomToCircuitMap matching
     const voltage = voltages[i];
     const isWetArea = wetAreaIndices.has(i);
     const probs = assignedProblems.get(i) ?? [];
+
+    // Calculate route distance via Dijkstra (fallback to DEFAULT_WIRE_LENGTH)
+    const routeDistance = getRouteDistance(floorPlan, room.id);
 
     // Determine the correct wire for this circuit
     const totalCurrent = circuitAppliances[i].reduce((sum, a) => sum + a.power / a.voltage, 0);
@@ -246,8 +302,8 @@ export function generateRandomOldHouse(difficulty: Difficulty): FixedCircuitLeve
           const tooSmall = findTooSmallWire(totalCurrent);
           if (tooSmall) {
             preWire = tooSmall;
-            // Repair cost: need to buy correct wire
-            repairCost += correctWire.costPerMeter * DEFAULT_WIRE_LENGTH;
+            // Repair cost: need to buy correct wire (distance-based)
+            repairCost += correctWire.costPerMeter * routeDistance;
           }
           break;
         }
@@ -265,8 +321,8 @@ export function generateRandomOldHouse(difficulty: Difficulty): FixedCircuitLeve
     // For problems requiring unwire+rewire (bare-wire, oxidized-splice, wrong-wire-gauge without wrong-wire)
     const needsRewire = probs.some(p => p === 'bare-wire' || p === 'oxidized-splice');
     if (needsRewire && !probs.includes('wrong-wire-gauge')) {
-      // Rewiring with same gauge
-      repairCost += correctWire.costPerMeter * DEFAULT_WIRE_LENGTH;
+      // Rewiring with same gauge (distance-based)
+      repairCost += correctWire.costPerMeter * routeDistance;
     }
 
     // Build problems list
@@ -323,6 +379,7 @@ export function generateRandomOldHouse(difficulty: Difficulty): FixedCircuitLeve
     oldHouse,
     bonusCondition: { type: 'no-warning' },
     randomDifficulty: difficulty,
+    floorPlan,
     ...(config.phaseMode ? { phaseMode: config.phaseMode } : {}),
     ...(config.leakageMode ? { leakageMode: config.leakageMode } : {}),
     ...(config.requiresRouting ? { requiresRouting: true } : {}),

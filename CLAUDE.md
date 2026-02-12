@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓ → floor-plan-renderer ✓ → floor-plan-wiring-interaction ✓ → floor-plan-game-integration ✓ → floor-plan-planner ✓ → floor-plan-levels ✓。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓ → floor-plan-renderer ✓ → floor-plan-wiring-interaction ✓ → floor-plan-game-integration ✓ → floor-plan-planner ✓ → floor-plan-levels ✓ → floor-plan-random-old-house ✓。**
 
 ## Tech Stack
 
@@ -45,7 +45,7 @@
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
   - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
   - `routing.ts` — 走線路由引擎（Dijkstra 最短路徑 + 星形/串聯候選方案 + 距離成本計算）
-  - `randomOldHouse.ts` — 隨機老屋生成器（3 難度等級 + 可解性驗證）
+  - `randomOldHouse.ts` — 隨機老屋生成器（3 難度等級 + 可解性驗證 + FloorPlan 整合 + Dijkstra 距離成本）
 - `src/data/` — 遊戲資料
   - `levels.ts` — L01-L31 關卡定義（L01-L05 單迴路教學+FLOOR_PLAN_S, L06-L10 多迴路+FLOOR_PLAN_M, L11-L12 相位平衡+M, L13-L15 ELCB+M, L16-L17 壓接端子+M, L18-L20 老屋驚魂+FLOOR_PLAN_L, L21-L23 走線整理+M, L24-L25 老屋新問題+L, L26 五毒俱全+L, L27 翻修+整線+L, L28 終極考驗+L, L29 豪宅配電+FLOOR_PLAN_XL, L30 豪宅翻修+XL, L31 終極豪宅+XL）— L06-L17/L21-L23 已改為 FreeCircuitLevel 格式
   - `constants.ts` — 6 種線材、13 種電器（v0.7 新增電暖器/烤箱/除濕機）、NFB 三規格（15A/20A/30A）+ NFB 成本、ELCB_COST、NEUTRAL_MAX_CURRENT、LEAKAGE_CHANCE_PER_SECOND、OXIDIZED_CONTACT_RESISTANCE
@@ -79,6 +79,8 @@
   3. **反向測試**：列出不應出現新功能的場景（確認沒有回歸）
   4. **響應式**：桌面 vs 手機版應有的差異
   5. **動畫/視覺**：需要肉眼確認的動畫效果描述
+
+- **Lint 零容忍**：每次 `npm run lint` 出現任何 error/warning，不論是否為自己引入的，都 MUST 當場修復。不可跳過或標註「既有問題」。
 
 ## Key Design Decisions
 
@@ -216,6 +218,10 @@
 - L29 豪宅配電：FreeCircuitLevel + XL + 11 房間 + 14 電器 + 8 插槽/100A + manual phaseMode + random leakage + crimp
 - L30 豪宅翻修：FixedCircuitLevel + XL + 6 迴路 + oldHouse(5問題) + routing + aesthetics-score bonus
 - L31 終極豪宅：FixedCircuitLevel + XL + 7 迴路 + oldHouse(6問題) + 全機制 + under-budget-ratio 0.75
+- 隨機老屋 FloorPlan 整合：難度1→FLOOR_PLAN_S、難度2→FLOOR_PLAN_M、難度3→FLOOR_PLAN_L
+- 隨機老屋 room 分配：從 FloorPlan rooms 隨機選取，wetArea 迴路分配到 wetArea 房間，label 使用 room.id
+- 隨機老屋距離成本：findShortestPath(routingGraph, 'panel', 'outlet-{roomId}') 取代 DEFAULT_WIRE_LENGTH，fallback 保留
+- GameBoard problemCircuits：useMemo 衍生（非 useState + useEffect），避免 cascading render
 
 ## Testing Workflow
 

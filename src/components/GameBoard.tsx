@@ -80,7 +80,6 @@ export default function GameBoard() {
   const [pendingCrimpCircuitId, setPendingCrimpCircuitId] = useState<CircuitId | null>(null);
   const [pendingCrimpWire, setPendingCrimpWire] = useState<Wire | null>(null);
   const [starResult, setStarResult] = useState<{ stars: number; details: StarDetail[] } | null>(null);
-  const [problemCircuits, setProblemCircuits] = useState<Set<CircuitId>>(new Set());
   const [preWiredCircuitIds, setPreWiredCircuitIds] = useState<Set<CircuitId>>(new Set());
   const preWiredCircuitIdsRef = useRef<Set<CircuitId>>(new Set());
   const [circuitLanes, setCircuitLanes] = useState<CircuitId[]>([]);
@@ -256,6 +255,32 @@ export default function GameBoard() {
       mainTripped: multiState.overallStatus === 'main-tripped',
     };
   }, [currentFloorPlan, isPowered, multiState, circuitIds]);
+
+  // Unified problem resolution: derive unresolved problem circuits from state
+  const problemCircuits = useMemo(() => {
+    if (!currentLevel || !isFixedCircuitLevel(currentLevel) || !currentLevel.oldHouse) return new Set<CircuitId>();
+    const oh = currentLevel.oldHouse;
+    if (oh.problems.length === 0) return new Set<CircuitId>();
+
+    const remaining = new Set<CircuitId>();
+    for (const problem of oh.problems) {
+      const cid = problem.circuitId;
+      const wire = circuitWires[cid] ?? DEFAULT_WIRES[0];
+      const resState: ProblemResolutionState = {
+        isPreWired: preWiredCircuitIds.has(cid),
+        isWired: wiring.circuits[cid]?.isWired ?? false,
+        crimpResult: circuitCrimps[cid],
+        breaker: circuitBreakers[cid] ?? currentLevel.circuitConfigs.find(c => c.id === cid)?.breaker ?? BREAKER_20A,
+        wire,
+        elcbEnabled: !!circuitElcb[cid],
+        requiresCrimp: currentLevel.requiresCrimp === true,
+      };
+      if (!isProblemResolved(problem, resState)) {
+        remaining.add(cid);
+      }
+    }
+    return remaining;
+  }, [currentLevel, circuitWires, circuitBreakers, circuitElcb, circuitCrimps, wiring.circuits, preWiredCircuitIds]);
 
   // Floor plan: problem rooms (old house mode)
   const floorPlanProblemRooms = useMemo(() => {
@@ -659,7 +684,6 @@ export default function GameBoard() {
       setWiring(createInitialWiring([]));
       setCircuitPhases({});
       setMultiState(createInitialMultiState([]));
-      setProblemCircuits(new Set());
       setPreWiredCircuitIds(new Set());
       preWiredCircuitIdsRef.current = new Set();
       setOldHouseSnapshot(null);
@@ -703,7 +727,6 @@ export default function GameBoard() {
         isDragging: false, dragWire: null, cursorPos: null,
         isWired: true, connectedWire: null, circuits: wiringCircuits, targetCircuitId: null,
       });
-      setProblemCircuits(new Set(oh.problems.map(p => p.circuitId)));
       setPreWiredCircuitIds(new Set(ids));
       preWiredCircuitIdsRef.current = new Set(ids);
       // Re-initialize ELCB state for missing-elcb
@@ -754,7 +777,6 @@ export default function GameBoard() {
     setCircuitCrimps({});
     setPendingCrimpCircuitId(null);
     setPendingCrimpWire(null);
-    setProblemCircuits(new Set());
     setPreWiredCircuitIds(new Set());
     preWiredCircuitIdsRef.current = new Set();
     setCircuitLanes([]);
@@ -798,7 +820,6 @@ export default function GameBoard() {
       setCircuitPhases({});
       setMultiState(createInitialMultiState([]));
       setResult('none');
-      setProblemCircuits(new Set());
       setPreWiredCircuitIds(new Set());
       preWiredCircuitIdsRef.current = new Set();
       setCircuitLanes([]);
@@ -875,7 +896,6 @@ export default function GameBoard() {
         isWired: true, connectedWire: null, circuits: wiringCircuits, targetCircuitId: null,
       });
 
-      setProblemCircuits(new Set(oh.problems.map(p => p.circuitId)));
       setPreWiredCircuitIds(new Set(ids));
       preWiredCircuitIdsRef.current = new Set(ids);
 
@@ -910,7 +930,6 @@ export default function GameBoard() {
       setCircuitWires(createInitialCircuitWires(ids));
       setCircuitCrimps({});
       setWiring(createInitialWiring(ids));
-      setProblemCircuits(new Set());
       setPreWiredCircuitIds(new Set());
       preWiredCircuitIdsRef.current = new Set();
       setOldHouseSnapshot(null);
@@ -1082,6 +1101,39 @@ export default function GameBoard() {
     ));
   }, []);
 
+  // Assign a room's appliances to a circuit
+  const handleAssignRoomToCircuit = useCallback((roomId: string, circuitId: string) => {
+    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return;
+    const room = currentLevel.rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    // Assign all matching-voltage appliances from this room
+    const circuit = plannerCircuits.find(c => c.id === circuitId);
+    if (!circuit) return;
+
+    setPlannerCircuits(prev => {
+      // First, remove any existing assignments from this room in ALL circuits
+      let updated = prev.map(c => ({
+        ...c,
+        assignedAppliances: c.assignedAppliances.filter(a => a.roomId !== roomId),
+      }));
+      // Then assign matching appliances to target circuit
+      const assignments: ApplianceAssignment[] = [];
+      room.appliances.forEach((appliance, idx) => {
+        if (appliance.voltage === circuit.voltage) {
+          assignments.push({ appliance, roomId, roomApplianceIndex: idx });
+        }
+      });
+      updated = updated.map(c =>
+        c.id === circuitId
+          ? { ...c, assignedAppliances: [...c.assignedAppliances, ...assignments] }
+          : c
+      );
+      return updated;
+    });
+    setRoomPopover(null);
+  }, [currentLevel, plannerCircuits]);
+
   // Floor plan room click handler (for circuit assignment during planning)
   const handleFloorPlanRoomClick = useCallback((roomId: string) => {
     if (!currentFloorPlan || !currentLevel) return;
@@ -1125,40 +1177,7 @@ export default function GameBoard() {
       pos = { x: rect.right + 4, y: rect.top };
     }
     setRoomPopover({ roomId, roomName, pos, currentCircuitId });
-  }, [currentFloorPlan, currentLevel, gamePhase, plannerCircuits, selectedPlannerCircuitId]);
-
-  // Assign a room's appliances to a circuit
-  const handleAssignRoomToCircuit = useCallback((roomId: string, circuitId: string) => {
-    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return;
-    const room = currentLevel.rooms.find(r => r.id === roomId);
-    if (!room) return;
-
-    // Assign all matching-voltage appliances from this room
-    const circuit = plannerCircuits.find(c => c.id === circuitId);
-    if (!circuit) return;
-
-    setPlannerCircuits(prev => {
-      // First, remove any existing assignments from this room in ALL circuits
-      let updated = prev.map(c => ({
-        ...c,
-        assignedAppliances: c.assignedAppliances.filter(a => a.roomId !== roomId),
-      }));
-      // Then assign matching appliances to target circuit
-      const assignments: ApplianceAssignment[] = [];
-      room.appliances.forEach((appliance, idx) => {
-        if (appliance.voltage === circuit.voltage) {
-          assignments.push({ appliance, roomId, roomApplianceIndex: idx });
-        }
-      });
-      updated = updated.map(c =>
-        c.id === circuitId
-          ? { ...c, assignedAppliances: [...c.assignedAppliances, ...assignments] }
-          : c
-      );
-      return updated;
-    });
-    setRoomPopover(null);
-  }, [currentLevel, plannerCircuits]);
+  }, [currentFloorPlan, currentLevel, gamePhase, plannerCircuits, selectedPlannerCircuitId, handleAssignRoomToCircuit]);
 
   // Unassign a room from all circuits
   const handleUnassignRoom = useCallback((roomId: string) => {
@@ -1499,36 +1518,6 @@ export default function GameBoard() {
     setCircuitElcb(prev => ({ ...prev, [circuitId]: !prev[circuitId] }));
   }, []);
 
-  // Unified problem resolution: re-check all problems whenever relevant state changes
-  useEffect(() => {
-    if (!currentLevel || !isFixedCircuitLevel(currentLevel) || !currentLevel.oldHouse) return;
-    const oh = currentLevel.oldHouse;
-    if (oh.problems.length === 0) return;
-
-    const remaining = new Set<CircuitId>();
-    for (const problem of oh.problems) {
-      const cid = problem.circuitId;
-      const wire = circuitWires[cid] ?? DEFAULT_WIRES[0];
-      const resState: ProblemResolutionState = {
-        isPreWired: preWiredCircuitIds.has(cid),
-        isWired: wiring.circuits[cid]?.isWired ?? false,
-        crimpResult: circuitCrimps[cid],
-        breaker: circuitBreakers[cid] ?? currentLevel.circuitConfigs.find(c => c.id === cid)?.breaker ?? BREAKER_20A,
-        wire,
-        elcbEnabled: !!circuitElcb[cid],
-        requiresCrimp: currentLevel.requiresCrimp === true,
-      };
-      if (!isProblemResolved(problem, resState)) {
-        remaining.add(cid);
-      }
-    }
-
-    setProblemCircuits(prev => {
-      // Only update if the set changed
-      if (prev.size === remaining.size && [...prev].every(id => remaining.has(id))) return prev;
-      return remaining;
-    });
-  }, [currentLevel, circuitWires, circuitBreakers, circuitElcb, circuitCrimps, wiring.circuits, preWiredCircuitIds]);
 
   const handleTogglePhase = useCallback((circuitId: CircuitId) => {
     if (isPowered || currentLevel?.phaseMode !== 'manual') return;
