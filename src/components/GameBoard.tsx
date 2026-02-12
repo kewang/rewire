@@ -31,6 +31,7 @@ import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAesth
 import { calcRouteCandidates } from '../engine/routing';
 import type { RoutePath, RouteCandidate } from '../engine/routing';
 import { tLevelName, tLevelDesc, tRoomName, tApplianceName } from '../i18nHelpers';
+import VolumeControl from './VolumeControl';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
@@ -1622,6 +1623,7 @@ export default function GameBoard() {
               <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
               <h1>{translatedLevelName}</h1>
               <span className="level-goal">{t('game.powerTimeBudget', { time: currentLevel.survivalTime, budget: currentLevel.budget })}</span>
+              <VolumeControl />
             </div>
           </header>
 
@@ -1697,6 +1699,7 @@ export default function GameBoard() {
             <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
             <h1>{translatedLevelName}</h1>
             <span className="level-goal">{t('game.powerTimeBudget', { time: currentLevel.survivalTime, budget: currentLevel.budget })}</span>
+            <VolumeControl />
           </div>
           <p className="level-description">{translatedLevelDesc}</p>
         </header>
@@ -1791,6 +1794,7 @@ export default function GameBoard() {
             <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
             <h1>{translatedLevelName}</h1>
             <span className="level-goal">{t('game.powerTime', { time: currentLevel.survivalTime })}</span>
+            <VolumeControl />
           </div>
           <StatusDisplay
             circuits={circuits}
@@ -1863,6 +1867,7 @@ export default function GameBoard() {
           <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
           <h1>{translatedLevelName}</h1>
           <span className="level-goal">{t('game.powerTime', { time: currentLevel.survivalTime })}</span>
+          <VolumeControl />
         </div>
         <StatusDisplay
           circuits={circuits}

@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。CSS polish ✓（未定義變數修復 + focus-visible + 硬編碼顏色統一）。v0.10 進行中（loading-screen ✓ → error-boundary ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。CSS polish ✓（未定義變數修復 + focus-visible + 硬編碼顏色統一）。v0.10 進行中（loading-screen ✓ → error-boundary ✓ → volume-control ✓）。**
 
 ## Tech Stack
 
@@ -36,6 +36,7 @@
   - `CircuitPlannerSidebar.tsx` — 平面圖規劃側欄（可收合 280px/48px + 精簡版迴路卡片 + 配電箱摘要 + 確認按鈕）
   - `WireToolbar.tsx` — 平面圖底部線材工具列（6 張線材卡片橫排 + 送電按鈕 + Pointer Events 拖曳）
   - `CircuitAssignmentPopover.tsx` — 房間迴路指派 popover（迴路列表 + 新增迴路 + 取消指派 + click-outside 關閉）
+  - `VolumeControl.tsx` — 音量控制元件（speaker icon SVG 三態 + range slider + mute toggle + localStorage 持久化）
 - `src/types/` — TypeScript 型別定義
   - `game.ts` — CircuitId, Circuit, CircuitState, MultiCircuitState(+neutralCurrent/neutralHeat/mainBreakerTripTimer/totalPanelCurrent), WiringState, CircuitConfig(+phase/wetArea), Level(+phaseMode/leakageMode/leakageEvents/bonusCondition/oldHouse/randomDifficulty), LeakageEvent, SimulationStatus(+neutral-burned/elcb-tripped/leakage/main-tripped), BonusCondition, OldHouseProblemType(5 種), OldHouseProblem, PreWiredCircuit(+breaker?), OldHouseConfig, CircuitSnapshot, OldHouseSnapshot
   - `helpers.ts` — toLegacyState, worstStatus, createSingleCircuitLevel, isProblemResolved(+ProblemResolutionState)
@@ -43,7 +44,7 @@
 - `src/engine/` — 模擬引擎邏輯
   - `simulation.ts` — 純函式模擬引擎（step, stepMulti(+phases+mainBreakerRating), calcTotalCurrent）
   - `scoring.ts` — 三星評分引擎（calcStars, loadBestStars, saveBestStars）
-  - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音
+  - `audio.ts` — Web Audio API 提示音 + buzzing 預警音 + 電器運轉音 + masterGain 音量控制（setMasterVolume/setMuted + localStorage 持久化）
   - `routing.ts` — 走線路由引擎（Dijkstra 最短路徑 + 星形/串聯候選方案 + 距離成本計算）
   - `randomOldHouse.ts` — 隨機老屋生成器（3 難度等級 + 可解性驗證 + FloorPlan 整合 + Dijkstra 距離成本）
 - `src/data/` — 遊戲資料
@@ -230,6 +231,11 @@
 - Popover viewport clamping：8px safe margin + fitsBelow 判斷翻轉
 - Power button pulse：:active scale(1→1.05→1) @keyframes power-pulse 0.2s
 - 距離標籤背景：rx=4 圓角 + rgba(0,0,0,0.8) + stroke rgba(255,255,255,0.12) 微邊框
+- 音量控制：masterGain node 串接所有音效 → ctx.destination，setMasterVolume(0–1)/setMuted API
+- 音量預設 50%，localStorage key=`rewire-volume`（JSON { volume, muted }）
+- VolumeControl UI：speaker icon SVG 三態（高音量/低音量/靜音斜線）+ range slider（inset groove + amber fill）
+- VolumeControl 位置：4 處 game-header .header-top 末端（planning fp/planning legacy/active fp/active legacy）
+- 滑桿拉到 0 自動 mute，unmute 時 volume=0 自動恢復 0.5
 
 ## Testing Workflow
 

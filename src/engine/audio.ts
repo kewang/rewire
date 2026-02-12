@@ -1,4 +1,84 @@
 let audioCtx: AudioContext | null = null;
+let masterGain: GainNode | null = null;
+
+// --- Master Volume State ---
+
+const STORAGE_KEY = 'rewire-volume';
+const DEFAULT_VOLUME = 0.5;
+
+interface VolumeSettings {
+  volume: number;
+  muted: boolean;
+}
+
+function loadSettings(): VolumeSettings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as VolumeSettings;
+      return {
+        volume: Math.max(0, Math.min(1, parsed.volume ?? DEFAULT_VOLUME)),
+        muted: !!parsed.muted,
+      };
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return { volume: DEFAULT_VOLUME, muted: false };
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ volume: _volume, muted: _muted }));
+  } catch {
+    // storage not available
+  }
+}
+
+let _volume = loadSettings().volume;
+let _muted = loadSettings().muted;
+
+function applyMasterGain() {
+  if (!masterGain) return;
+  try {
+    const ctx = getCtx();
+    const effective = _muted ? 0 : _volume;
+    masterGain.gain.linearRampToValueAtTime(effective, ctx.currentTime + 0.02);
+  } catch {
+    // Audio not available
+  }
+}
+
+/** Set master volume (0.0–1.0). Immediately affects all audio. */
+export function setMasterVolume(volume: number) {
+  _volume = Math.max(0, Math.min(1, volume));
+  if (_volume === 0) {
+    _muted = true;
+  } else if (_muted && _volume > 0) {
+    _muted = false;
+  }
+  applyMasterGain();
+  saveSettings();
+}
+
+/** Get current master volume (0.0–1.0). */
+export function getMasterVolume(): number {
+  return _volume;
+}
+
+/** Set muted state. When muted, all audio is silent. Unmute restores previous volume. */
+export function setMuted(muted: boolean) {
+  _muted = muted;
+  applyMasterGain();
+  saveSettings();
+}
+
+/** Check if audio is muted. */
+export function isMuted(): boolean {
+  return _muted;
+}
+
+// --- AudioContext & MasterGain ---
 
 function getCtx(): AudioContext {
   if (!audioCtx) {
@@ -7,9 +87,21 @@ function getCtx(): AudioContext {
   return audioCtx;
 }
 
+function getMasterGainNode(): GainNode {
+  const ctx = getCtx();
+  if (!masterGain) {
+    masterGain = ctx.createGain();
+    const effective = _muted ? 0 : _volume;
+    masterGain.gain.setValueAtTime(effective, ctx.currentTime);
+    masterGain.connect(ctx.destination);
+  }
+  return masterGain;
+}
+
 function playTone(frequency: number, duration: number, type: OscillatorType = 'sine', volume = 0.15) {
   try {
     const ctx = getCtx();
+    const master = getMasterGainNode();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -17,7 +109,7 @@ function playTone(frequency: number, duration: number, type: OscillatorType = 's
     gain.gain.setValueAtTime(volume, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(master);
     osc.start();
     osc.stop(ctx.currentTime + duration);
   } catch {
@@ -51,13 +143,14 @@ export function startBuzzing() {
   if (buzzOsc) return; // already playing
   try {
     const ctx = getCtx();
+    const master = getMasterGainNode();
     buzzOsc = ctx.createOscillator();
     buzzGain = ctx.createGain();
     buzzOsc.type = 'sawtooth';
     buzzOsc.frequency.value = 120;
     buzzGain.gain.setValueAtTime(0, ctx.currentTime);
     buzzOsc.connect(buzzGain);
-    buzzGain.connect(ctx.destination);
+    buzzGain.connect(master);
     buzzOsc.start();
   } catch {
     // Audio not available
@@ -102,8 +195,9 @@ interface ApplianceAudioNode {
 let applianceNodes: ApplianceAudioNode[] = [];
 
 function createApplianceSound(ctx: AudioContext, name: string): ApplianceAudioNode | null {
+  const master = getMasterGainNode();
   const gain = ctx.createGain();
-  gain.connect(ctx.destination);
+  gain.connect(master);
 
   if (name === '吹風機') {
     // Bandpass-filtered sawtooth to approximate wind noise
