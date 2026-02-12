@@ -186,6 +186,15 @@
   opacity: 1;
 }
 
+.level-card:focus-visible {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}
+
+.level-card:active {
+  transform: translateY(0);
+}
+
 /* ── Random Old House ────────────────────────────────────────── */
 
 .random-section-title {
@@ -220,7 +229,7 @@
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, var(--color-accent-amber), var(--color-status-danger));
+  background: linear-gradient(90deg, var(--color-accent-amber), var(--color-accent-red));
   opacity: 0;
   transition: opacity 0.25s;
 }
@@ -234,6 +243,15 @@
 
 .random-card:hover::before {
   opacity: 1;
+}
+
+.random-card:focus-visible {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}
+
+.random-card:active {
+  transform: translateY(0);
 }
 
 .random-card-icon {
@@ -262,7 +280,7 @@
 .random-card-completions {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--color-status-safe);
+  color: var(--color-accent-green);
   letter-spacing: 0.05em;
 }
 
@@ -359,7 +377,7 @@
 }
 
 .elcb-toggle input[type="checkbox"] {
-  accent-color: var(--color-accent);
+  accent-color: var(--color-accent-amber);
   width: 16px;
   height: 16px;
 }
@@ -501,8 +519,8 @@
 }
 
 .circuit-tab.active {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--color-accent-amber);
+  color: var(--color-accent-amber);
   background: rgba(234, 179, 8, 0.08);
 }
 
@@ -573,7 +591,7 @@
 }
 .card.voltage-disabled:hover {
   border-color: var(--color-border);
-  background: var(--color-surface-card);
+  background: var(--color-bg-card);
 }
 
 /* Voltage incompatibility hint */
@@ -754,7 +772,7 @@ h3, h4 {
 }
 
 .star-achieved {
-  color: #22c55e;
+  color: var(--color-accent-green);
 }
 
 .star-missed {
@@ -816,6 +834,15 @@ h3, h4 {
   transform: translateY(-1px);
 }
 
+.retry-button:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
+}
+
+.retry-button:active {
+  transform: translateY(0);
+}
+
 .back-button {
   padding: var(--space-sm) var(--space-lg);
   border: 1px solid var(--color-border);
@@ -831,6 +858,15 @@ h3, h4 {
 .back-button:hover {
   border-color: var(--color-text-secondary);
   color: var(--color-text-primary);
+}
+
+.back-button:focus-visible {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}
+
+.back-button:active {
+  transform: translateY(0);
 }
 
 /* ── Before/After View ───────────────────────────────────────── */
@@ -1783,12 +1819,12 @@ h3, h4 {
 }
 
 .panel-score-value.score-perfect {
-  color: #22c55e;
+  color: var(--color-accent-green);
   text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
 }
 
 .panel-score-value.score-bad {
-  color: #ef4444;
+  color: var(--color-accent-red);
   text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
@@ -2008,10 +2044,10 @@ h3, h4 {
   width: 100%;
   margin-top: var(--space-md);
   padding: 10px 20px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
+  border: 1px solid var(--color-accent-copper);
+  border-radius: var(--radius-md);
   background: linear-gradient(180deg, rgba(217, 119, 6, 0.15), rgba(217, 119, 6, 0.05));
-  color: var(--accent);
+  color: var(--color-accent-copper);
   font-family: var(--font-display);
   font-size: 0.85rem;
   font-weight: 700;
@@ -2036,7 +2072,7 @@ h3, h4 {
 .aesthetics-score-line {
   margin-top: var(--space-sm);
   padding-top: var(--space-sm);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
 }
 
 .aesthetics-score-value {
@@ -2046,15 +2082,15 @@ h3, h4 {
 }
 
 .aesthetics-score-value.score-green {
-  color: #22c55e;
+  color: var(--color-accent-green);
 }
 
 .aesthetics-score-value.score-yellow {
-  color: #eab308;
+  color: var(--color-accent-amber);
 }
 
 .aesthetics-score-value.score-red {
-  color: #ef4444;
+  color: var(--color-accent-red);
 }
 
 /* ── Circuit Planner (Planning Phase) ─────────────────────────── */
@@ -2688,6 +2724,11 @@ h3, h4 {
   transform: translateY(0);
 }
 
+.confirm-planning-btn:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
+}
+
 .confirm-planning-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -3177,10 +3218,10 @@ h3, h4 {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  border: 2px solid var(--color-success);
+  border: 2px solid var(--color-accent-green);
   border-radius: var(--radius-md);
   background: rgba(34, 197, 94, 0.1);
-  color: var(--color-success);
+  color: var(--color-accent-green);
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
@@ -3191,6 +3232,11 @@ h3, h4 {
 
 .fp-power-button:active:not(:disabled) {
   animation: power-pulse 0.2s ease;
+}
+
+.fp-power-button:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
 }
 
 .fp-power-button:disabled {
@@ -3866,6 +3912,11 @@ h3, h4 {
   background: rgba(34, 197, 94, 0.2);
 }
 
+.sidebar-confirm-btn:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
+}
+
 .sidebar-confirm-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -4029,6 +4080,11 @@ h3, h4 {
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
+}
+
+.wire-toolbar__power:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
 }
 
 .wire-toolbar__power:disabled {
