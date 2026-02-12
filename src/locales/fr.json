@@ -381,6 +381,18 @@
     "L28": {
       "name": "L28 Vieille maison : Épreuve ultime",
       "description": "Examen final ! 5 circuits + 4 problèmes + phases + fuite + rangement = défi ultime."
+    },
+    "L29": {
+      "name": "L29 Câblage du manoir",
+      "description": "Un manoir de 12 pièces — votre premier vrai défi spatial. La distance change tout !"
+    },
+    "L30": {
+      "name": "L30 Rénovation du manoir",
+      "description": "Rénovation du vieux manoir + rangement des câbles. Plus c'est grand, plus il y a de problèmes !"
+    },
+    "L31": {
+      "name": "L31 Manoir ultime",
+      "description": "Examen final v0.9. Manoir + vieille maison + toutes les mécaniques + distance. Êtes-vous prêt ?"
     }
   },
   "random": {

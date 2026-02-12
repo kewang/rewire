@@ -1,68 +1,86 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, DEFAULT_WIRES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
-import { FLOOR_PLAN_S } from './floorPlans';
+import { FLOOR_PLAN_S, FLOOR_PLAN_M, FLOOR_PLAN_L, FLOOR_PLAN_XL } from './floorPlans';
 
 const [hairDryer, kettle, microwave, underSinkHeater, dryer, , ihStove, airCon, bathHeater, fridge, heater, oven, dehumidifier] = DEFAULT_APPLIANCES;
 const [wire16, wire20] = DEFAULT_WIRES;
 
-/** 關卡定義（L01-L05 單迴路教學, L06-L17 自由配迴路, L18-L20 老屋固定迴路, L21-L23 自由配走線） */
+/**
+ * 關卡定義
+ * - L01-L05: 單迴路教學 (FixedCircuitLevel, no floorPlan)
+ * - L06-L17: 自由配迴路 (FreeCircuitLevel, FLOOR_PLAN_S/M)
+ * - L18-L20: 老屋固定迴路 (FixedCircuitLevel, FLOOR_PLAN_L)
+ * - L21-L23: 自由配走線 (FreeCircuitLevel, FLOOR_PLAN_M)
+ * - L24-L28: 老屋進階 (FixedCircuitLevel, FLOOR_PLAN_L)
+ * - L29-L31: 豪宅 (FLOOR_PLAN_XL)
+ *
+ * Budget notes (v0.9): FreeCircuitLevel budgets recalibrated for distance-based wire costs.
+ * FixedCircuitLevel budgets use approximate average distances from their floor plan.
+ * All values subject to playtest tuning.
+ */
 export const LEVELS: readonly Level[] = [
+  // === L01-L05: 單迴路教學 (FLOOR_PLAN_S) ===
   {
     name: 'L01 基礎教學',
     description: '接上吹風機並成功送電。理解 P ÷ V = I。',
     requiredAppliances: [hairDryer],
-    budget: 50,
+    budget: 30,
     survivalTime: 5,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
-      { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
+      { id: 'c1', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
     ],
+    floorPlan: FLOOR_PLAN_S,
   },
   {
     name: 'L02 燒線陷阱',
     description: '同時使用吹風機和快煮壺。小心選線！',
     requiredAppliances: [hairDryer, kettle],
-    budget: 120,
+    budget: 65,
     survivalTime: 5,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
-      { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
     ],
+    floorPlan: FLOOR_PLAN_S,
   },
   {
     name: 'L03 成本取捨',
     description: '同樣的電器，但預算收緊。不能無腦選最粗線。',
     requiredAppliances: [hairDryer, kettle],
-    budget: 55,
+    budget: 45,
     survivalTime: 5,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
-      { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, kettle] },
     ],
+    floorPlan: FLOOR_PLAN_S,
   },
   {
     name: 'L04 低功率陷阱',
     description: '廚下加熱器才 800W，看起來很無害？加上快煮壺撐 8 秒試試。',
     requiredAppliances: [underSinkHeater, kettle],
-    budget: 85,
+    budget: 55,
     survivalTime: 8,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
-      { id: 'c1', label: '主迴路', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [underSinkHeater, kettle] },
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [underSinkHeater, kettle] },
     ],
+    floorPlan: FLOOR_PLAN_S,
   },
   {
     name: 'L05 長時間耐久',
     description: '電暖器 + 快煮壺，合計 30A。需要粗線才撐得住！',
     requiredAppliances: [heater, kettle],
-    budget: 130,
+    budget: 100,
     survivalTime: 15,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
-      { id: 'c1', label: '主迴路', voltage: 110, breaker: BREAKER_30A, availableAppliances: [heater, kettle] },
+      { id: 'c1', label: '客廳', voltage: 110, breaker: BREAKER_30A, availableAppliances: [heater, kettle] },
     ],
+    floorPlan: FLOOR_PLAN_S,
   },
-  // === L06-L10: 基礎自由配迴路 ===
+  // === L06-L10: 基礎自由配迴路 (FLOOR_PLAN_S / FLOOR_PLAN_M) ===
   {
     name: 'L06 自由配迴路入門',
     description: '第一次體驗自由配迴路！兩個房間、三台電器，你來決定怎麼分。',
@@ -71,7 +89,7 @@ export const LEVELS: readonly Level[] = [
       { id: 'kitchen', name: '廚房', appliances: [kettle, fridge] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 35 },
-    budget: 100,
+    budget: 95,
     survivalTime: 8,
     bonusCondition: { type: 'under-budget-ratio', ratio: 0.85 },
     floorPlan: FLOOR_PLAN_S,
@@ -80,96 +98,103 @@ export const LEVELS: readonly Level[] = [
     name: 'L07 高功率初體驗',
     description: '電暖器 16.4A — 第一次遇到 1.6mm² 不夠用的電器！',
     rooms: [
-      { id: 'living', name: '客廳', appliances: [heater, fridge] },
+      { id: 'living-room', name: '客廳', appliances: [heater, fridge] },
     ],
     panel: { maxSlots: 3, mainBreakerRating: 30 },
-    budget: 85,
+    budget: 90,
     survivalTime: 10,
     bonusCondition: { type: 'no-warning' },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L08 廚房分迴路',
     description: '快煮壺、微波爐、電暖器 — 三台高功率電器，怎麼分才划算？',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'living', name: '客廳', appliances: [heater] },
+      { id: 'living-room', name: '客廳', appliances: [heater] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 40 },
-    budget: 150,
+    budget: 180,
     survivalTime: 10,
     bonusCondition: { type: 'no-warning' },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L09 混合電壓',
     description: '廚房 110V + 洗衣間 220V。不同電壓需要不同迴路！',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, oven] },
-      { id: 'laundry', name: '洗衣間', appliances: [dryer] },
+      { id: 'second-bedroom', name: '洗衣間', appliances: [dryer] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 40 },
-    budget: 140,
+    budget: 165,
     survivalTime: 10,
     bonusCondition: { type: 'under-budget-ratio', ratio: 0.9 },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L10 全屋配電',
     description: '五個房間、七台電器 — 第一次全屋配電設計！',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'living', name: '客廳', appliances: [heater, hairDryer] },
-      { id: 'bedroom', name: '臥室', appliances: [dehumidifier] },
-      { id: 'laundry', name: '洗衣間', appliances: [dryer] },
-      { id: 'storage', name: '儲藏室', appliances: [fridge] },
+      { id: 'living-room', name: '客廳', appliances: [heater] },
+      { id: 'master-bedroom', name: '主臥', appliances: [hairDryer, dehumidifier] },
+      { id: 'second-bedroom', name: '洗衣間', appliances: [dryer] },
+      { id: 'entrance', name: '玄關', appliances: [fridge] },
     ],
     panel: { maxSlots: 6, mainBreakerRating: 60 },
-    budget: 280,
+    budget: 310,
     survivalTime: 15,
     bonusCondition: { type: 'under-budget-ratio', ratio: 0.9 },
+    floorPlan: FLOOR_PLAN_M,
   },
-  // === L11-L12: 自由配迴路 + 相位平衡 ===
+  // === L11-L12: 自由配迴路 + 相位平衡 (FLOOR_PLAN_M) ===
   {
     name: 'L11 相位平衡入門',
     description: '單相三線制登場！R 相和 T 相要均衡分配，否則中性線過載燒毀。',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, fridge] },
-      { id: 'living', name: '客廳', appliances: [hairDryer, dehumidifier] },
-      { id: 'ac', name: '冷氣間', appliances: [airCon] },
+      { id: 'living-room', name: '客廳', appliances: [hairDryer, dehumidifier] },
+      { id: 'master-bedroom', name: '主臥', appliances: [airCon] },
     ],
     panel: { maxSlots: 5, mainBreakerRating: 50 },
     budget: 200,
     survivalTime: 12,
     phaseMode: 'auto',
     bonusCondition: { type: 'time-margin', margin: 3 },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L12 相位平衡進階',
     description: '更多電器、手動相位切換。你來決定哪條迴路走 R 相、哪條走 T 相。',
     rooms: [
-      { id: 'kitchen', name: '廚房', appliances: [kettle, microwave, oven] },
-      { id: 'living', name: '客廳', appliances: [heater, hairDryer] },
-      { id: 'storage', name: '儲藏室', appliances: [fridge] },
-      { id: 'ac', name: '冷氣間', appliances: [airCon] },
+      { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
+      { id: 'living-room', name: '客廳', appliances: [heater, hairDryer] },
+      { id: 'entrance', name: '玄關', appliances: [fridge, oven] },
+      { id: 'master-bedroom', name: '主臥', appliances: [airCon] },
     ],
     panel: { maxSlots: 6, mainBreakerRating: 75 },
-    budget: 280,
+    budget: 310,
     survivalTime: 15,
     phaseMode: 'manual',
     bonusCondition: { type: 'time-margin', margin: 3 },
+    floorPlan: FLOOR_PLAN_M,
   },
-  // === L13-L15: 自由配迴路 + ELCB/漏電 ===
+  // === L13-L15: 自由配迴路 + ELCB/漏電 (FLOOR_PLAN_M) ===
   {
     name: 'L13 ELCB 入門',
     description: '浴室潮濕區必須安裝 ELCB。不裝 = 觸電！',
     rooms: [
       { id: 'bathroom', name: '浴室', appliances: [bathHeater], wetArea: true },
-      { id: 'bedroom', name: '臥室', appliances: [hairDryer] },
+      { id: 'master-bedroom', name: '主臥', appliances: [hairDryer] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 30 },
-    budget: 150,
+    budget: 160,
     survivalTime: 10,
     leakageMode: 'scripted',
     leakageEvents: [{ time: 5, circuitId: 'wetArea' }],
     bonusCondition: { type: 'time-margin', margin: 3 },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L14 ELCB 預算壓力',
@@ -177,67 +202,72 @@ export const LEVELS: readonly Level[] = [
     rooms: [
       { id: 'bathroom', name: '浴室', appliances: [bathHeater], wetArea: true },
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'storage', name: '儲藏室', appliances: [fridge] },
+      { id: 'entrance', name: '玄關', appliances: [fridge] },
     ],
     panel: { maxSlots: 5, mainBreakerRating: 35 },
-    budget: 185,
+    budget: 200,
     survivalTime: 12,
     leakageMode: 'random',
     bonusCondition: { type: 'under-budget-ratio', ratio: 0.9 },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L15 綜合挑戰',
     description: '相位平衡 + ELCB + 多房間。所有 v0.4 機制的自由配迴路版！',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'living', name: '客廳', appliances: [heater] },
+      { id: 'living-room', name: '客廳', appliances: [heater] },
       { id: 'bathroom', name: '浴室', appliances: [bathHeater], wetArea: true },
-      { id: 'ac', name: '冷氣間', appliances: [airCon] },
+      { id: 'master-bedroom', name: '主臥', appliances: [airCon] },
     ],
     panel: { maxSlots: 6, mainBreakerRating: 60 },
-    budget: 300,
+    budget: 320,
     survivalTime: 20,
     phaseMode: 'manual',
     leakageMode: 'random',
     bonusCondition: { type: 'time-margin', margin: 5 },
+    floorPlan: FLOOR_PLAN_M,
   },
-  // === L16-L17: 自由配迴路 + 壓接端子 ===
+  // === L16-L17: 自由配迴路 + 壓接端子 (FLOOR_PLAN_M) ===
   {
     name: 'L16 壓接端子入門',
     description: '接好線後要壓接才能送電。低壓力環境學習壓接。',
     rooms: [
-      { id: 'living', name: '客廳', appliances: [hairDryer, fridge] },
+      { id: 'living-room', name: '客廳', appliances: [hairDryer, fridge] },
     ],
     panel: { maxSlots: 3, mainBreakerRating: 20 },
-    budget: 80,
+    budget: 85,
     survivalTime: 8,
     requiresCrimp: true,
     bonusCondition: { type: 'crimp-quality', minQuality: 'good' },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L17 端子品質大考驗',
     description: '壓接品質差 = 接觸電阻高 = 線材加速過熱！廚房高功率迴路要壓好。',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'ac', name: '冷氣間', appliances: [ihStove] },
+      { id: 'master-bedroom', name: '主臥', appliances: [ihStove] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 40 },
-    budget: 150,
+    budget: 165,
     survivalTime: 12,
     requiresCrimp: true,
     bonusCondition: { type: 'crimp-quality', minQuality: 'good' },
+    floorPlan: FLOOR_PLAN_M,
   },
+  // === L18-L20: 老屋驚魂 (FLOOR_PLAN_L) ===
   {
     name: 'L18 老屋驚魂：初診',
     description: '打開老配電箱，c1 活線沒壓端子！拆掉問題線路重新接線再送電。',
     requiredAppliances: [hairDryer, fridge, fridge],
-    budget: 100,
+    budget: 120,
     survivalTime: 10,
     requiresCrimp: true,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge] },
-      { id: 'c2', label: '臥室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+      { id: 'c2', label: '次臥', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
     ],
     oldHouse: {
       problems: [{ circuitId: 'c1', type: 'bare-wire' }],
@@ -246,19 +276,20 @@ export const LEVELS: readonly Level[] = [
         c2: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
   {
     name: 'L19 老屋驚魂：全面檢修',
     description: '廚房線太細、客廳沒壓端子。兩條問題迴路等你修復！',
     requiredAppliances: [kettle, microwave, hairDryer],
-    budget: 180,
+    budget: 200,
     survivalTime: 12,
     requiresCrimp: true,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave] },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
-      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [microwave] },
+      { id: 'c3', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [microwave] },
     ],
     oldHouse: {
       problems: [
@@ -271,12 +302,13 @@ export const LEVELS: readonly Level[] = [
         c3: { wire: wire16, crimpQuality: 'good', appliances: [] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
   {
     name: 'L20 老屋驚魂：危機四伏',
     description: 'v0.5 畢業考！氧化接點、裸線、線太細 — 三個問題加上潮濕浴室和相位平衡。',
     requiredAppliances: [kettle, hairDryer, fridge],
-    budget: 250,
+    budget: 280,
     survivalTime: 15,
     requiresCrimp: true,
     phaseMode: 'manual',
@@ -285,7 +317,7 @@ export const LEVELS: readonly Level[] = [
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, fridge], phase: 'R' },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge], phase: 'R' },
-      { id: 'c3', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c3', label: '客浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
     ],
     oldHouse: {
       problems: [
@@ -299,74 +331,78 @@ export const LEVELS: readonly Level[] = [
         c3: { wire: wire16, crimpQuality: 'poor', appliances: [bathHeater] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
-  // === L21-L23: 自由配迴路 + 走線整理 ===
+  // === L21-L23: 自由配迴路 + 走線整理 (FLOOR_PLAN_M) ===
   {
     name: 'L21 整線入門',
     description: '設計迴路後進入配電箱整理走線。學習車道排列和束帶。',
     rooms: [
-      { id: 'living', name: '客廳', appliances: [hairDryer] },
-      { id: 'storage', name: '儲藏室', appliances: [fridge] },
+      { id: 'living-room', name: '客廳', appliances: [hairDryer] },
+      { id: 'entrance', name: '玄關', appliances: [fridge] },
       { id: 'kitchen', name: '廚房', appliances: [underSinkHeater] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 30 },
-    budget: 150,
+    budget: 140,
     survivalTime: 10,
     phaseMode: 'auto',
     requiresCrimp: true,
     requiresRouting: true,
     bonusCondition: { type: 'aesthetics-score', minScore: 90 },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L22 交叉迷宮',
     description: '5 個房間 + 混合電壓 + 手動相位。迴路規劃直接影響走線難度！',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'living', name: '客廳', appliances: [heater] },
-      { id: 'balcony', name: '陽台', appliances: [dryer] },
-      { id: 'storage', name: '儲藏室', appliances: [fridge] },
-      { id: 'bedroom', name: '臥室', appliances: [dehumidifier] },
+      { id: 'living-room', name: '客廳', appliances: [heater] },
+      { id: 'second-bedroom', name: '次臥', appliances: [dryer] },
+      { id: 'entrance', name: '玄關', appliances: [fridge] },
+      { id: 'master-bedroom', name: '主臥', appliances: [dehumidifier] },
     ],
     panel: { maxSlots: 6, mainBreakerRating: 60 },
-    budget: 250,
+    budget: 270,
     survivalTime: 12,
     phaseMode: 'manual',
     requiresCrimp: true,
     requiresRouting: true,
     bonusCondition: { type: 'aesthetics-score', minScore: 80 },
+    floorPlan: FLOOR_PLAN_M,
   },
   {
     name: 'L23 完美配電箱',
     description: 'v0.7 畢業考！全機制綜合 — 自由配迴路 + 相位 + ELCB + 壓接 + 走線。',
     rooms: [
       { id: 'kitchen', name: '廚房', appliances: [kettle, microwave] },
-      { id: 'living', name: '客廳', appliances: [heater, hairDryer] },
+      { id: 'living-room', name: '客廳', appliances: [heater, hairDryer] },
       { id: 'bathroom', name: '浴室', appliances: [bathHeater], wetArea: true },
-      { id: 'ac', name: '冷氣間', appliances: [airCon] },
-      { id: 'storage', name: '儲藏室', appliances: [fridge] },
+      { id: 'master-bedroom', name: '主臥', appliances: [airCon] },
+      { id: 'entrance', name: '玄關', appliances: [fridge] },
     ],
     panel: { maxSlots: 8, mainBreakerRating: 65 },
-    budget: 350,
+    budget: 370,
     survivalTime: 15,
     phaseMode: 'manual',
     leakageMode: 'random',
     requiresCrimp: true,
     requiresRouting: true,
     bonusCondition: { type: 'aesthetics-score', minScore: 70 },
+    floorPlan: FLOOR_PLAN_M,
   },
-  // === L24-L25: 老屋驚魂 v0.8（新問題類型） ===
+  // === L24-L25: 老屋驚魂 v0.8 新問題類型 (FLOOR_PLAN_L) ===
   {
     name: 'L24 老屋驚魂：保護力缺失',
     description: '廚房的 30A NFB 保護不了 20A 線材！更換正確的 NFB 規格，修復裸線問題。',
     requiredAppliances: [kettle, fridge, hairDryer, fridge],
-    budget: 120,
+    budget: 140,
     survivalTime: 10,
     requiresCrimp: true,
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle] },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge] },
-      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+      { id: 'c3', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
     ],
     oldHouse: {
       problems: [
@@ -379,20 +415,21 @@ export const LEVELS: readonly Level[] = [
         c3: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
   {
     name: 'L25 老屋驚魂：潮濕陷阱',
     description: '浴室迴路缺少漏電斷路器！安裝 ELCB 保護生命，修復氧化接點。',
     requiredAppliances: [bathHeater, hairDryer, fridge],
-    budget: 170,
+    budget: 200,
     survivalTime: 12,
     requiresCrimp: true,
     leakageMode: 'random',
     bonusCondition: { type: 'no-trip' },
     circuitConfigs: [
-      { id: 'c1', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c1', label: '客浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer] },
-      { id: 'c3', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
+      { id: 'c3', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge] },
     ],
     oldHouse: {
       problems: [
@@ -405,13 +442,14 @@ export const LEVELS: readonly Level[] = [
         c3: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
-  // === L26-L28: 老屋驚魂 v0.8（老屋 + 走線整合） ===
+  // === L26-L28: 老屋驚魂 v0.8 老屋 + 走線整合 (FLOOR_PLAN_L) ===
   {
     name: 'L26 老屋驚魂：五毒俱全',
     description: '全 5 種問題類型登場！診斷每條迴路的問題，逐一修復後平衡相位送電。',
     requiredAppliances: [kettle, microwave, bathHeater, fridge, hairDryer],
-    budget: 280,
+    budget: 320,
     survivalTime: 15,
     requiresCrimp: true,
     leakageMode: 'random',
@@ -419,9 +457,9 @@ export const LEVELS: readonly Level[] = [
     bonusCondition: { type: 'no-warning' },
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave], phase: 'R' },
-      { id: 'c2', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c2', label: '客浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
       { id: 'c3', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer], phase: 'R' },
-      { id: 'c4', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
+      { id: 'c4', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
     ],
     oldHouse: {
       problems: [
@@ -438,12 +476,13 @@ export const LEVELS: readonly Level[] = [
         c4: { wire: wire16, crimpQuality: 'none', appliances: [fridge] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
   {
     name: 'L27 老屋驚魂：翻修 + 整線',
     description: '修復問題後進入配電箱整理走線。第一次體驗「修復 + 整線」完整翻修流程！',
     requiredAppliances: [kettle, hairDryer, fridge, airCon],
-    budget: 280,
+    budget: 320,
     survivalTime: 12,
     requiresCrimp: true,
     requiresRouting: true,
@@ -453,8 +492,8 @@ export const LEVELS: readonly Level[] = [
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle], phase: 'R' },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer, fridge], phase: 'R' },
-      { id: 'c3', label: '客廳冷氣', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
-      { id: 'c4', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
+      { id: 'c3', label: '餐廳', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
+      { id: 'c4', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
     ],
     oldHouse: {
       problems: [
@@ -468,12 +507,13 @@ export const LEVELS: readonly Level[] = [
         c4: { wire: wire16, crimpQuality: 'excellent', appliances: [fridge] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
   },
   {
     name: 'L28 老屋驚魂：終極考驗',
     description: 'v0.8 畢業考！5 迴路 + 4 問題 + 相位 + 漏電 + 整線 = 全機制綜合終極挑戰。',
     requiredAppliances: [kettle, microwave, hairDryer, bathHeater, airCon, fridge],
-    budget: 380,
+    budget: 420,
     survivalTime: 15,
     requiresCrimp: true,
     requiresRouting: true,
@@ -484,9 +524,9 @@ export const LEVELS: readonly Level[] = [
     circuitConfigs: [
       { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave], phase: 'R' },
       { id: 'c2', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [hairDryer], phase: 'R' },
-      { id: 'c3', label: '浴室', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
-      { id: 'c4', label: '客廳冷氣', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
-      { id: 'c5', label: '儲藏室', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
+      { id: 'c3', label: '客浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c4', label: '餐廳', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
+      { id: 'c5', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
     ],
     oldHouse: {
       problems: [
@@ -504,5 +544,112 @@ export const LEVELS: readonly Level[] = [
         c5: { wire: wire16, crimpQuality: 'none', appliances: [fridge] },
       },
     },
+    floorPlan: FLOOR_PLAN_L,
+  },
+  // === L29-L31: 豪宅 (FLOOR_PLAN_XL) ===
+  {
+    name: 'L29 豪宅配電',
+    description: '12 個房間的豪宅，第一次面對真正的空間挑戰。距離影響一切！',
+    rooms: [
+      { id: 'master-bedroom', name: '主臥', appliances: [dehumidifier] },
+      { id: 'walk-in-closet', name: '更衣室', appliances: [hairDryer] },
+      { id: 'master-bathroom', name: '主浴', appliances: [bathHeater], wetArea: true },
+      { id: 'living-room', name: '客廳', appliances: [airCon, heater] },
+      { id: 'study', name: '書房', appliances: [dehumidifier] },
+      { id: 'dining-room', name: '餐廳', appliances: [microwave] },
+      { id: 'second-bedroom', name: '次臥', appliances: [dehumidifier] },
+      { id: 'kids-room', name: '小孩房', appliances: [dehumidifier] },
+      { id: 'guest-bathroom', name: '客浴', appliances: [bathHeater], wetArea: true },
+      { id: 'entrance', name: '玄關', appliances: [fridge] },
+      { id: 'kitchen', name: '廚房', appliances: [kettle, oven, ihStove], wetArea: true },
+    ],
+    panel: { maxSlots: 8, mainBreakerRating: 100 },
+    budget: 550,
+    survivalTime: 15,
+    phaseMode: 'manual',
+    leakageMode: 'random',
+    requiresCrimp: true,
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.8 },
+    floorPlan: FLOOR_PLAN_XL,
+  },
+  {
+    name: 'L30 豪宅翻修',
+    description: '豪宅老屋翻修 + 走線整理。空間越大，問題越多！',
+    requiredAppliances: [kettle, oven, bathHeater, heater, dehumidifier, dehumidifier, airCon],
+    budget: 500,
+    survivalTime: 15,
+    requiresCrimp: true,
+    requiresRouting: true,
+    phaseMode: 'manual',
+    bonusCondition: { type: 'aesthetics-score', minScore: 70 },
+    initialLanes: ['c1', 'c4', 'c2', 'c5', 'c3', 'c6'],
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, oven], phase: 'R' },
+      { id: 'c2', label: '主浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c3', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [heater], phase: 'R' },
+      { id: 'c4', label: '餐廳', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
+      { id: 'c5', label: '次臥', voltage: 110, breaker: BREAKER_15A, availableAppliances: [dehumidifier, dehumidifier], phase: 'T' },
+      { id: 'c6', label: '主臥', voltage: 110, breaker: BREAKER_15A, availableAppliances: [dehumidifier], phase: 'T' },
+    ],
+    oldHouse: {
+      problems: [
+        { circuitId: 'c1', type: 'overrated-breaker' },
+        { circuitId: 'c1', type: 'wrong-wire-gauge' },
+        { circuitId: 'c2', type: 'missing-elcb' },
+        { circuitId: 'c3', type: 'oxidized-splice' },
+        { circuitId: 'c5', type: 'bare-wire' },
+      ],
+      preWiredCircuits: {
+        c1: { wire: wire16, crimpQuality: 'poor', appliances: [kettle, oven], breaker: BREAKER_30A },
+        c2: { wire: wire20, crimpQuality: 'good', appliances: [bathHeater] },
+        c3: { wire: wire20, crimpQuality: 'none', appliances: [heater] },
+        c4: { wire: wire20, crimpQuality: 'excellent', appliances: [airCon] },
+        c5: { wire: wire16, crimpQuality: 'none', appliances: [dehumidifier] },
+        c6: { wire: wire16, crimpQuality: 'excellent', appliances: [dehumidifier] },
+      },
+    },
+    floorPlan: FLOOR_PLAN_XL,
+  },
+  {
+    name: 'L31 終極豪宅',
+    description: 'v0.9 畢業考。豪宅 + 老屋 + 全機制 + 走線距離。你準備好了嗎？',
+    requiredAppliances: [kettle, microwave, oven, bathHeater, bathHeater, airCon, heater, hairDryer, fridge, dehumidifier],
+    budget: 650,
+    survivalTime: 18,
+    requiresCrimp: true,
+    requiresRouting: true,
+    phaseMode: 'manual',
+    leakageMode: 'random',
+    bonusCondition: { type: 'under-budget-ratio', ratio: 0.75 },
+    initialLanes: ['c1', 'c5', 'c3', 'c2', 'c6', 'c4', 'c7'],
+    circuitConfigs: [
+      { id: 'c1', label: '廚房', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [kettle, microwave, oven], phase: 'R' },
+      { id: 'c2', label: '主浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c3', label: '客廳', voltage: 110, breaker: DEFAULT_BREAKER, availableAppliances: [heater, hairDryer], phase: 'R' },
+      { id: 'c4', label: '餐廳', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [airCon] },
+      { id: 'c5', label: '客浴', voltage: 220, breaker: DEFAULT_BREAKER, availableAppliances: [bathHeater], wetArea: true, elcbAvailable: true },
+      { id: 'c6', label: '玄關', voltage: 110, breaker: BREAKER_15A, availableAppliances: [fridge], phase: 'T' },
+      { id: 'c7', label: '主臥', voltage: 110, breaker: BREAKER_15A, availableAppliances: [dehumidifier], phase: 'T' },
+    ],
+    oldHouse: {
+      problems: [
+        { circuitId: 'c1', type: 'wrong-wire-gauge' },
+        { circuitId: 'c1', type: 'overrated-breaker' },
+        { circuitId: 'c2', type: 'missing-elcb' },
+        { circuitId: 'c3', type: 'oxidized-splice' },
+        { circuitId: 'c5', type: 'missing-elcb' },
+        { circuitId: 'c6', type: 'bare-wire' },
+      ],
+      preWiredCircuits: {
+        c1: { wire: wire16, crimpQuality: 'poor', appliances: [kettle, microwave, oven], breaker: BREAKER_30A },
+        c2: { wire: wire20, crimpQuality: 'good', appliances: [bathHeater] },
+        c3: { wire: wire20, crimpQuality: 'none', appliances: [heater] },
+        c4: { wire: wire20, crimpQuality: 'excellent', appliances: [airCon] },
+        c5: { wire: wire20, crimpQuality: 'good', appliances: [bathHeater] },
+        c6: { wire: wire16, crimpQuality: 'none', appliances: [fridge] },
+        c7: { wire: wire16, crimpQuality: 'excellent', appliances: [dehumidifier] },
+      },
+    },
+    floorPlan: FLOOR_PLAN_XL,
   },
 ] as const;

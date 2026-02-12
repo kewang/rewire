@@ -381,6 +381,18 @@
     "L28": {
       "name": "L28 Old House: Ultimate",
       "description": "Final exam! 5 circuits + 4 problems + phase + leakage + routing = ultimate challenge."
+    },
+    "L29": {
+      "name": "L29 Mansion Wiring",
+      "description": "A 12-room mansion — your first real spatial challenge. Distance changes everything!"
+    },
+    "L30": {
+      "name": "L30 Mansion Renovation",
+      "description": "Mansion old house renovation + cable routing. Bigger space, more problems!"
+    },
+    "L31": {
+      "name": "L31 Ultimate Mansion",
+      "description": "v0.9 final exam. Mansion + old house + all mechanics + routing distance. Are you ready?"
     }
   },
   "random": {
