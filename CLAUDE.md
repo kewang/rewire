@@ -66,7 +66,7 @@
 
 - 語言：程式碼用英文，註解與文件可用繁體中文
 - OpenSpec 工作流程管理所有 change
-- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`、`docs/project-rewire-prd-v0.9.md`
+- PRD 參考：`docs/project-rewire-prd-v0.1.md`、`docs/project-rewire-prd-v0.2.md`、`docs/project-rewire-prd-v0.4.md`、`docs/project-rewire-prd-v0.5.md`、`docs/project-rewire-prd-v0.6.md`、`docs/project-rewire-prd-v0.7.md`、`docs/project-rewire-prd-v0.8.md`、`docs/project-rewire-prd-v0.9.md`、`docs/project-rewire-prd-v0.10.md`
 - 「更新 memory」= 更新此 CLAUDE.md 檔案
 - **前端畫面設計**：凡牽涉 UI/UX 設計、元件樣式、佈局變更等前端畫面工作，MUST 使用 `/frontend-design` skill 產出設計方案
 - **Archive 後 MUST 更新相關文件並 commit**：每次 `opsx:archive` 完成後，MUST 執行以下步驟：

@@ -157,6 +157,37 @@ NFB 只保護過載，ELCB 保護漏電（人身安全）。
 - 品質影響：壓不好 → 鬆脫風險
 
 
+## v0.10：工程品質與體驗優化
+
+> 詳見 `docs/project-rewire-prd-v0.10.md`
+
+v0.1–v0.9 功能完備後，聚焦工程品質與使用者體驗的全面提升。
+
+### FR-L-A：Code-splitting（延遲載入）
+React.lazy + Suspense 分割非首屏元件，降低初始 JS bundle 至 < 350 KB。
+
+### FR-L-B：GameBoard 重構（Custom Hooks 抽取）
+1953 行 GameBoard 拆分為 5 個 custom hooks，元件本體 < 500 行。
+
+### FR-L-C：CSS 模組化
+4391 行 App.css 拆分為 per-component CSS Modules。
+
+### FR-L-D：音量控制
+靜音 / 音量滑桿 + localStorage 持久化。
+
+### FR-L-E：Error Boundary
+React Error Boundary 攔截渲染錯誤，避免白屏。
+
+### FR-L-F：PWA 支援
+Service Worker + manifest，離線遊玩、手機安裝。
+
+### FR-L-G：載入畫面
+index.html 內聯 loading 畫面，取代白屏等待。
+
+### FR-L-H：Accessibility 深化
+ARIA landmarks + 鍵盤操作 + screen reader 支援。
+
+
 ## v1.0：弱電與網路系統
 
 ### FR-K：弱電箱整理
@@ -214,4 +245,4 @@ NFB 只保護過載，ELCB 保護漏電（人身安全）。
 
 ---
 
-*本文件最後更新：2026-02-07*
+*本文件最後更新：2026-02-12*
