@@ -330,3 +330,9 @@ export interface PlannerCircuit {
   /** 是否啟用 ELCB（含 wetArea 電器的迴路使用） */
   readonly elcbEnabled?: boolean;
 }
+
+/** 遊戲結果類型 */
+export type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
+
+/** 遊戲階段（規劃 | 運行） */
+export type GamePhase = 'planning' | 'active';

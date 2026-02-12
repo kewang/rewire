@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。CSS polish ✓（未定義變數修復 + focus-visible + 硬編碼顏色統一）。v0.10 進行中（loading-screen ✓ → error-boundary ✓ → volume-control ✓ → test-infrastructure ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。CSS polish ✓（未定義變數修復 + focus-visible + 硬編碼顏色統一）。v0.10 進行中（loading-screen ✓ → error-boundary ✓ → volume-control ✓ → test-infrastructure ✓ → gameboard-refactor ✓）。**
 
 ## Tech Stack
 
@@ -16,8 +16,15 @@
 
 ## Project Structure
 
+- `src/hooks/` — Custom Hooks（從 GameBoard 抽取，v0.10 gameboard-refactor）
+  - `usePlannerState.ts` — 迴路規劃狀態（plannerCircuits/handlers/衍生值 + roomToCircuitMap）
+  - `useCircuitState.ts` — 迴路接線狀態（circuitWires/Appliances/Crimps/Phases/Elcb + 拖曳 handlers + circuits useMemo）
+  - `useOldHouseLogic.ts` — 老屋模式邏輯（preWiredCircuitIds/circuitBreakers/problemCircuits + 拆線/換 NFB handlers）
+  - `useRoutingOverlay.ts` — 走線整理 overlay（circuitLanes/cableTies/aestheticsScore + 拖曳/束帶 handlers）
+  - `useSimulationLoop.ts` — rAF 模擬迴圈（multiState/isPowered/result/starResult + 漏電事件/buzzing/終態判定）
+  - `useFloorPlanInteraction.ts` — 平面圖互動（routeDistances/Paths/候選路線/房間 popover/模擬狀態衍生 useMemo）
 - `src/components/` — React 元件
-  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire/circuitBreakers/handleChangeBreaker）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents/selectedPlannerCircuitId）+ 平面圖走線互動（circuitRoutingStrategies/circuitRouteDistances/circuitRoutePaths/pendingRoutingCircuit/candidateRoutes/floorPlanHighlightedRoomRef）+ 平面圖模擬狀態傳遞（floorPlanSimulationState/floorPlanProblemRooms/floorPlanRoomCircuitMap useMemo）+ 平面圖 layout 切換（fp-layout: CircuitPlannerSidebar + FloorPlanView + WireToolbar / legacy: 三欄 layout）+ 迴路指派互動（handleFloorPlanRoomClick/handleAssignRoomToCircuit/handleAddCircuitAndAssignRoom/roomPopover/CircuitAssignmentPopover）
+  - `GameBoard.tsx` — 主遊戲控制器（622 行），協調 6 個 custom hooks + 關卡管理 + JSX 渲染，共用 ref 解決 hooks 間循環依賴
   - `CircuitPlanner.tsx` — 迴路規劃主容器（RoomPanel + CircuitCard 列表 + 配電箱摘要 + 相位平衡預估面板）
   - `CircuitCard.tsx` — 單條迴路卡片（電壓/NFB/線材選擇 + 相位 R/T toggle + ELCB toggle + 電器列表 + 成本 + 迴路選取高亮）
   - `RoomPanel.tsx` — 房間電器清單（未指派高亮 / 已指派灰化）
@@ -238,6 +245,11 @@
 - VolumeControl UI：speaker icon SVG 三態（高音量/低音量/靜音斜線）+ range slider（inset groove + amber fill）
 - VolumeControl 位置：4 處 game-header .header-top 末端（planning fp/planning legacy/active fp/active legacy）
 - 滑桿拉到 0 自動 mute，unmute 時 volume=0 自動恢復 0.5
+- GameBoard 重構：1958 行 → 622 行（68% 減少），抽取 6 個 custom hooks 到 src/hooks/
+- Hook 呼叫順序：usePlannerState → useCircuitState → useOldHouseLogic → useRoutingOverlay → useSimulationLoop → useFloorPlanInteraction
+- Hook 間循環依賴解法：GameBoard 頂層建立 3 個共用 ref（initiateFloorPlanWiringRef/floorPlanHighlightedRoomRef/circuitRouteDistancesRef），傳給需要的 hooks
+- useSimulationLoop 內部建立 currentLevelRef/resolvedConfigsRef（從 value props 同步），避免外部 ref 傳遞
+- useCircuitState 內含 circuits useMemo 衍生（circuitConfigs + circuitBreakers + circuitWires/Crimps → Circuit[]）
 
 ## Testing Workflow
 
