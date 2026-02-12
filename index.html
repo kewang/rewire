@@ -8,9 +8,102 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <title>Project Rewire</title>
+    <style>
+      /* Loading screen — inline for instant display, auto-removed by React mount */
+      #rewire-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #0a0c0f;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        opacity: 0;
+        animation: rl-in .5s ease .3s forwards;
+      }
+      @keyframes rl-in { to { opacity: 1 } }
+
+      .rl-title {
+        font-family: 'Orbitron', 'Courier New', monospace;
+        font-size: clamp(1.8rem, 5vw, 3rem);
+        font-weight: 700;
+        color: #e8ecf0;
+        letter-spacing: .25em;
+        text-shadow:
+          0 0 20px rgba(245,158,11,.35),
+          0 0 60px rgba(245,158,11,.12);
+        animation: rl-glow 2.5s ease-in-out infinite alternate;
+      }
+      @keyframes rl-glow {
+        to {
+          text-shadow:
+            0 0 30px rgba(245,158,11,.55),
+            0 0 80px rgba(245,158,11,.2),
+            0 0 120px rgba(245,158,11,.08);
+        }
+      }
+
+      .rl-circuit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .rl-trace {
+        width: 180px;
+        height: 2px;
+        background: rgba(138,150,166,.08);
+        position: relative;
+        border-radius: 1px;
+      }
+      .rl-pulse {
+        position: absolute;
+        top: -1px;
+        left: -40px;
+        width: 40px;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+        border-radius: 2px;
+        box-shadow: 0 0 10px rgba(245,158,11,.4);
+        animation: rl-flow 1.8s ease-in-out infinite;
+      }
+      .rl-d1 .rl-pulse { animation-delay: .3s; }
+      .rl-d2 .rl-pulse { animation-delay: .6s; }
+      @keyframes rl-flow {
+        0%   { left: -40px; opacity: 0; }
+        8%   { opacity: 1; }
+        92%  { opacity: 1; }
+        100% { left: 180px; opacity: 0; }
+      }
+
+      .rl-sub {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: .7rem;
+        color: rgba(138,150,166,.4);
+        letter-spacing: .15em;
+        text-transform: uppercase;
+        animation: rl-blink 1.5s ease-in-out infinite;
+      }
+      @keyframes rl-blink {
+        0%, 100% { opacity: .4; }
+        50% { opacity: .8; }
+      }
+    </style>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;background:#0a0c0f">
+    <div id="root">
+      <div id="rewire-loader">
+        <div class="rl-title">Rewire</div>
+        <div class="rl-circuit">
+          <div class="rl-trace"><span class="rl-pulse"></span></div>
+          <div class="rl-trace rl-d1"><span class="rl-pulse"></span></div>
+          <div class="rl-trace rl-d2"><span class="rl-pulse"></span></div>
+        </div>
+        <div class="rl-sub">Loading systems…</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
