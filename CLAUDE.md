@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。CSS polish ✓（未定義變數修復 + focus-visible + 硬編碼顏色統一）。v0.10 進行中（loading-screen ✓ → error-boundary ✓ → volume-control ✓ → test-infrastructure ✓ → gameboard-refactor ✓）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。CSS polish ✓（未定義變數修復 + focus-visible + 硬編碼顏色統一）。v0.10 進行中（loading-screen ✓ → error-boundary ✓ → volume-control ✓ → test-infrastructure ✓ → gameboard-refactor ✓ → fix-fp-result-panel-layout ✓）。**
 
 ## Tech Stack
 
@@ -250,6 +250,9 @@
 - Hook 間循環依賴解法：GameBoard 頂層建立 3 個共用 ref（initiateFloorPlanWiringRef/floorPlanHighlightedRoomRef/circuitRouteDistancesRef），傳給需要的 hooks
 - useSimulationLoop 內部建立 currentLevelRef/resolvedConfigsRef（從 value props 同步），避免外部 ref 傳遞
 - useCircuitState 內含 circuits useMemo 衍生（circuitConfigs + circuitBreakers + circuitWires/Crimps → Circuit[]）
+- fp-layout ResultPanel 位置：渲染在 `.fp-center` 內部（FloorPlanView 下方），非 `.fp-layout` 直接子元素，避免擠壓 flex 空間
+- fp-layout overlays 拆分：`resultPanel`（inline 內容，放 fp-center 內）+ `modalOverlays`（position:fixed 彈窗，放 fp-layout 底部）
+- FloorPlanView 居中策略：`margin-top: auto; margin-bottom: auto`（非 justify-content: center），避免溢出時頂部不可及
 
 ## Testing Workflow
 

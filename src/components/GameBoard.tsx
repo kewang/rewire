@@ -402,26 +402,29 @@ export default function GameBoard() {
     ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded'))
     : undefined;
 
-  // Shared overlays
-  const overlays = (
-    <>
-      <ResultPanel
-        result={sim.result}
-        circuits={circuits}
-        multiState={sim.multiState}
-        cost={totalCost}
-        budget={currentLevel.budget}
-        onRetry={handleRetry}
-        onBackToLevels={handleBackToLevels}
-        starResult={sim.starResult}
-        aestheticsScore={routing.finalAestheticsScore}
-        oldHouseSnapshot={oldHouse.oldHouseSnapshot}
-        circuitConfigs={circuitConfigs}
-        currentWires={circuitState.circuitWires}
-        currentBreakers={oldHouse.circuitBreakers}
-        currentElcb={circuitState.circuitElcb}
-      />
+  // Result panel (inline content — placed inside fp-center for floor plan layout)
+  const resultPanel = (
+    <ResultPanel
+      result={sim.result}
+      circuits={circuits}
+      multiState={sim.multiState}
+      cost={totalCost}
+      budget={currentLevel.budget}
+      onRetry={handleRetry}
+      onBackToLevels={handleBackToLevels}
+      starResult={sim.starResult}
+      aestheticsScore={routing.finalAestheticsScore}
+      oldHouseSnapshot={oldHouse.oldHouseSnapshot}
+      circuitConfigs={circuitConfigs}
+      currentWires={circuitState.circuitWires}
+      currentBreakers={oldHouse.circuitBreakers}
+      currentElcb={circuitState.circuitElcb}
+    />
+  );
 
+  // Modal overlays (position: fixed, don't affect flex layout)
+  const modalOverlays = (
+    <>
       {routing.showRoutingOverlay && (
         <PanelInteriorView
           circuitConfigs={circuitConfigs}
@@ -505,6 +508,7 @@ export default function GameBoard() {
                 {routing.routingCompleted ? t('game.rerouting') : t('game.routing')}
               </button>
             )}
+            {resultPanel}
           </div>
         </div>
 
@@ -521,7 +525,7 @@ export default function GameBoard() {
           powerTooltip={powerTooltipText}
         />
 
-        {overlays}
+        {modalOverlays}
       </div>
     );
   }
@@ -616,7 +620,8 @@ export default function GameBoard() {
         </section>
       </main>
 
-      {overlays}
+      {resultPanel}
+      {modalOverlays}
     </div>
   );
 }
