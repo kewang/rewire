@@ -403,6 +403,12 @@
     "cost": "預估成本",
     "cancel": "取消"
   },
+  "sidebar": {
+    "expand": "展開側欄",
+    "collapse": "收合側欄",
+    "unassigned": "未指派",
+    "unassignRoom": "取消指派"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

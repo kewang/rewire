@@ -23,11 +23,14 @@ import FloorPlanView from './FloorPlanView';
 import type { CircuitAssignment, ConnectedPathGroup } from './FloorPlanView';
 import RoutingStrategyPicker from './RoutingStrategyPicker';
 import CircuitPlanner from './CircuitPlanner';
+import CircuitPlannerSidebar from './CircuitPlannerSidebar';
+import WireToolbar from './WireToolbar';
+import CircuitAssignmentPopover from './CircuitAssignmentPopover';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs, calcAestheticsScore } from '../engine/aesthetics';
 import { calcRouteCandidates } from '../engine/routing';
 import type { RoutePath, RouteCandidate } from '../engine/routing';
-import { tLevelName, tLevelDesc, tRoomName } from '../i18nHelpers';
+import { tLevelName, tLevelDesc, tRoomName, tApplianceName } from '../i18nHelpers';
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
@@ -90,6 +93,10 @@ export default function GameBoard() {
   const [circuitBreakers, setCircuitBreakers] = useState<Record<CircuitId, Breaker>>({});
   const [oldHouseSnapshot, setOldHouseSnapshot] = useState<OldHouseSnapshot | null>(null);
 
+  // Floor plan sidebar + popover state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [roomPopover, setRoomPopover] = useState<{ roomId: string; roomName: string; pos: { x: number; y: number }; currentCircuitId: string | null } | null>(null);
+
   // Floor plan wiring interaction state
   const [/* circuitRoutingStrategies */, setCircuitRoutingStrategies] = useState<Record<CircuitId, 'direct' | 'star' | 'daisy-chain'>>({});
   const [circuitRouteDistances, setCircuitRouteDistances] = useState<Record<CircuitId, number>>({});
@@ -97,6 +104,7 @@ export default function GameBoard() {
   const [pendingRoutingCircuit, setPendingRoutingCircuit] = useState<{ circuitId: CircuitId; wire: Wire } | null>(null);
   const [candidateRoutes, setCandidateRoutes] = useState<readonly RouteCandidate[]>([]);
   const [floorPlanHighlightedRoom, setFloorPlanHighlightedRoom] = useState<string | null>(null);
+  const floorPlanHighlightedRoomRef = useRef<string | null>(null);
 
   const rafRef = useRef<number>(0);
   const hasWarningRef = useRef(false);
@@ -270,6 +278,44 @@ export default function GameBoard() {
     for (const [roomId, cid] of roomToCircuitMap) rec[roomId] = cid;
     return rec;
   }, [currentFloorPlan, roomToCircuitMap]);
+
+  // Floor plan: appliance counts per room (for badge display)
+  const floorPlanApplianceCounts = useMemo(() => {
+    if (!currentFloorPlan) return undefined;
+    const map = new Map<string, number>();
+    if (currentLevel && isFreeCircuitLevel(currentLevel)) {
+      for (const room of currentLevel.rooms) {
+        if (room.appliances.length > 0) map.set(room.id, room.appliances.length);
+      }
+    } else if (currentLevel && isFixedCircuitLevel(currentLevel) && currentFloorPlan) {
+      for (const config of currentLevel.circuitConfigs) {
+        const room = currentFloorPlan.rooms.find(r => r.id === config.label || r.label === config.label);
+        if (room) map.set(room.id, config.availableAppliances.length);
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [currentFloorPlan, currentLevel]);
+
+  // Floor plan: appliance details per room (for tooltip)
+  const floorPlanApplianceDetails = useMemo(() => {
+    if (!currentFloorPlan) return undefined;
+    const map = new Map<string, string[]>();
+    if (currentLevel && isFreeCircuitLevel(currentLevel)) {
+      for (const room of currentLevel.rooms) {
+        if (room.appliances.length > 0) {
+          map.set(room.id, room.appliances.map(a => `${tApplianceName(t, a.name)} ${a.power}W`));
+        }
+      }
+    } else if (currentLevel && isFixedCircuitLevel(currentLevel) && currentFloorPlan) {
+      for (const config of currentLevel.circuitConfigs) {
+        const room = currentFloorPlan.rooms.find(r => r.id === config.label || r.label === config.label);
+        if (room) {
+          map.set(room.id, config.availableAppliances.map(a => `${tApplianceName(t, a.name)} ${a.power}W`));
+        }
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [currentFloorPlan, currentLevel, t]);
 
   // Translated level name/description
   const currentLevelIndex = currentLevel ? LEVELS.indexOf(currentLevel) : -1;
@@ -599,6 +645,7 @@ export default function GameBoard() {
     setPendingRoutingCircuit(null);
     setCandidateRoutes([]);
     setFloorPlanHighlightedRoom(null);
+    floorPlanHighlightedRoomRef.current = null;
 
     if (currentLevel && isFreeCircuitLevel(currentLevel)) {
       // Free circuit level: reset to planning phase
@@ -916,6 +963,38 @@ export default function GameBoard() {
     setPlannerNextId(prev => prev + 1);
   }, [plannerNextId, currentLevel]);
 
+  // Add circuit AND assign room in one batch (used by popover "新增迴路")
+  const handleAddCircuitAndAssignRoom = useCallback((roomId: string) => {
+    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return;
+    const room = currentLevel.rooms.find(r => r.id === roomId);
+    const hasPhaseMode = currentLevel.phaseMode != null;
+    setPlannerCircuits(prev => {
+      const autoPhase = hasPhaseMode && currentLevel.phaseMode === 'auto';
+      const existing110Count = prev.filter(c => c.voltage === 110).length;
+      const phase = hasPhaseMode ? (autoPhase ? (existing110Count % 2 === 0 ? 'R' : 'T') : 'R') : undefined;
+      const newId = `pc-${plannerNextId}`;
+      const voltage = 110 as const;
+      const assignments: ApplianceAssignment[] = room
+        ? room.appliances
+            .map((appliance, idx) => ({ appliance, roomId, roomApplianceIndex: idx }))
+            .filter(a => a.appliance.voltage === voltage)
+        : [];
+      return [
+        ...prev,
+        {
+          id: newId,
+          voltage,
+          breaker: BREAKER_20A,
+          assignedAppliances: assignments,
+          selectedWire: null,
+          phase,
+        },
+      ];
+    });
+    setPlannerNextId(prev => prev + 1);
+    setRoomPopover(null);
+  }, [plannerNextId, currentLevel]);
+
   const handleDeletePlannerCircuit = useCallback((id: string) => {
     setPlannerCircuits(prev => prev.filter(c => c.id !== id));
     setSelectedPlannerCircuitId(prev => prev === id ? null : prev);
@@ -1003,6 +1082,93 @@ export default function GameBoard() {
     ));
   }, []);
 
+  // Floor plan room click handler (for circuit assignment during planning)
+  const handleFloorPlanRoomClick = useCallback((roomId: string) => {
+    if (!currentFloorPlan || !currentLevel) return;
+
+    // During active phase with floor plan: no-op (wiring handled by drag)
+    if (gamePhase !== 'planning') return;
+
+    // For free circuit levels in planning phase: circuit assignment
+    if (!isFreeCircuitLevel(currentLevel)) return;
+
+    const room = currentFloorPlan.rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const roomName = room.label;
+
+    // Skip rooms that have no appliances in the level data
+    const levelRoom = currentLevel.rooms.find(r => r.id === roomId);
+    if (!levelRoom || levelRoom.appliances.length === 0) return;
+
+    // Find if this room is already assigned to a circuit
+    let currentCircuitId: string | null = null;
+    for (const c of plannerCircuits) {
+      if (c.assignedAppliances.some(a => a.roomId === roomId)) {
+        currentCircuitId = c.id;
+        break;
+      }
+    }
+
+    // If a circuit is selected in sidebar and room is unassigned, quick-assign
+    if (selectedPlannerCircuitId && !currentCircuitId) {
+      handleAssignRoomToCircuit(roomId, selectedPlannerCircuitId);
+      return;
+    }
+
+    // Otherwise show popover
+    // Get approximate screen position for the room center
+    const svgEl = document.querySelector('.floor-plan-view');
+    const roomEl = svgEl?.querySelector(`[data-room-id="${roomId}"]`);
+    let pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    if (roomEl) {
+      const rect = roomEl.getBoundingClientRect();
+      pos = { x: rect.right + 4, y: rect.top };
+    }
+    setRoomPopover({ roomId, roomName, pos, currentCircuitId });
+  }, [currentFloorPlan, currentLevel, gamePhase, plannerCircuits, selectedPlannerCircuitId]);
+
+  // Assign a room's appliances to a circuit
+  const handleAssignRoomToCircuit = useCallback((roomId: string, circuitId: string) => {
+    if (!currentLevel || !isFreeCircuitLevel(currentLevel)) return;
+    const room = currentLevel.rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    // Assign all matching-voltage appliances from this room
+    const circuit = plannerCircuits.find(c => c.id === circuitId);
+    if (!circuit) return;
+
+    setPlannerCircuits(prev => {
+      // First, remove any existing assignments from this room in ALL circuits
+      let updated = prev.map(c => ({
+        ...c,
+        assignedAppliances: c.assignedAppliances.filter(a => a.roomId !== roomId),
+      }));
+      // Then assign matching appliances to target circuit
+      const assignments: ApplianceAssignment[] = [];
+      room.appliances.forEach((appliance, idx) => {
+        if (appliance.voltage === circuit.voltage) {
+          assignments.push({ appliance, roomId, roomApplianceIndex: idx });
+        }
+      });
+      updated = updated.map(c =>
+        c.id === circuitId
+          ? { ...c, assignedAppliances: [...c.assignedAppliances, ...assignments] }
+          : c
+      );
+      return updated;
+    });
+    setRoomPopover(null);
+  }, [currentLevel, plannerCircuits]);
+
+  // Unassign a room from all circuits
+  const handleUnassignRoom = useCallback((roomId: string) => {
+    setPlannerCircuits(prev => prev.map(c => ({
+      ...c,
+      assignedAppliances: c.assignedAppliances.filter(a => a.roomId !== roomId),
+    })));
+    setRoomPopover(null);
+  }, []);
+
   // Planner cost (computed for planning phase display)
   const plannerTotalCost = useMemo(() => {
     return plannerCircuits.reduce((sum, c) => {
@@ -1075,8 +1241,8 @@ export default function GameBoard() {
       appls[cid] = pc.assignedAppliances.map(a => a.appliance);
       if (pc.phase) phases[cid] = pc.phase;
       if (pc.elcbEnabled) elcbs[cid] = true;
-      // For requiresCrimp levels, leave circuits as not wired (crimp flow will handle)
-      if (currentLevel.requiresCrimp) {
+      // Floor plan mode or requiresCrimp: leave circuits as not wired (drag-to-room wiring flow)
+      if (currentLevel.requiresCrimp || currentLevel.floorPlan) {
         wiringCircuits[cid] = { isWired: false, connectedWire: null };
       } else {
         wiringCircuits[cid] = { isWired: true, connectedWire: pc.selectedWire };
@@ -1209,6 +1375,7 @@ export default function GameBoard() {
   // Floor plan: handle room hover during drag
   const handleFloorPlanRoomHover = useCallback((roomId: string | null) => {
     setFloorPlanHighlightedRoom(roomId);
+    floorPlanHighlightedRoomRef.current = roomId;
     // Also update wiring targetCircuitId for compatibility
     if (roomId) {
       const cid = roomToCircuitMap.get(roomId) ?? null;
@@ -1219,13 +1386,15 @@ export default function GameBoard() {
   }, [roomToCircuitMap]);
 
   const handleDragEnd = useCallback((dropped: boolean) => {
-    // Floor plan mode: use highlighted room to resolve target circuit
-    if (currentFloorPlan && dropped && wiring.dragWire && floorPlanHighlightedRoom) {
-      const cid = roomToCircuitMap.get(floorPlanHighlightedRoom);
+    // Floor plan mode: use highlighted room ref to resolve target circuit (avoid stale closure)
+    const highlightedRoom = floorPlanHighlightedRoomRef.current;
+    if (currentFloorPlan && dropped && wiring.dragWire && highlightedRoom) {
+      const cid = roomToCircuitMap.get(highlightedRoom);
       if (cid) {
         initiateFloorPlanWiring(cid, wiring.dragWire);
       }
       setFloorPlanHighlightedRoom(null);
+      floorPlanHighlightedRoomRef.current = null;
       setWiring(prev => ({
         ...prev,
         isDragging: false,
@@ -1276,7 +1445,7 @@ export default function GameBoard() {
       }
       return { ...prev, isDragging: false, dragWire: null, cursorPos: null, targetCircuitId: null };
     });
-  }, [currentLevel?.requiresCrimp, currentFloorPlan, wiring.dragWire, floorPlanHighlightedRoom, roomToCircuitMap, initiateFloorPlanWiring]);
+  }, [currentLevel?.requiresCrimp, currentFloorPlan, wiring.dragWire, roomToCircuitMap, initiateFloorPlanWiring]);
 
   // Crimp mini-game complete callback
   const handleCrimpComplete = useCallback((result: CrimpResult) => {
@@ -1455,6 +1624,83 @@ export default function GameBoard() {
 
   // Planning phase for free circuit levels
   if (gamePhase === 'planning' && isFreeCircuitLevel(currentLevel)) {
+    // Floor plan planning: sidebar + floor plan view
+    if (currentFloorPlan) {
+      return (
+        <div className="game-board fp-layout planning-phase">
+          <header className="game-header">
+            <div className="header-top">
+              <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
+              <h1>{translatedLevelName}</h1>
+              <span className="level-goal">{t('game.powerTimeBudget', { time: currentLevel.survivalTime, budget: currentLevel.budget })}</span>
+            </div>
+          </header>
+
+          <div className="fp-main">
+            <CircuitPlannerSidebar
+              level={currentLevel}
+              circuits={plannerCircuits}
+              totalCost={plannerTotalCost}
+              canConfirm={plannerCanConfirm}
+              confirmTooltip={plannerConfirmTooltip}
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
+              selectedCircuitId={selectedPlannerCircuitId}
+              onSelectCircuit={setSelectedPlannerCircuitId}
+              onAddCircuit={handleAddPlannerCircuit}
+              onDeleteCircuit={handleDeletePlannerCircuit}
+              onChangeVoltage={handleChangePlannerVoltage}
+              onChangeBreaker={handleChangePlannerBreaker}
+              onSelectWire={handleSelectPlannerWire}
+              onAssignAppliance={handleAssignAppliance}
+              onUnassignAppliance={handleUnassignPlannerAppliance}
+              onChangePhase={handleChangePlannerPhase}
+              onChangeElcb={handleChangePlannerElcb}
+              onConfirm={handleConfirmPlanning}
+            />
+
+            <div className="fp-center">
+              <FloorPlanView
+                floorPlan={currentFloorPlan}
+                circuitAssignments={floorPlanCircuitAssignments}
+                onRoomClick={handleFloorPlanRoomClick}
+                applianceCounts={floorPlanApplianceCounts}
+                applianceDetails={floorPlanApplianceDetails}
+              />
+            </div>
+          </div>
+
+          <WireToolbar
+            wires={DEFAULT_WIRES}
+            wiring={wiring}
+            disabled={true}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            isPowered={false}
+            canPowerOn={false}
+            onPowerToggle={handlePowerToggle}
+          />
+
+          {roomPopover && (
+            <CircuitAssignmentPopover
+              roomId={roomPopover.roomId}
+              roomName={tRoomName(t, roomPopover.roomName)}
+              position={roomPopover.pos}
+              circuits={plannerCircuits}
+              currentCircuitId={roomPopover.currentCircuitId}
+              onAssignToCircuit={(cid) => handleAssignRoomToCircuit(roomPopover.roomId, cid)}
+              onUnassign={() => handleUnassignRoom(roomPopover.roomId)}
+              onAddCircuit={() => handleAddCircuitAndAssignRoom(roomPopover.roomId)}
+              onClose={() => setRoomPopover(null)}
+              canAddCircuit={plannerCircuits.length < currentLevel.panel.maxSlots}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // Non-floor-plan planning: existing CircuitPlanner
     return (
       <div className="game-board planning-phase">
         <header className="game-header">
@@ -1489,124 +1735,14 @@ export default function GameBoard() {
     );
   }
 
-  // Active phase (wiring / simulation) — same for both fixed and free circuit levels
-  return (
-    <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}${circuitConfigs.length >= 4 ? ' many-circuits' : ''}`}>
-      <header className="game-header">
-        <div className="header-top">
-          <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
-          <h1>{translatedLevelName}</h1>
-          <span className="level-goal">{t('game.powerTime', { time: currentLevel.survivalTime })}</span>
-        </div>
-        <StatusDisplay
-          circuits={circuits}
-          multiState={multiState}
-          cost={totalCost}
-          budget={currentLevel.budget}
-          survivalTime={currentLevel.survivalTime}
-          phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
-          mainBreakerRating={isFreeLevel && isFreeCircuitLevel(currentLevel) ? currentLevel.panel.mainBreakerRating : undefined}
-        />
-      </header>
+  // Shared power tooltip
+  const powerTooltipText = !isPowered && !canPowerOn
+    ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded'))
+    : undefined;
 
-      <main className="game-main">
-        <section className="panel-left">
-          <WireSelector
-            wires={DEFAULT_WIRES}
-            wiring={wiring}
-            disabled={isPowered}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-          />
-          {currentFloorPlan && (
-            <button
-              className="fp-power-button"
-              disabled={!isPowered && !canPowerOn}
-              onClick={handlePowerToggle}
-              title={!isPowered && !canPowerOn ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded')) : undefined}
-            >
-              {isPowered ? t('game.powerOff') : t('game.powerOn')}
-            </button>
-          )}
-        </section>
-
-        <section className="panel-center">
-          {currentFloorPlan ? (
-            <FloorPlanView
-              floorPlan={currentFloorPlan}
-              circuitAssignments={floorPlanCircuitAssignments}
-              candidatePaths={floorPlanCandidatePaths}
-              connectedPaths={floorPlanConnectedPaths}
-              onPanelClick={() => setShowRoutingOverlay(true)}
-              onRoomHover={wiring.isDragging ? handleFloorPlanRoomHover : undefined}
-              highlightedRoomId={floorPlanHighlightedRoom}
-              dragActive={wiring.isDragging}
-              simulationState={floorPlanSimulationState}
-              problemRooms={floorPlanProblemRooms}
-              roomCircuitMap={floorPlanRoomCircuitMap}
-            />
-          ) : (
-            <CircuitDiagram
-              circuits={circuits}
-              multiState={multiState}
-              isPowered={isPowered}
-              wiring={wiring}
-              onPowerToggle={handlePowerToggle}
-              leverDisabled={!canPowerOn && !isPowered}
-              leverTooltip={!isPowered && !canPowerOn ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded')) : undefined}
-              onTargetCircuitChange={handleTargetCircuitChange}
-              phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
-              phaseMode={currentLevel?.phaseMode}
-              onTogglePhase={handleTogglePhase}
-              circuitCrimps={Object.keys(circuitCrimps).length > 0 ? circuitCrimps : undefined}
-              problemCircuits={problemCircuits}
-              preWiredCircuitIds={preWiredCircuitIds}
-              onUnwire={handleUnwire}
-              isOldHouse={isOldHouse}
-              oldHouseProblems={oldHouseProblems}
-              onChangeBreaker={isOldHouse ? handleChangeBreaker : undefined}
-              circuitWires={isOldHouse ? circuitWires : undefined}
-            />
-          )}
-          {routingReady && !isPowered && (
-            <button
-              className="routing-button"
-              onClick={() => setShowRoutingOverlay(true)}
-            >
-              {routingCompleted ? t('game.rerouting') : t('game.routing')}
-            </button>
-          )}
-        </section>
-
-        <section className="panel-right">
-          <AppliancePanel
-            circuitConfigs={circuitConfigs}
-            circuitAppliances={circuitAppliances}
-            onAdd={handleAddAppliance}
-            onRemove={handleRemoveAppliance}
-            disabled={isPowered}
-            isPowered={isPowered}
-          />
-          {hasAnyElcbOption && (
-            <div className="elcb-panel">
-              <h3 className="elcb-panel-title">{t('elcb.title', { cost: ELCB_COST })}</h3>
-              {circuitConfigs.filter(c => c.elcbAvailable).map(config => (
-                <label key={config.id} className="elcb-toggle">
-                  <input
-                    type="checkbox"
-                    checked={!!circuitElcb[config.id]}
-                    onChange={() => handleToggleElcb(config.id)}
-                    disabled={isPowered}
-                  />
-                  <span className="elcb-label">{tRoomName(t, config.label)}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
-
+  // Shared overlays (PanelInteriorView, RoutingStrategyPicker, CrimpMiniGame, ResultPanel)
+  const overlays = (
+    <>
       <ResultPanel
         result={result}
         circuits={circuits}
@@ -1654,6 +1790,175 @@ export default function GameBoard() {
           onComplete={handleCrimpComplete}
         />
       )}
+    </>
+  );
+
+  // Active phase — Floor plan layout
+  if (currentFloorPlan) {
+    return (
+      <div className={`game-board fp-layout${circuitConfigs.length > 1 ? ' multi-circuit' : ''}`}>
+        <header className="game-header">
+          <div className="header-top">
+            <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
+            <h1>{translatedLevelName}</h1>
+            <span className="level-goal">{t('game.powerTime', { time: currentLevel.survivalTime })}</span>
+          </div>
+          <StatusDisplay
+            circuits={circuits}
+            multiState={multiState}
+            cost={totalCost}
+            budget={currentLevel.budget}
+            survivalTime={currentLevel.survivalTime}
+            phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
+            mainBreakerRating={isFreeLevel && isFreeCircuitLevel(currentLevel) ? currentLevel.panel.mainBreakerRating : undefined}
+          />
+        </header>
+
+        <div className="fp-main">
+          <div className="sidebar-collapsed" onClick={() => setSidebarCollapsed(prev => !prev)} title={t('sidebar.expand')}>
+            <span className="sidebar-collapsed__icon">&#9776;</span>
+            <span className="sidebar-collapsed__count">{circuitConfigs.length}</span>
+            <span className="sidebar-collapsed__cost">${totalCost}</span>
+          </div>
+
+          <div className="fp-center">
+            <FloorPlanView
+              floorPlan={currentFloorPlan}
+              circuitAssignments={floorPlanCircuitAssignments}
+              candidatePaths={floorPlanCandidatePaths}
+              connectedPaths={floorPlanConnectedPaths}
+              onPanelClick={() => setShowRoutingOverlay(true)}
+              onRoomHover={wiring.isDragging ? handleFloorPlanRoomHover : undefined}
+              highlightedRoomId={floorPlanHighlightedRoom}
+              dragActive={wiring.isDragging}
+              simulationState={floorPlanSimulationState}
+              problemRooms={floorPlanProblemRooms}
+              roomCircuitMap={floorPlanRoomCircuitMap}
+              applianceCounts={floorPlanApplianceCounts}
+              applianceDetails={floorPlanApplianceDetails}
+            />
+            {routingReady && !isPowered && (
+              <button
+                className="routing-button"
+                onClick={() => setShowRoutingOverlay(true)}
+              >
+                {routingCompleted ? t('game.rerouting') : t('game.routing')}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <WireToolbar
+          wires={DEFAULT_WIRES}
+          wiring={wiring}
+          disabled={isPowered}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          isPowered={isPowered}
+          canPowerOn={canPowerOn}
+          onPowerToggle={handlePowerToggle}
+          powerTooltip={powerTooltipText}
+        />
+
+        {overlays}
+      </div>
+    );
+  }
+
+  // Active phase — Legacy three-column layout (no floor plan)
+  return (
+    <div className={`game-board${circuitConfigs.length > 1 ? ' multi-circuit' : ''}${circuitConfigs.length >= 4 ? ' many-circuits' : ''}`}>
+      <header className="game-header">
+        <div className="header-top">
+          <button className="back-button" onClick={handleBackToLevels}>← {t('nav.back')}</button>
+          <h1>{translatedLevelName}</h1>
+          <span className="level-goal">{t('game.powerTime', { time: currentLevel.survivalTime })}</span>
+        </div>
+        <StatusDisplay
+          circuits={circuits}
+          multiState={multiState}
+          cost={totalCost}
+          budget={currentLevel.budget}
+          survivalTime={currentLevel.survivalTime}
+          phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
+          mainBreakerRating={isFreeLevel && isFreeCircuitLevel(currentLevel) ? currentLevel.panel.mainBreakerRating : undefined}
+        />
+      </header>
+
+      <main className="game-main">
+        <section className="panel-left">
+          <WireSelector
+            wires={DEFAULT_WIRES}
+            wiring={wiring}
+            disabled={isPowered}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+          />
+        </section>
+
+        <section className="panel-center">
+          <CircuitDiagram
+            circuits={circuits}
+            multiState={multiState}
+            isPowered={isPowered}
+            wiring={wiring}
+            onPowerToggle={handlePowerToggle}
+            leverDisabled={!canPowerOn && !isPowered}
+            leverTooltip={powerTooltipText}
+            onTargetCircuitChange={handleTargetCircuitChange}
+            phases={Object.keys(circuitPhases).length > 0 ? circuitPhases : undefined}
+            phaseMode={currentLevel?.phaseMode}
+            onTogglePhase={handleTogglePhase}
+            circuitCrimps={Object.keys(circuitCrimps).length > 0 ? circuitCrimps : undefined}
+            problemCircuits={problemCircuits}
+            preWiredCircuitIds={preWiredCircuitIds}
+            onUnwire={handleUnwire}
+            isOldHouse={isOldHouse}
+            oldHouseProblems={oldHouseProblems}
+            onChangeBreaker={isOldHouse ? handleChangeBreaker : undefined}
+            circuitWires={isOldHouse ? circuitWires : undefined}
+          />
+          {routingReady && !isPowered && (
+            <button
+              className="routing-button"
+              onClick={() => setShowRoutingOverlay(true)}
+            >
+              {routingCompleted ? t('game.rerouting') : t('game.routing')}
+            </button>
+          )}
+        </section>
+
+        <section className="panel-right">
+          <AppliancePanel
+            circuitConfigs={circuitConfigs}
+            circuitAppliances={circuitAppliances}
+            onAdd={handleAddAppliance}
+            onRemove={handleRemoveAppliance}
+            disabled={isPowered}
+            isPowered={isPowered}
+          />
+          {hasAnyElcbOption && (
+            <div className="elcb-panel">
+              <h3 className="elcb-panel-title">{t('elcb.title', { cost: ELCB_COST })}</h3>
+              {circuitConfigs.filter(c => c.elcbAvailable).map(config => (
+                <label key={config.id} className="elcb-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!!circuitElcb[config.id]}
+                    onChange={() => handleToggleElcb(config.id)}
+                    disabled={isPowered}
+                  />
+                  <span className="elcb-label">{tRoomName(t, config.label)}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {overlays}
     </div>
   );
 }

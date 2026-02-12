@@ -403,6 +403,12 @@
     "cost": "ต้นทุนโดยประมาณ",
     "cancel": "ยกเลิก"
   },
+  "sidebar": {
+    "expand": "ขยายแถบข้าง",
+    "collapse": "ย่อแถบข้าง",
+    "unassigned": "ยังไม่ได้กำหนด",
+    "unassignRoom": "ยกเลิกการกำหนดห้อง"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

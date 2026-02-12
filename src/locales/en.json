@@ -403,6 +403,12 @@
     "cost": "Est. Cost",
     "cancel": "Cancel"
   },
+  "sidebar": {
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "unassigned": "Unassigned",
+    "unassignRoom": "Unassign room"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

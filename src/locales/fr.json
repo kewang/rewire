@@ -403,6 +403,12 @@
     "cost": "Coût est.",
     "cancel": "Annuler"
   },
+  "sidebar": {
+    "expand": "Développer le panneau",
+    "collapse": "Réduire le panneau",
+    "unassigned": "Non assigné",
+    "unassignRoom": "Désassigner la pièce"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

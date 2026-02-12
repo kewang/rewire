@@ -1,5 +1,6 @@
 import type { Level } from '../types/game';
 import { DEFAULT_APPLIANCES, DEFAULT_WIRES, BREAKER_15A, BREAKER_30A, DEFAULT_BREAKER } from './constants';
+import { FLOOR_PLAN_S } from './floorPlans';
 
 const [hairDryer, kettle, microwave, underSinkHeater, dryer, , ihStove, airCon, bathHeater, fridge, heater, oven, dehumidifier] = DEFAULT_APPLIANCES;
 const [wire16, wire20] = DEFAULT_WIRES;
@@ -66,13 +67,14 @@ export const LEVELS: readonly Level[] = [
     name: 'L06 自由配迴路入門',
     description: '第一次體驗自由配迴路！兩個房間、三台電器，你來決定怎麼分。',
     rooms: [
-      { id: 'living', name: '客廳', appliances: [hairDryer] },
+      { id: 'living-room', name: '客廳', appliances: [hairDryer] },
       { id: 'kitchen', name: '廚房', appliances: [kettle, fridge] },
     ],
     panel: { maxSlots: 4, mainBreakerRating: 35 },
     budget: 100,
     survivalTime: 8,
     bonusCondition: { type: 'under-budget-ratio', ratio: 0.85 },
+    floorPlan: FLOOR_PLAN_S,
   },
   {
     name: 'L07 高功率初體驗',

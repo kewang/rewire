@@ -403,6 +403,12 @@
     "cost": "推定コスト",
     "cancel": "キャンセル"
   },
+  "sidebar": {
+    "expand": "サイドバーを展開",
+    "collapse": "サイドバーを折りたたむ",
+    "unassigned": "未割当",
+    "unassignRoom": "割当解除"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

@@ -403,6 +403,12 @@
     "cost": "예상 비용",
     "cancel": "취소"
   },
+  "sidebar": {
+    "expand": "사이드바 펼치기",
+    "collapse": "사이드바 접기",
+    "unassigned": "미할당",
+    "unassignRoom": "방 할당 해제"
+  },
   "language": {
     "zh-TW": "繁體中文",
     "en": "English",

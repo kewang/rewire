@@ -80,6 +80,10 @@ export interface FloorPlanViewProps {
   problemRooms?: ReadonlyMap<string, readonly OldHouseProblemType[]>;
   /** Room ID → CircuitId mapping for state lookup */
   roomCircuitMap?: Record<string, CircuitId>;
+  /** Room ID → appliance count (for badge display) */
+  applianceCounts?: ReadonlyMap<string, number>;
+  /** Room ID → appliance detail strings (for tooltip) */
+  applianceDetails?: ReadonlyMap<string, readonly string[]>;
 }
 
 // ─── Coordinate Helpers ──────────────────────────────────
@@ -261,6 +265,8 @@ export default function FloorPlanView({
   simulationState,
   problemRooms,
   roomCircuitMap,
+  applianceCounts,
+  applianceDetails,
 }: FloorPlanViewProps) {
   const { t } = useTranslation();
   const [panelHover, setPanelHover] = useState(false);
@@ -389,6 +395,7 @@ export default function FloorPlanView({
         return (
           <g
             key={room.id}
+            data-room-id={room.id}
             className={roomClassName}
             onClick={() => onRoomClick?.(room.id)}
             onPointerEnter={dragActive ? () => onRoomHover?.(room.id) : undefined}
@@ -456,6 +463,31 @@ export default function FloorPlanView({
                 <title>{roomProblems.map(p => t(`oldHouse.problemType.${p}`, p)).join(', ')}</title>
                 ⚠️
               </text>
+            )}
+            {/* Appliance count badge */}
+            {applianceCounts && (applianceCounts.get(room.id) ?? 0) > 0 && (
+              <g pointerEvents="none">
+                <rect
+                  x={r.x + r.w - 30} y={r.y + r.h - 18}
+                  width={26} height={14} rx={3}
+                  fill={assigned ? `${asgn.color}40` : 'rgba(255,255,255,0.08)'}
+                  stroke={assigned ? asgn.color : '#4a5568'}
+                  strokeWidth={0.5}
+                />
+                <text
+                  x={r.x + r.w - 17} y={r.y + r.h - 11}
+                  textAnchor="middle" dominantBaseline="middle"
+                  fontSize={9}
+                  fontFamily="var(--font-mono)"
+                  fontWeight={600}
+                  fill={assigned ? asgn.color : '#8a96a6'}
+                >
+                  {applianceCounts.get(room.id)}⚡
+                </text>
+                {applianceDetails?.get(room.id) && (
+                  <title>{applianceDetails.get(room.id)!.join('\n')}</title>
+                )}
+              </g>
             )}
           </g>
         );
