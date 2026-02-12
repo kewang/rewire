@@ -29,7 +29,9 @@
     "switchPhase": "切換",
     "routing": "整線",
     "rerouting": "重新整線",
-    "unwireConfirm": "確定要拆除此迴路的線材嗎？舊線材將被丟棄。"
+    "unwireConfirm": "確定要拆除此迴路的線材嗎？舊線材將被丟棄。",
+    "powerOn": "⚡ 送電",
+    "powerOff": "⏹ 斷電"
   },
   "status": {
     "normal": "正常",
@@ -243,7 +245,14 @@
     "allWiresNeeded": "請先完成所有迴路接線",
     "crimpNeeded": "請先完成所有迴路壓接",
     "routingNeeded": "請先完成整線",
-    "appliancesNeeded": "請先分配電器"
+    "appliancesNeeded": "請先分配電器",
+    "problemType": {
+      "bare-wire": "裸線接頭",
+      "wrong-wire-gauge": "線徑不足",
+      "oxidized-splice": "氧化接點",
+      "overrated-breaker": "NFB 額定過大",
+      "missing-elcb": "缺漏電保護"
+    }
   },
   "beforeAfter": {
     "title": "修復對比",

@@ -29,7 +29,9 @@
     "switchPhase": "Switch",
     "routing": "Route",
     "rerouting": "Re-route",
-    "unwireConfirm": "Are you sure you want to remove this circuit's wiring? The old wire will be discarded."
+    "unwireConfirm": "Are you sure you want to remove this circuit's wiring? The old wire will be discarded.",
+    "powerOn": "⚡ Power On",
+    "powerOff": "⏹ Power Off"
   },
   "status": {
     "normal": "Normal",
@@ -243,7 +245,14 @@
     "allWiresNeeded": "Complete all circuit wiring first",
     "crimpNeeded": "Complete all circuit crimping first",
     "routingNeeded": "Complete wire routing first",
-    "appliancesNeeded": "Assign appliances first"
+    "appliancesNeeded": "Assign appliances first",
+    "problemType": {
+      "bare-wire": "Bare wire splice",
+      "wrong-wire-gauge": "Undersized wire",
+      "oxidized-splice": "Oxidized splice",
+      "overrated-breaker": "Overrated breaker",
+      "missing-elcb": "Missing ELCB"
+    }
   },
   "beforeAfter": {
     "title": "Repair Comparison",

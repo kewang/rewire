@@ -29,7 +29,9 @@
     "switchPhase": "切替",
     "routing": "配線整理",
     "rerouting": "再整理",
-    "unwireConfirm": "この回路の配線を取り外しますか？古い電線は廃棄されます。"
+    "unwireConfirm": "この回路の配線を取り外しますか？古い電線は廃棄されます。",
+    "powerOn": "⚡ 通電",
+    "powerOff": "⏹ 停電"
   },
   "status": {
     "normal": "正常",
@@ -243,7 +245,14 @@
     "allWiresNeeded": "すべての回路の配線を完了してください",
     "crimpNeeded": "すべての回路の圧着を完了してください",
     "routingNeeded": "配線整理を完了してください",
-    "appliancesNeeded": "先に機器を割り当ててください"
+    "appliancesNeeded": "先に機器を割り当ててください",
+    "problemType": {
+      "bare-wire": "裸線接続",
+      "wrong-wire-gauge": "線径不足",
+      "oxidized-splice": "酸化接点",
+      "overrated-breaker": "NFB定格超過",
+      "missing-elcb": "漏電遮断器なし"
+    }
   },
   "beforeAfter": {
     "title": "修復比較",

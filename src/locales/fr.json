@@ -29,7 +29,9 @@
     "switchPhase": "Changer",
     "routing": "Ranger",
     "rerouting": "Re-ranger",
-    "unwireConfirm": "Voulez-vous retirer le câblage de ce circuit ? L'ancien câble sera jeté."
+    "unwireConfirm": "Voulez-vous retirer le câblage de ce circuit ? L'ancien câble sera jeté.",
+    "powerOn": "⚡ Alimenter",
+    "powerOff": "⏹ Couper"
   },
   "status": {
     "normal": "Normal",
@@ -243,7 +245,14 @@
     "allWiresNeeded": "Terminez d'abord tout le câblage",
     "crimpNeeded": "Terminez d'abord tous les sertissages",
     "routingNeeded": "Terminez d'abord le rangement des câbles",
-    "appliancesNeeded": "Attribuez d'abord les appareils"
+    "appliancesNeeded": "Attribuez d'abord les appareils",
+    "problemType": {
+      "bare-wire": "Épissure à nu",
+      "wrong-wire-gauge": "Section insuffisante",
+      "oxidized-splice": "Contact oxydé",
+      "overrated-breaker": "Disjoncteur surdimensionné",
+      "missing-elcb": "DDR manquant"
+    }
   },
   "beforeAfter": {
     "title": "Comparaison des réparations",

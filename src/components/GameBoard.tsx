@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment, OldHouseSnapshot } from '../types/game';
+import type { Wire, Appliance, Breaker, Circuit, Level, MultiCircuitState, WiringState, CircuitId, CircuitConfig, CircuitState, CrimpResult, CableTieQuality, PlannerCircuit, ApplianceAssignment, OldHouseSnapshot, SimulationStatus, OldHouseProblemType } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, LEAKAGE_CHANCE_PER_SECOND, CRIMP_QUALITY_MAP, OXIDIZED_CONTACT_RESISTANCE, BREAKER_20A, NFB_COSTS } from '../data/constants';
 import { LEVELS } from '../data/levels';
 import { isFixedCircuitLevel, isFreeCircuitLevel, isProblemResolved } from '../types/helpers';
@@ -231,6 +231,45 @@ export default function GameBoard() {
     if (!pendingRoutingCircuit) return [];
     return candidateRoutes;
   }, [pendingRoutingCircuit, candidateRoutes]);
+
+  // Floor plan: simulation state for visual feedback
+  const floorPlanSimulationState = useMemo(() => {
+    if (!currentFloorPlan) return undefined;
+    const circuitStates: Record<CircuitId, { status: SimulationStatus; wireHeat: number; totalCurrent: number }> = {};
+    for (const id of circuitIds) {
+      const cs = multiState.circuitStates[id];
+      if (cs) {
+        circuitStates[id] = { status: cs.status, wireHeat: cs.wireHeat, totalCurrent: cs.totalCurrent };
+      }
+    }
+    return {
+      isPowered,
+      circuitStates,
+      mainTripped: multiState.overallStatus === 'main-tripped',
+    };
+  }, [currentFloorPlan, isPowered, multiState, circuitIds]);
+
+  // Floor plan: problem rooms (old house mode)
+  const floorPlanProblemRooms = useMemo(() => {
+    if (!currentFloorPlan || problemCircuits.size === 0) return undefined;
+    const map = new Map<string, OldHouseProblemType[]>();
+    const problems = currentLevel != null && isFixedCircuitLevel(currentLevel) ? currentLevel.oldHouse?.problems : undefined;
+    if (!problems) return undefined;
+    for (const [roomId, cid] of roomToCircuitMap) {
+      if (!problemCircuits.has(cid)) continue;
+      const roomProbs = problems.filter(p => p.circuitId === cid).map(p => p.type);
+      if (roomProbs.length > 0) map.set(roomId, roomProbs);
+    }
+    return map.size > 0 ? map : undefined;
+  }, [currentFloorPlan, problemCircuits, currentLevel, roomToCircuitMap]);
+
+  // Floor plan: room→circuit map as Record for FloorPlanView prop
+  const floorPlanRoomCircuitMap = useMemo(() => {
+    if (!currentFloorPlan || roomToCircuitMap.size === 0) return undefined;
+    const rec: Record<string, CircuitId> = {};
+    for (const [roomId, cid] of roomToCircuitMap) rec[roomId] = cid;
+    return rec;
+  }, [currentFloorPlan, roomToCircuitMap]);
 
   // Translated level name/description
   const currentLevelIndex = currentLevel ? LEVELS.indexOf(currentLevel) : -1;
@@ -1480,6 +1519,16 @@ export default function GameBoard() {
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
           />
+          {currentFloorPlan && (
+            <button
+              className="fp-power-button"
+              disabled={!isPowered && !canPowerOn}
+              onClick={handlePowerToggle}
+              title={!isPowered && !canPowerOn ? (problemsRemaining ? t('oldHouse.problemsRemaining') : wetAreaMissingElcb ? t('oldHouse.wetAreaMissingElcb') : !allWired ? t('oldHouse.allWiresNeeded') : crimpMissing ? t('oldHouse.crimpNeeded') : routingMissing ? t('oldHouse.routingNeeded') : t('oldHouse.appliancesNeeded')) : undefined}
+            >
+              {isPowered ? t('game.powerOff') : t('game.powerOn')}
+            </button>
+          )}
         </section>
 
         <section className="panel-center">
@@ -1493,6 +1542,9 @@ export default function GameBoard() {
               onRoomHover={wiring.isDragging ? handleFloorPlanRoomHover : undefined}
               highlightedRoomId={floorPlanHighlightedRoom}
               dragActive={wiring.isDragging}
+              simulationState={floorPlanSimulationState}
+              problemRooms={floorPlanProblemRooms}
+              roomCircuitMap={floorPlanRoomCircuitMap}
             />
           ) : (
             <CircuitDiagram

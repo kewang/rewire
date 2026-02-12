@@ -29,7 +29,9 @@
     "switchPhase": "전환",
     "routing": "정리",
     "rerouting": "재정리",
-    "unwireConfirm": "이 회로의 배선을 제거하시겠습니까? 기존 전선은 폐기됩니다."
+    "unwireConfirm": "이 회로의 배선을 제거하시겠습니까? 기존 전선은 폐기됩니다.",
+    "powerOn": "⚡ 전원 켜기",
+    "powerOff": "⏹ 전원 끄기"
   },
   "status": {
     "normal": "정상",
@@ -243,7 +245,14 @@
     "allWiresNeeded": "모든 회로 배선을 먼저 완료하세요",
     "crimpNeeded": "모든 회로 압착을 먼저 완료하세요",
     "routingNeeded": "배선 정리를 먼저 완료하세요",
-    "appliancesNeeded": "먼저 가전제품을 할당하세요"
+    "appliancesNeeded": "먼저 가전제품을 할당하세요",
+    "problemType": {
+      "bare-wire": "노출 전선 접합",
+      "wrong-wire-gauge": "전선 굵기 부족",
+      "oxidized-splice": "산화된 접점",
+      "overrated-breaker": "차단기 정격 초과",
+      "missing-elcb": "누전차단기 없음"
+    }
   },
   "beforeAfter": {
     "title": "수리 비교",

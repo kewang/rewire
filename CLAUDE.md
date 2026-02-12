@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓ → floor-plan-renderer ✓ → floor-plan-wiring-interaction ✓。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 PRD 已完成（平面圖模式）。v0.9 實作中：floor-plan-data-model ✓ → routing-engine ✓ → floor-plan-renderer ✓ → floor-plan-wiring-interaction ✓ → floor-plan-game-integration ✓。**
 
 ## Tech Stack
 
@@ -17,7 +17,7 @@
 ## Project Structure
 
 - `src/components/` — React 元件
-  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire/circuitBreakers/handleChangeBreaker）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents/selectedPlannerCircuitId）+ 平面圖走線互動（circuitRoutingStrategies/circuitRouteDistances/circuitRoutePaths/pendingRoutingCircuit/candidateRoutes/floorPlanHighlightedRoom）
+  - `GameBoard.tsx` — 主遊戲控制器，rAF 驅動，多迴路狀態管理（circuitWires/circuitAppliances per-circuit）+ 老屋模式（problemCircuits/preWiredCircuitIds/handleUnwire/circuitBreakers/handleChangeBreaker）+ 自由配迴路規劃（plannerCircuits/handleChangePhase/handleChangeElcb/resolvedLeakageEvents/selectedPlannerCircuitId）+ 平面圖走線互動（circuitRoutingStrategies/circuitRouteDistances/circuitRoutePaths/pendingRoutingCircuit/candidateRoutes/floorPlanHighlightedRoom）+ 平面圖模擬狀態傳遞（floorPlanSimulationState/floorPlanProblemRooms/floorPlanRoomCircuitMap useMemo + 送電按鈕）
   - `CircuitPlanner.tsx` — 迴路規劃主容器（RoomPanel + CircuitCard 列表 + 配電箱摘要 + 相位平衡預估面板）
   - `CircuitCard.tsx` — 單條迴路卡片（電壓/NFB/線材選擇 + 相位 R/T toggle + ELCB toggle + 電器列表 + 成本 + 迴路選取高亮）
   - `RoomPanel.tsx` — 房間電器清單（未指派高亮 / 已指派灰化）
@@ -30,7 +30,7 @@
   - `AppliancePanel.tsx` — 電器面板，多迴路時有 circuit-tabs 選擇目標迴路
   - `LevelSelect.tsx` — 關卡選擇（CSS Grid 多欄排列 + 歷史星等 + 隨機老屋挑戰區塊）
   - `LanguageSwitcher.tsx` — 語言切換下拉選單（6 語：zh-TW/en/ja/ko/fr/th）
-  - `FloorPlanView.tsx` — 平面圖 SVG 渲染元件（房間色塊+名稱+💧潮濕標記+插座圓形+⚡配電箱+走線路徑+距離標籤+共用牆段偏移+響應式 viewBox+互動 props: onRoomClick/onRoomHover/highlightedRoomId/dragActive）
+  - `FloorPlanView.tsx` — 平面圖 SVG 渲染元件（房間色塊+名稱+💧潮濕標記+插座圓形+⚡配電箱+走線路徑+距離標籤+共用牆段偏移+響應式 viewBox+互動 props: onRoomClick/onRoomHover/highlightedRoomId/dragActive+模擬狀態視覺: 房間 glow/warning/tripped/burned+路徑 wireHeat 色彩+電流流動動畫+老屋問題 badge）
   - `FloorPlanPreview.tsx` — 開發驗證用平面圖預覽（4 種房型 + mock 迴路分配 + 走線路徑展示）
   - `RoutingStrategyPicker.tsx` — 走線策略選擇 overlay（星形/串聯雙卡片 + 距離/成本 + SVG 示意圖標 + i18n 六語）
 - `src/types/` — TypeScript 型別定義
@@ -187,6 +187,15 @@
 - 平面圖條件渲染：currentFloorPlan 存在 → FloorPlanView，否則 → CircuitDiagram（向後相容）
 - 走線策略選擇後觸發 crimp：requiresCrimp 關卡先選策略再壓接（非同時）
 - 線材替換清除走線：替換線材時清除 routingStrategy/routeDistance/routePaths，多房間重新觸發策略選擇
+- FloorPlanSimulationState 介面：isPowered + circuitStates(Record<CircuitId, {status, wireHeat, totalCurrent}>) + mainTripped，由 GameBoard useMemo 從 multiState 萃取
+- FloorPlanView 房間模擬狀態：powered-normal(warm glow SVG filter) / warning(橘色脈動 fp-room-warning-pulse) / tripped(opacity 0.3) / burned(紅色閃爍 fp-room-burned-flash) / mainTripped(全暗)
+- FloorPlanView 路徑模擬色：wireHeat < 0.3 原色 / 0.3-0.7 橘漸變 / ≥ 0.7 紅漸變，burned=紅+opacity 0.2，tripped=灰+opacity 0.3，CSS transition 0.3s
+- FloorPlanView 電流流動動畫：SVG strokeDasharray="6 20" overlay path + CSS @keyframes fp-current-flow (strokeDashoffset)，僅 isPowered && normal/warning 時顯示
+- FloorPlanView 老屋問題 badge：problemRooms prop → 房間右上角 ⚠️ SVG text + fp-problem-flash 動畫 + `<title>` tooltip
+- 平面圖送電按鈕：fp-power-button 在 panel-left 區域，「⚡ 送電」/「⏹ 斷電」toggle，disabled 時 tooltip 提示缺少條件
+- GameBoard 模擬狀態傳遞：3 個 useMemo（floorPlanSimulationState / floorPlanProblemRooms / floorPlanRoomCircuitMap）→ FloorPlanView props
+- lerpColor 輔助函式：hex 色彩線性插值，用於 wireHeat 連續色彩映射
+- getRoomSimState 輔助函式：roomId → roomCircuitMap → simulationState → RoomSimState('none'|'powered'|'warning'|'tripped'|'burned')
 
 ## Testing Workflow
 

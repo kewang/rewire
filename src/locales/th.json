@@ -29,7 +29,9 @@
     "switchPhase": "สลับ",
     "routing": "จัดสาย",
     "rerouting": "จัดใหม่",
-    "unwireConfirm": "ต้องการถอดสายวงจรนี้หรือไม่? สายเก่าจะถูกทิ้ง"
+    "unwireConfirm": "ต้องการถอดสายวงจรนี้หรือไม่? สายเก่าจะถูกทิ้ง",
+    "powerOn": "⚡ จ่ายไฟ",
+    "powerOff": "⏹ ตัดไฟ"
   },
   "status": {
     "normal": "ปกติ",
@@ -243,7 +245,14 @@
     "allWiresNeeded": "กรุณาเดินสายทุกวงจรให้เสร็จก่อน",
     "crimpNeeded": "กรุณาย้ำหางปลาทุกวงจรให้เสร็จก่อน",
     "routingNeeded": "กรุณาจัดสายให้เสร็จก่อน",
-    "appliancesNeeded": "กรุณากำหนดเครื่องใช้ก่อน"
+    "appliancesNeeded": "กรุณากำหนดเครื่องใช้ก่อน",
+    "problemType": {
+      "bare-wire": "สายเปลือย",
+      "wrong-wire-gauge": "ขนาดสายเล็กเกินไป",
+      "oxidized-splice": "จุดต่อเกิดสนิม",
+      "overrated-breaker": "เบรกเกอร์พิกัดสูงเกินไป",
+      "missing-elcb": "ไม่มีเบรกเกอร์กันไฟรั่ว"
+    }
   },
   "beforeAfter": {
     "title": "เปรียบเทียบการซ่อม",

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FloorPlan, FloorPlanRoom, FloorPlanOutlet, RoutingNode } from '../types/floorPlan';
 import type { RoutePath, RouteCandidate } from '../engine/routing';
+import type { CircuitId, SimulationStatus, OldHouseProblemType } from '../types/game';
 import { tRoomName } from '../i18nHelpers';
 
 // ─── Constants ────────────────────────────────────────────
@@ -44,6 +45,17 @@ export interface ConnectedPathGroup {
   paths: ReadonlyMap<string, RoutePath>;
 }
 
+/** Simulation state passed from GameBoard for live visual feedback on floor plan */
+export interface FloorPlanSimulationState {
+  isPowered: boolean;
+  circuitStates: Record<CircuitId, {
+    status: SimulationStatus;
+    wireHeat: number;
+    totalCurrent: number;
+  }>;
+  mainTripped: boolean;
+}
+
 export interface FloorPlanViewProps {
   floorPlan: FloorPlan;
   /** Room ID → circuit assignment (for coloring rooms and outlets) */
@@ -62,6 +74,12 @@ export interface FloorPlanViewProps {
   highlightedRoomId?: string | null;
   /** Whether a wire drag is currently active */
   dragActive?: boolean;
+  /** Live simulation state for visual feedback during power-on */
+  simulationState?: FloorPlanSimulationState;
+  /** Room ID → problem types (old house mode) */
+  problemRooms?: ReadonlyMap<string, readonly OldHouseProblemType[]>;
+  /** Room ID → CircuitId mapping for state lookup */
+  roomCircuitMap?: Record<string, CircuitId>;
 }
 
 // ─── Coordinate Helpers ──────────────────────────────────
@@ -186,6 +204,48 @@ function buildOffsetPath(
   return segs.join(' ');
 }
 
+// ─── Simulation Visual Helpers ──────────────────────────
+
+/** Interpolate between two hex colors. t=0→a, t=1→b */
+function lerpColor(a: string, b: string, t: number): string {
+  const parse = (c: string) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+  const [ar, ag, ab] = parse(a);
+  const [br, bg, bb] = parse(b);
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bl.toString(16).padStart(2, '0')}`;
+}
+
+/** Map wireHeat (0-1) + status to path stroke color */
+function heatToPathColor(wireColor: string, wireHeat: number, status: SimulationStatus): { stroke: string; opacity: number } {
+  if (status === 'burned' || status === 'leakage') return { stroke: '#ef4444', opacity: 0.2 };
+  if (status === 'tripped' || status === 'elcb-tripped' || status === 'main-tripped') return { stroke: '#6b7280', opacity: 0.3 };
+  if (wireHeat < 0.3) return { stroke: wireColor, opacity: 0.8 };
+  if (wireHeat < 0.7) return { stroke: lerpColor(wireColor, '#f97316', (wireHeat - 0.3) / 0.4), opacity: 0.8 };
+  return { stroke: lerpColor('#f97316', '#ef4444', (wireHeat - 0.7) / 0.3), opacity: 0.8 };
+}
+
+/** Determine room visual class based on its circuit's simulation state */
+type RoomSimState = 'none' | 'powered' | 'warning' | 'tripped' | 'burned';
+
+function getRoomSimState(
+  roomId: string,
+  roomCircuitMap: Record<string, CircuitId> | undefined,
+  simulationState: FloorPlanSimulationState | undefined,
+): RoomSimState {
+  if (!simulationState?.isPowered || !roomCircuitMap) return 'none';
+  if (simulationState.mainTripped) return 'tripped';
+  const cid = roomCircuitMap[roomId];
+  if (!cid) return 'none';
+  const cs = simulationState.circuitStates[cid];
+  if (!cs) return 'none';
+  if (cs.status === 'burned' || cs.status === 'leakage') return 'burned';
+  if (cs.status === 'tripped' || cs.status === 'elcb-tripped' || cs.status === 'neutral-burned' || cs.status === 'main-tripped') return 'tripped';
+  if (cs.status === 'warning' || cs.wireHeat >= 0.3) return 'warning';
+  return 'powered';
+}
+
 // ─── Component ───────────────────────────────────────────
 
 export default function FloorPlanView({
@@ -198,6 +258,9 @@ export default function FloorPlanView({
   onRoomHover,
   highlightedRoomId,
   dragActive,
+  simulationState,
+  problemRooms,
+  roomCircuitMap,
 }: FloorPlanViewProps) {
   const { t } = useTranslation();
   const [panelHover, setPanelHover] = useState(false);
@@ -259,6 +322,16 @@ export default function FloorPlanView({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        {/* Powered room warm glow */}
+        <filter id="fp-room-powered" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feFlood floodColor="#fbbf24" floodOpacity="0.3" result="color" />
+          <feComposite in="color" in2="blur" operator="in" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
 
       {/* ── External Walls ───────────────────────────── */}
@@ -283,12 +356,16 @@ export default function FloorPlanView({
         const isHighlighted = highlightedRoomId === room.id && dragActive;
         const highlightValid = isHighlighted && assigned;
         const highlightInvalid = isHighlighted && !assigned;
+        const roomSimState = getRoomSimState(room.id, roomCircuitMap, simulationState);
+        const roomProblems = problemRooms?.get(room.id);
 
-        // Determine stroke and fill based on highlight state
+        // Determine stroke and fill based on highlight state + simulation state
         let roomFill = assigned ? `${asgn.color}15` : '#1a1f2e';
         let roomStroke = assigned ? asgn.color : '#374151';
         let roomStrokeWidth = assigned ? 2 : 1;
         let roomFilter: string | undefined;
+        let roomOpacity = 1;
+        let roomClassName = 'floor-plan-room';
 
         if (highlightValid) {
           roomFill = `${asgn!.color}30`;
@@ -298,16 +375,25 @@ export default function FloorPlanView({
           roomStroke = '#ef4444';
           roomStrokeWidth = 2;
           roomFilter = 'url(#fp-room-invalid)';
+        } else if (roomSimState === 'powered') {
+          roomFill = assigned ? `${asgn.color}25` : '#1a1f2e';
+          roomFilter = 'url(#fp-room-powered)';
+        } else if (roomSimState === 'warning') {
+          roomClassName = 'floor-plan-room fp-room-warning';
+        } else if (roomSimState === 'tripped') {
+          roomOpacity = 0.3;
+        } else if (roomSimState === 'burned') {
+          roomClassName = 'floor-plan-room fp-room-burned';
         }
 
         return (
           <g
             key={room.id}
-            className="floor-plan-room"
+            className={roomClassName}
             onClick={() => onRoomClick?.(room.id)}
             onPointerEnter={dragActive ? () => onRoomHover?.(room.id) : undefined}
             onPointerLeave={dragActive ? () => onRoomHover?.(null) : undefined}
-            style={{ cursor: dragActive && assigned ? 'pointer' : undefined }}
+            style={{ cursor: dragActive && assigned ? 'pointer' : undefined, opacity: roomOpacity, transition: 'opacity 0.3s ease' }}
           >
             {/* Room background */}
             <rect
@@ -359,6 +445,18 @@ export default function FloorPlanView({
                   />
                 );
               })}
+            {/* Problem badge (old house) */}
+            {roomProblems && roomProblems.length > 0 && (
+              <text
+                x={r.x + r.w - 8} y={r.y + 14}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize={14}
+                className="fp-problem-badge"
+              >
+                <title>{roomProblems.map(p => t(`oldHouse.problemType.${p}`, p)).join(', ')}</title>
+                ⚠️
+              </text>
+            )}
           </g>
         );
       })}
@@ -399,31 +497,59 @@ export default function FloorPlanView({
         </g>
       ))}
 
-      {/* ── Connected Paths (solid with glow) ────────── */}
-      {connectedPaths?.map(group => (
-        <g key={`conn-${group.circuitIndex}`} className="fp-connected-paths">
-          {Array.from(group.paths.entries()).map(([roomId, path]) => {
-            const pts = resolvePoints(path.nodeIds, nodeMap);
-            if (pts.length < 2) return null;
-            const pid = `${group.circuitIndex}-${roomId}`;
-            const d = buildOffsetPath(pts, path.nodeIds, pid, segSharing);
-            return (
-              <g key={roomId}>
-                {/* Glow underlay */}
-                <path
-                  d={d} fill="none" stroke={group.wireColor}
-                  strokeWidth={6} opacity={0.15} strokeLinecap="round"
-                />
-                {/* Main wire path */}
-                <path
-                  d={d} fill="none" stroke={group.wireColor}
-                  strokeWidth={2.5} opacity={0.8} strokeLinecap="round"
-                />
-              </g>
-            );
-          })}
-        </g>
-      ))}
+      {/* ── Connected Paths (solid with glow + simulation state) ── */}
+      {connectedPaths?.map(group => {
+        // Find CircuitId for this path group via the first room in its paths
+        const firstRoomId = group.paths.keys().next().value;
+        const cid = firstRoomId && roomCircuitMap ? roomCircuitMap[firstRoomId] : undefined;
+        const cs = cid && simulationState?.isPowered ? simulationState.circuitStates[cid] : undefined;
+        const isMainTripped = simulationState?.mainTripped ?? false;
+        const effectiveStatus: SimulationStatus = isMainTripped ? 'main-tripped' : (cs?.status ?? 'normal');
+        const wireHeat = cs?.wireHeat ?? 0;
+        const pathStyle = simulationState?.isPowered
+          ? heatToPathColor(group.wireColor, wireHeat, effectiveStatus)
+          : { stroke: group.wireColor, opacity: 0.8 };
+        const isFlowing = simulationState?.isPowered && !isMainTripped &&
+          effectiveStatus !== 'tripped' && effectiveStatus !== 'burned' &&
+          effectiveStatus !== 'elcb-tripped' && effectiveStatus !== 'leakage';
+
+        return (
+          <g key={`conn-${group.circuitIndex}`} className="fp-connected-paths">
+            {Array.from(group.paths.entries()).map(([roomId, path]) => {
+              const pts = resolvePoints(path.nodeIds, nodeMap);
+              if (pts.length < 2) return null;
+              const pid = `${group.circuitIndex}-${roomId}`;
+              const d = buildOffsetPath(pts, path.nodeIds, pid, segSharing);
+              return (
+                <g key={roomId}>
+                  {/* Glow underlay */}
+                  <path
+                    d={d} fill="none" stroke={pathStyle.stroke}
+                    strokeWidth={6} opacity={pathStyle.opacity * 0.2} strokeLinecap="round"
+                    style={{ transition: 'stroke 0.3s ease, opacity 0.3s ease' }}
+                  />
+                  {/* Main wire path */}
+                  <path
+                    d={d} fill="none" stroke={pathStyle.stroke}
+                    strokeWidth={2.5} opacity={pathStyle.opacity} strokeLinecap="round"
+                    style={{ transition: 'stroke 0.3s ease, opacity 0.3s ease' }}
+                  />
+                  {/* Current flow animation overlay */}
+                  {isFlowing && (
+                    <path
+                      d={d} fill="none"
+                      stroke="rgba(200,230,255,0.6)"
+                      strokeWidth={2} strokeLinecap="round"
+                      strokeDasharray="6 20"
+                      className="fp-current-flow"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
 
       {/* ── Panel Icon (配電箱) ──────────────────────── */}
       <g
