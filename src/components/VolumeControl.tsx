@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMasterVolume, isMuted, setMasterVolume, setMuted } from '../engine/audio';
+import './VolumeControl.css';
 
 export default function VolumeControl() {
   const { t } = useTranslation();

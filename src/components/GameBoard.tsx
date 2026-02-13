@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import './GameBoard.css';
 import type { Wire, Level, CircuitId, CircuitConfig } from '../types/game';
 import { DEFAULT_WIRES, DEFAULT_WIRE_LENGTH, ELCB_COST, NFB_COSTS } from '../data/constants';
 import { LEVELS } from '../data/levels';

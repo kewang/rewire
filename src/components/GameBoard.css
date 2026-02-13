@@ -1,0 +1,63 @@
+/* ── Game Board ───────────────────────────────────────────────── */
+
+.game-board {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+
+.game-board.multi-circuit {
+  max-width: 1280px;
+}
+
+.game-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.game-header h1 {
+  margin: 0 0 var(--space-sm);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.level-goal {
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.game-main {
+  display: grid;
+  grid-template-columns: 1fr 280px 1fr;
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+.game-board.multi-circuit .game-main {
+  grid-template-columns: 180px 1fr 220px;
+}
+
+/* 4+ circuits: widen board so 3-column layout has enough center space */
+.game-board.many-circuits {
+  max-width: 1500px;
+}
+
+.panel-left,
+.panel-right {
+  min-width: 0;
+}
+
+.panel-center {
+  text-align: center;
+}
