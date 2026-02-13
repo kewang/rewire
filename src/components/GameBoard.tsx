@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import './GameBoard.css';
 import type { Wire, Level, CircuitId, CircuitConfig } from '../types/game';
@@ -11,12 +11,7 @@ import AppliancePanel from './AppliancePanel';
 import StatusDisplay from './StatusDisplay';
 import ResultPanel from './ResultPanel';
 import LevelSelect from './LevelSelect';
-import CircuitDiagram from './CircuitDiagram';
-import CrimpMiniGame from './CrimpMiniGame';
-import PanelInteriorView from './PanelInteriorView';
-import FloorPlanPreview from './FloorPlanPreview';
 import FloorPlanView from './FloorPlanView';
-import RoutingStrategyPicker from './RoutingStrategyPicker';
 import CircuitPlanner from './CircuitPlanner';
 import CircuitPlannerSidebar from './CircuitPlannerSidebar';
 import WireToolbar from './WireToolbar';
@@ -30,6 +25,12 @@ import { useFloorPlanInteraction } from '../hooks/useFloorPlanInteraction';
 import { useSimulationLoop } from '../hooks/useSimulationLoop';
 import { useRoutingOverlay } from '../hooks/useRoutingOverlay';
 import { useRef } from 'react';
+
+const CircuitDiagram = lazy(() => import('./CircuitDiagram'));
+const CrimpMiniGame = lazy(() => import('./CrimpMiniGame'));
+const PanelInteriorView = lazy(() => import('./PanelInteriorView'));
+const RoutingStrategyPicker = lazy(() => import('./RoutingStrategyPicker'));
+const FloorPlanPreview = import.meta.env.DEV ? lazy(() => import('./FloorPlanPreview')) : null;
 
 export default function GameBoard() {
   const { t } = useTranslation();
@@ -279,7 +280,7 @@ export default function GameBoard() {
     return (
       <>
         <LevelSelect levels={LEVELS} onSelect={handleSelectLevel} />
-        <FloorPlanPreview />
+        {FloorPlanPreview && <Suspense fallback={null}><FloorPlanPreview /></Suspense>}
       </>
     );
   }
@@ -425,7 +426,7 @@ export default function GameBoard() {
 
   // Modal overlays (position: fixed, don't affect flex layout)
   const modalOverlays = (
-    <>
+    <Suspense fallback={null}>
       {routing.showRoutingOverlay && (
         <PanelInteriorView
           circuitConfigs={circuitConfigs}
@@ -456,7 +457,7 @@ export default function GameBoard() {
           onComplete={circuitState.handleCrimpComplete}
         />
       )}
-    </>
+    </Suspense>
   );
 
   // Active phase — Floor plan layout
@@ -565,27 +566,29 @@ export default function GameBoard() {
         </section>
 
         <section className="panel-center">
-          <CircuitDiagram
-            circuits={circuits}
-            multiState={sim.multiState}
-            isPowered={sim.isPowered}
-            wiring={circuitState.wiring}
-            onPowerToggle={sim.handlePowerToggle}
-            leverDisabled={!canPowerOn && !sim.isPowered}
-            leverTooltip={powerTooltipText}
-            onTargetCircuitChange={circuitState.handleTargetCircuitChange}
-            phases={Object.keys(circuitState.circuitPhases).length > 0 ? circuitState.circuitPhases : undefined}
-            phaseMode={currentLevel?.phaseMode}
-            onTogglePhase={circuitState.handleTogglePhase}
-            circuitCrimps={Object.keys(circuitState.circuitCrimps).length > 0 ? circuitState.circuitCrimps : undefined}
-            problemCircuits={oldHouse.problemCircuits}
-            preWiredCircuitIds={oldHouse.preWiredCircuitIds}
-            onUnwire={oldHouse.handleUnwire}
-            isOldHouse={isOldHouse}
-            oldHouseProblems={oldHouseProblems}
-            onChangeBreaker={isOldHouse ? oldHouse.handleChangeBreaker : undefined}
-            circuitWires={isOldHouse ? circuitState.circuitWires : undefined}
-          />
+          <Suspense fallback={<div className="lazy-loading-spinner" />}>
+            <CircuitDiagram
+              circuits={circuits}
+              multiState={sim.multiState}
+              isPowered={sim.isPowered}
+              wiring={circuitState.wiring}
+              onPowerToggle={sim.handlePowerToggle}
+              leverDisabled={!canPowerOn && !sim.isPowered}
+              leverTooltip={powerTooltipText}
+              onTargetCircuitChange={circuitState.handleTargetCircuitChange}
+              phases={Object.keys(circuitState.circuitPhases).length > 0 ? circuitState.circuitPhases : undefined}
+              phaseMode={currentLevel?.phaseMode}
+              onTogglePhase={circuitState.handleTogglePhase}
+              circuitCrimps={Object.keys(circuitState.circuitCrimps).length > 0 ? circuitState.circuitCrimps : undefined}
+              problemCircuits={oldHouse.problemCircuits}
+              preWiredCircuitIds={oldHouse.preWiredCircuitIds}
+              onUnwire={oldHouse.handleUnwire}
+              isOldHouse={isOldHouse}
+              oldHouseProblems={oldHouseProblems}
+              onChangeBreaker={isOldHouse ? oldHouse.handleChangeBreaker : undefined}
+              circuitWires={isOldHouse ? circuitState.circuitWires : undefined}
+            />
+          </Suspense>
           {routingReady && !sim.isPowered && (
             <button className="routing-button" onClick={() => routing.setShowRoutingOverlay(true)}>
               {routing.routingCompleted ? t('game.rerouting') : t('game.routing')}

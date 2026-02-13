@@ -1,9 +1,10 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import './ResultPanel.css';
 import type { Circuit, MultiCircuitState, OldHouseSnapshot, CircuitId, CircuitConfig, Wire, Breaker } from '../types/game';
 import type { StarDetail } from '../engine/scoring';
-import BeforeAfterView from './BeforeAfterView';
+
+const BeforeAfterView = lazy(() => import('./BeforeAfterView'));
 
 type GameResult = 'none' | 'tripped' | 'burned' | 'neutral-burned' | 'leakage' | 'main-tripped' | 'won' | 'over-budget';
 
@@ -195,12 +196,14 @@ export default function ResultPanel({ result, circuits, multiState, cost, budget
       )}
 
       {showBeforeAfter && (
-        <BeforeAfterView
-          snapshot={oldHouseSnapshot}
-          circuitConfigs={circuitConfigs}
-          currentWires={currentWires}
-          currentBreakers={currentBreakers}
-        />
+        <Suspense fallback={null}>
+          <BeforeAfterView
+            snapshot={oldHouseSnapshot}
+            circuitConfigs={circuitConfigs}
+            currentWires={currentWires}
+            currentBreakers={currentBreakers}
+          />
+        </Suspense>
       )}
 
       <div className="result-actions">

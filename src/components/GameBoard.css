@@ -61,3 +61,18 @@
 .panel-center {
   text-align: center;
 }
+
+/* Lazy-loading spinner for code-split components */
+.lazy-loading-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 2rem auto;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: lazy-spin 0.8s linear infinite;
+}
+
+@keyframes lazy-spin {
+  to { transform: rotate(360deg); }
+}

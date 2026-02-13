@@ -1,8 +1,9 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import './CircuitDiagram.css';
 import type { Breaker, Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult, OldHouseProblem, OldHouseProblemType, Wire } from '../types/game';
-import BreakerSelector from './BreakerSelector';
+
+const BreakerSelector = lazy(() => import('./BreakerSelector'));
 
 interface CircuitDiagramProps {
   circuits: readonly Circuit[];
@@ -871,15 +872,17 @@ export default function CircuitDiagram({ circuits, multiState, isPowered, wiring
         const wire = circuitWires?.[breakerSelectorCircuitId];
         if (!circuit || !wire) return null;
         return (
-          <BreakerSelector
-            currentBreaker={circuit.breaker}
-            wireMaxCurrent={wire.maxCurrent}
-            onSelect={(breaker) => {
-              onChangeBreaker(breakerSelectorCircuitId, breaker);
-              setBreakerSelectorCircuitId(null);
-            }}
-            onClose={() => setBreakerSelectorCircuitId(null)}
-          />
+          <Suspense fallback={null}>
+            <BreakerSelector
+              currentBreaker={circuit.breaker}
+              wireMaxCurrent={wire.maxCurrent}
+              onSelect={(breaker) => {
+                onChangeBreaker(breakerSelectorCircuitId, breaker);
+                setBreakerSelectorCircuitId(null);
+              }}
+              onClose={() => setBreakerSelectorCircuitId(null)}
+            />
+          </Suspense>
         );
       })()}
     </div>
