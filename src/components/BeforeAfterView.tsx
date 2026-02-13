@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import './BeforeAfterView.css';
 import type { OldHouseSnapshot, OldHouseProblem, CircuitId, CircuitConfig, Wire, Breaker } from '../types/game';
 import { tRoomName } from '../i18nHelpers';
 

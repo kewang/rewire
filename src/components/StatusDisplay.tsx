@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Circuit, CircuitId, MultiCircuitState } from '../types/game';
+import './StatusDisplay.css';
 import { NEUTRAL_MAX_CURRENT } from '../data/constants';
 import { tStatus } from '../i18nHelpers';
 
