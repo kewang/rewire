@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import './LevelSelect.css';
 import type { Level } from '../types/game';
 import { isFreeCircuitLevel } from '../types/helpers';
 import { loadBestStars } from '../engine/scoring';

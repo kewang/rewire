@@ -1,0 +1,207 @@
+/* ── Level Select ─────────────────────────────────────────────── */
+
+.level-select {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+}
+
+.level-select h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--color-accent-amber) 0%, var(--color-text-primary) 60%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.level-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+}
+
+.level-select .subtitle {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  margin: var(--space-xs) 0 var(--space-2xl);
+}
+
+.level-select h2 {
+  margin: 0 0 var(--space-lg);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.level-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-md);
+}
+
+.level-card {
+  padding: var(--space-lg) var(--space-xl);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.level-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--color-accent-amber);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.level-card:hover {
+  border-color: var(--color-accent-amber);
+  background: var(--color-bg-card-hover);
+  box-shadow: var(--shadow-card-hover), var(--shadow-glow-amber);
+  transform: translateY(-2px);
+}
+
+.level-card:hover::before {
+  opacity: 1;
+}
+
+.level-card:focus-visible {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}
+
+.level-card:active {
+  transform: translateY(0);
+}
+
+/* ── Random Old House ────────────────────────────────────────── */
+
+.random-section-title {
+  margin-top: var(--space-2xl);
+}
+
+.random-old-house-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-2xl);
+}
+
+.random-card {
+  padding: var(--space-lg) var(--space-xl);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.random-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent-amber), var(--color-accent-red));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.random-card:hover {
+  border-color: var(--color-accent-amber);
+  background: var(--color-bg-card-hover);
+  box-shadow: var(--shadow-card-hover), var(--shadow-glow-amber);
+  transform: translateY(-2px);
+}
+
+.random-card:hover::before {
+  opacity: 1;
+}
+
+.random-card:focus-visible {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}
+
+.random-card:active {
+  transform: translateY(0);
+}
+
+.random-card-icon {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--color-accent-amber);
+  margin-bottom: var(--space-sm);
+}
+
+.random-card-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-xs);
+}
+
+.random-card-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin-bottom: var(--space-sm);
+}
+
+.random-card-completions {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-accent-green);
+  letter-spacing: 0.05em;
+}
+
+/* ── Star Rating (LevelSelect) ─────────────────────────────────── */
+
+.level-stars-row {
+  display: flex;
+  gap: 2px;
+  margin-bottom: var(--space-xs);
+}
+
+.level-star {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.level-star-lit {
+  color: var(--color-accent-amber);
+}
+
+.level-star-dim {
+  color: var(--color-border);
+  opacity: 0.3;
+}

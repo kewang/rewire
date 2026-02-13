@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import './ErrorFallback.css'
 
 interface ErrorBoundaryProps {
   children: ReactNode
