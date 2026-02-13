@@ -21,7 +21,7 @@
 .status-label {
   color: var(--color-text-secondary);
   min-width: 5rem;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 
 .status-value {

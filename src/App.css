@@ -183,7 +183,7 @@
 }
 
 .card-detail {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
@@ -334,7 +334,18 @@ h3, h4 {
   }
 
   .header-top {
-    gap: var(--space-sm);
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .level-goal {
+    font-size: 0.75rem;
+  }
+
+  .back-button {
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: 0.8rem;
   }
 
   .volume-control__slider {

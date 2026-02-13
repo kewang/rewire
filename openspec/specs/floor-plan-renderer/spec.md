@@ -178,12 +178,37 @@ When hovering over a room, FloorPlanView SHALL show a tooltip listing the applia
 - **WHEN** player hovers over a room that has appliances and applianceDetails prop is provided
 - **THEN** a SVG title element or CSS tooltip shows appliance names and wattages
 
+### Requirement: SVG text sizing for readability
+FloorPlanView SHALL use consistent font sizes across all floor plan sizes (S/M/L/XL) to ensure readability. Room names use CSS `.fp-room-label` at 18px. Appliance badges use `BADGE_FONT_SIZE=16` constant. Distance labels use CSS `.fp-distance-label` at 14px. Emoji/icon elements (💧, ⚠️, ⚡) use 18px inline fontSize. Panel icon uses `PANEL_HALF=14`.
+
+#### Scenario: Room name rendered size matches status-display
+- **WHEN** the SVG renders at 1:1 scale (no height constraint)
+- **THEN** room name text renders at approximately 23px height, matching the status-display text height
+
+#### Scenario: Consistent room names across floor plan sizes
+- **WHEN** comparing L01 (S plan, 4×4) and L31 (XL plan, 10×6) on desktop
+- **THEN** room names render at the same visual height (23px) because both SVGs render at 1:1 scale
+
+### Requirement: SVG renders at natural scale without height constraint
+FloorPlanView SVG SHALL NOT have max-height constraint, allowing it to render at 1:1 scale. The parent `.fp-center` container provides scrolling when the SVG exceeds available height.
+
+#### Scenario: XL floor plan on desktop
+- **WHEN** XL floor plan (viewBox 808×488) renders in fp-center
+- **THEN** the SVG renders at 808×488px (1:1 scale), scrollable if container height is less than 488px
+
+### Requirement: Status display height capped in fp-layout
+The `.status-display` within `.game-board.fp-layout` SHALL have `max-height: 30vh; overflow-y: auto` to prevent multi-circuit status panels from consuming too much vertical space and squeezing the floor plan.
+
+#### Scenario: L31 with 7 circuits
+- **WHEN** L31 (7 circuits) status display would naturally be ~434px
+- **THEN** status display is capped at 30vh (~270px on 900px viewport) with vertical scrolling, leaving sufficient space for the XL floor plan
+
 ### Requirement: Distance label readability
-The FloorPlanView distance labels on wire paths SHALL use a background pill for readability and scale font size based on path length.
+The FloorPlanView distance labels on wire paths SHALL use a background pill for readability.
 
 #### Scenario: Distance label on short path
 - **WHEN** a wire path has a distance label displayed
-- **THEN** the label renders with a dark background pill (semi-transparent), white text at 10px font, positioned at the path midpoint without overlapping room names
+- **THEN** the label renders with a dark background pill (rgba(0,0,0,0.8), rx=4 rounded), text at 14px CSS font via `.fp-distance-label`, positioned at the path midpoint
 
 ### Requirement: Wire path overlap visibility
 When multiple wire paths share wall segments, the FloorPlanView SHALL use sufficient offset and distinct colors to keep each path visually distinguishable.

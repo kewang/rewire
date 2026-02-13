@@ -2,7 +2,7 @@
 
 配電盤燒線模擬器 — 讓玩家體驗選線徑、接線、送電、過載跳電/燒線的 Web 互動遊戲。
 
-**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。v0.10 全部完成（css-polish ✓ → loading-screen ✓ → error-boundary ✓ → volume-control ✓ → test-infrastructure ✓ → gameboard-refactor ✓ → fix-fp-result-panel-layout ✓ → code-splitting ✓ → css-extraction batch 1-4 ✓；PWA/A11y 深化延後）。**
+**PRD v0.2 完成。v0.3 全部完成。v0.4 全部完成（FR-G ✓ → FR-E ✓ → FR-F ✓）。v0.5 全部完成（crimp-terminal-system ✓ → level-select-grid-layout ✓ → star-rating-system ✓ → old-house-intro ✓）。v0.6 全部完成（routing-ux-guide ✓ → panel-visual-and-cable-tie ✓ → fix-multi-circuit-svg-sizing ✓）。v0.7 全部完成（new-appliances-and-nfb-cost ✓ → free-circuit-data-model ✓ → circuit-planner-ui ✓ → main-breaker-simulation ✓ → planner-phase-elcb ✓ → free-circuit-levels ✓ → level-balance-tuning ✓）。v0.8 全部完成（new-old-house-problems ✓ → before-after-view ✓ → old-house-routing-integration ✓ → random-old-house ✓）。i18n 六語 ✓（zh-TW/en/ja/ko/fr/th）。v0.9 全部完成（平面圖模式 9/9 changes ✓）。v0.10 全部完成（css-polish ✓ → loading-screen ✓ → error-boundary ✓ → volume-control ✓ → test-infrastructure ✓ → gameboard-refactor ✓ → fix-fp-result-panel-layout ✓ → code-splitting ✓ → css-extraction batch 1-4 ✓；PWA/A11y 深化延後）。ui-size-readability-fix ✓（全域字體放大 + SVG 文字放大 + 房間名稱一致性 + 觸控目標優化）。**
 
 ## Tech Stack
 
@@ -257,6 +257,14 @@
 - Code-splitting fallback 策略：overlay 類元件 fallback={null}、CircuitDiagram 用 .lazy-loading-spinner 旋轉動畫
 - FloorPlanPreview 生產排除：`import.meta.env.DEV` 條件 guard，production build tree-shake 移除
 - Vite manualChunks：vendor（react/react-dom/scheduler）+ i18n（i18next/react-i18next）分離，初始 chunk 531→241 KB
+- 全域字體放大：`html { font-size: 18px }`（index.css），所有 rem 值自動放大 12.5%
+- FloorPlanView SVG 文字尺寸：room-label 18px(CSS)、BADGE_FONT_SIZE=16(常數)、distance-label 14px(CSS)、emoji/icon 18px(inline)、PANEL_HALF=14
+- FloorPlanView SVG 1:1 渲染：移除 `.fp-center .floor-plan-view` 的 `max-height: 100%`，SVG 以原始尺寸渲染，fp-center 提供 overflow-y 捲動
+- fp-layout status-display 高度限制：`max-height: 30vh; overflow-y: auto`，防止多迴路狀態面板擠壓平面圖空間
+- 房間名稱一致性：所有房型（S/M/L/XL）房間名稱渲染高度統一為 23px，與 status-display 文字高度匹配
+- WireToolbar 文字尺寸：gauge 0.875rem、spec/cost 0.8rem、送電按鈕 min-height 40px + 0.875rem
+- 返回按鈕：padding 10px 20px、min-height 40px、font-size 0.875rem；手機版 padding 6px 12px、min-height 36px、0.8rem
+- 手機版 header 優化：`.header-top` flex-wrap + gap xs、level-goal 0.75rem
 
 ## Testing Workflow
 

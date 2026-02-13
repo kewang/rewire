@@ -50,6 +50,10 @@
   --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
+html {
+  font-size: 18px;
+}
+
 *,
 *::before,
 *::after {

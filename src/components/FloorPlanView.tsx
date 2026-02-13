@@ -19,7 +19,9 @@ const WALL_THICKNESS = 5;
 /** Perpendicular offset step for overlapping path segments (pixels) */
 const PATH_OFFSET_STEP = 4;
 /** Panel icon half-size (pixels) */
-const PANEL_HALF = 12;
+const PANEL_HALF = 14;
+/** Appliance badge font size (pixels) */
+const BADGE_FONT_SIZE = 16;
 
 /** 8 distinct circuit colors for room assignment visualization on dark backgrounds */
 export const CIRCUIT_COLORS = [
@@ -422,7 +424,7 @@ export default function FloorPlanView({
             )}
             {/* Room name */}
             <text
-              x={cx} y={room.wetArea ? cy - 7 : cy}
+              x={cx} y={room.wetArea ? cy - 10 : cy}
               textAnchor="middle" dominantBaseline="middle"
               className="fp-room-label"
             >
@@ -431,9 +433,9 @@ export default function FloorPlanView({
             {/* Wet area indicator */}
             {room.wetArea && (
               <text
-                x={cx} y={cy + 10}
+                x={cx} y={cy + 14}
                 textAnchor="middle" dominantBaseline="middle"
-                fontSize={14} pointerEvents="none"
+                fontSize={18} pointerEvents="none"
               >
                 💧
               </text>
@@ -456,9 +458,9 @@ export default function FloorPlanView({
             {/* Problem badge (old house) */}
             {roomProblems && roomProblems.length > 0 && (
               <text
-                x={r.x + r.w - 8} y={r.y + 14}
+                x={r.x + r.w - 10} y={r.y + 16}
                 textAnchor="middle" dominantBaseline="middle"
-                fontSize={14}
+                fontSize={18}
                 className="fp-problem-badge"
               >
                 <title>{roomProblems.map(p => t(`oldHouse.problemType.${p}`, p)).join(', ')}</title>
@@ -469,16 +471,16 @@ export default function FloorPlanView({
             {applianceCounts && (applianceCounts.get(room.id) ?? 0) > 0 && (
               <g pointerEvents="none">
                 <rect
-                  x={r.x + r.w - 30} y={r.y + r.h - 18}
-                  width={26} height={14} rx={3}
+                  x={r.x + r.w - 38} y={r.y + r.h - 24}
+                  width={34} height={20} rx={3}
                   fill={assigned ? `${asgn.color}40` : 'rgba(255,255,255,0.08)'}
                   stroke={assigned ? asgn.color : '#4a5568'}
                   strokeWidth={0.5}
                 />
                 <text
-                  x={r.x + r.w - 17} y={r.y + r.h - 11}
+                  x={r.x + r.w - 21} y={r.y + r.h - 14}
                   textAnchor="middle" dominantBaseline="middle"
-                  fontSize={9}
+                  fontSize={BADGE_FONT_SIZE}
                   fontFamily="var(--font-mono)"
                   fontWeight={600}
                   fill={assigned ? asgn.color : '#8a96a6'}
@@ -511,8 +513,8 @@ export default function FloorPlanView({
                 {mid && (
                   <>
                     <rect
-                      x={mid[0] - 20} y={mid[1] - 9}
-                      width={40} height={18} rx={4}
+                      x={mid[0] - 22} y={mid[1] - 10}
+                      width={44} height={20} rx={4}
                       fill="rgba(0,0,0,0.8)"
                       stroke="rgba(255,255,255,0.12)"
                       strokeWidth={0.5}
@@ -603,7 +605,7 @@ export default function FloorPlanView({
         <text
           x={panelPx} y={panelPy}
           textAnchor="middle" dominantBaseline="middle"
-          fontSize={14}
+          fontSize={18}
         >
           ⚡
         </text>
