@@ -1,0 +1,596 @@
+/* ── CircuitPlannerSidebar ──────────────────────────────── */
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.5);
+    animation: sidebar-backdrop-in 0.2s ease-out;
+  }
+}
+
+@keyframes sidebar-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sidebar-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 48px;
+  padding: var(--space-md) var(--space-xs);
+  background: var(--color-bg-panel);
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.15s ease, width 0.25s ease;
+}
+
+.sidebar-collapsed:hover {
+  background: var(--color-bg-card);
+}
+
+.sidebar-collapsed__icon {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+}
+
+.sidebar-collapsed__count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent-amber);
+}
+
+.sidebar-collapsed__cost {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.sidebar-planner {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  min-width: 280px;
+  max-height: 100%;
+  background: var(--color-bg-panel);
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease;
+}
+
+.sidebar-planner__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-planner__header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+}
+
+.sidebar-planner__collapse {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
+}
+
+.sidebar-planner__collapse:hover {
+  color: var(--color-text-primary);
+}
+
+/* Summary section */
+.sidebar-planner__summary {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  padding: 2px 0;
+}
+
+.sidebar-summary-row .text-danger {
+  color: var(--color-accent-red);
+  font-weight: 700;
+}
+
+.sidebar-summary-row .text-warning {
+  color: var(--color-accent-amber);
+  font-weight: 700;
+}
+
+.sidebar-phase-balance {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  gap: var(--space-md);
+}
+
+.sidebar-phase-row {
+  display: flex;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+}
+
+.sidebar-phase-row .text-danger {
+  color: var(--color-accent-red);
+  font-weight: 700;
+}
+
+.sidebar-phase-row .phase-r-label {
+  color: #f87171;
+  font-weight: 700;
+}
+
+.sidebar-phase-row .phase-t-label {
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+/* Circuit list section */
+.sidebar-planner__circuits {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.sidebar-circuits-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-circuits-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sidebar-add-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  color: var(--color-accent-green);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.sidebar-add-btn:hover:not(:disabled) {
+  border-color: var(--color-accent-green);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.sidebar-add-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sidebar-circuits-list {
+  padding: var(--space-xs) var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* Sidebar circuit card */
+.sidebar-circuit-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sidebar-circuit-card--selected {
+  border-color: var(--color-accent-amber);
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+}
+
+.sidebar-circuit-card__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.sidebar-circuit-card__header:hover {
+  background: var(--color-bg-card-hover);
+}
+
+.sidebar-circuit-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sidebar-circuit-card__name {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+}
+
+.sidebar-circuit-card__voltage {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+.sidebar-circuit-card__voltage.voltage-110 {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.sidebar-circuit-card__voltage.voltage-220 {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+
+.sidebar-circuit-card__phase {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+.sidebar-circuit-card__phase.phase-R {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.sidebar-circuit-card__phase.phase-T {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.sidebar-circuit-card__nfb {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+}
+
+.sidebar-circuit-card__elcb {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+.sidebar-circuit-card__load {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.sidebar-circuit-card__count {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.sidebar-circuit-card__expand {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0 2px;
+}
+
+/* Load bar */
+.sidebar-circuit-card__loadbar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-circuit-card__loadbar-fill {
+  height: 100%;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+/* Expanded body */
+.sidebar-circuit-card__body {
+  padding: 6px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-card-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.sidebar-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-card-field label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-card-field select {
+  padding: 3px 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+}
+
+.voltage-toggle--small button,
+.phase-toggle--small button {
+  padding: 2px 6px;
+  font-size: 0.65rem;
+}
+
+.sidebar-elcb-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.sidebar-elcb-toggle input {
+  accent-color: #38bdf8;
+}
+
+/* Appliances in card */
+.sidebar-card-appliances {
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 4px;
+}
+
+.sidebar-card-room-group {
+  margin-bottom: 4px;
+}
+
+.sidebar-card-room-name {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sidebar-card-appliance {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  font-size: 0.68rem;
+  color: var(--color-text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.sidebar-card-appliance:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-card-appliance-current {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--color-text-muted);
+}
+
+.sidebar-card-remove {
+  font-size: 0.6rem;
+  color: var(--color-accent-red);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.sidebar-card-appliance:hover .sidebar-card-remove {
+  opacity: 1;
+}
+
+.sidebar-card-unassigned {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-card-unassigned-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-card-appliance--unassigned {
+  opacity: 0.6;
+}
+
+.sidebar-card-assign {
+  font-size: 0.7rem;
+  color: var(--color-accent-green);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.sidebar-card-appliance--unassigned:hover .sidebar-card-assign {
+  opacity: 1;
+}
+
+.sidebar-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-secondary);
+}
+
+.sidebar-card-delete-btn {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-red);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sidebar-card-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Footer with confirm */
+.sidebar-planner__footer {
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.sidebar-confirm-btn {
+  width: 100%;
+  padding: var(--space-sm);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--color-accent-green);
+  border-radius: var(--radius-md);
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-accent-green);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.sidebar-confirm-btn:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.sidebar-confirm-btn:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
+}
+
+.sidebar-confirm-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--color-text-secondary);
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+/* ── Responsive: Mobile ── */
+
+@media (max-width: 640px) {
+  /* Sidebar: full-width strip at top when collapsed */
+  .fp-main > .sidebar-collapsed {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    padding: var(--space-xs) var(--space-md);
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* Sidebar: overlay when expanded on mobile */
+  .fp-main > .sidebar-planner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 200;
+    border-right: 1px solid var(--color-border);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ── Responsive: Tablet ── */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .sidebar-planner {
+    width: 220px;
+    min-width: 220px;
+  }
+
+  .sidebar-planner__header h3 {
+    font-size: 0.72rem;
+  }
+
+  .sidebar-summary-row {
+    font-size: 0.68rem;
+  }
+
+  .sidebar-circuit-card__header {
+    font-size: 0.68rem;
+  }
+}

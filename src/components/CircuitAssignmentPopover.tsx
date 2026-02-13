@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import './CircuitAssignmentPopover.css';
 import type { PlannerCircuit } from '../types/game';
 import { CIRCUIT_COLORS } from './FloorPlanView';
 

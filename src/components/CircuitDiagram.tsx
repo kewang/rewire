@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import './CircuitDiagram.css';
 import type { Breaker, Circuit, CircuitId, CircuitState, MultiCircuitState, WiringState, CrimpResult, OldHouseProblem, OldHouseProblemType, Wire } from '../types/game';
 import BreakerSelector from './BreakerSelector';
 

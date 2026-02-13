@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import './BreakerSelector.css';
 import type { Breaker } from '../types/game';
 import { BREAKER_15A, BREAKER_20A, BREAKER_30A } from '../data/constants';
 

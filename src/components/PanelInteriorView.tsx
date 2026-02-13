@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import './PanelInteriorView.css';
 import type { CircuitId, CircuitConfig, Wire, CableTieQuality } from '../types/game';
 import { detectCrossings, getCrossingPairIndices, countUnbundledPairs } from '../engine/aesthetics';
 import { LANE_WIDTH, PANEL_PADDING, ROUTING_TOP, ROUTING_HEIGHT, wireStartX } from './panelLayout';

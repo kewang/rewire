@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import './CircuitPlanner.css';
 import type { Appliance, Wire, Breaker, FreeCircuitLevel, PlannerCircuit } from '../types/game';
 import { NEUTRAL_MAX_CURRENT } from '../data/constants';
 import RoomPanel from './RoomPanel';

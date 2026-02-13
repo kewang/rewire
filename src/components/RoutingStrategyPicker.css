@@ -1,0 +1,165 @@
+/* ===== RoutingStrategyPicker — Star vs Daisy-Chain Selection ===== */
+
+.routing-strategy-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: routing-strategy-fade-in 0.15s ease-out;
+}
+
+@keyframes routing-strategy-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.routing-strategy-picker {
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  padding: var(--space-xl);
+  min-width: 320px;
+  max-width: 420px;
+  animation: routing-strategy-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes routing-strategy-pop-in {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.routing-strategy-header {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.routing-strategy-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+
+.routing-strategy-cards {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.routing-strategy-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md);
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text-primary);
+}
+
+.routing-strategy-card:hover {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.routing-strategy-card--star:hover {
+  border-color: #f59e0b;
+  box-shadow: var(--shadow-card-hover), 0 0 12px rgba(245, 158, 11, 0.15);
+}
+
+.routing-strategy-card--daisy:hover {
+  border-color: #38bdf8;
+  box-shadow: var(--shadow-card-hover), 0 0 12px rgba(56, 189, 248, 0.15);
+}
+
+.routing-strategy-icon {
+  margin-bottom: var(--space-xs);
+}
+
+.routing-strategy-name {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.routing-strategy-stats {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.routing-strategy-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.routing-strategy-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.routing-strategy-stat-value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.routing-strategy-stat-cost {
+  color: var(--color-accent-amber);
+}
+
+.routing-strategy-cancel {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.routing-strategy-cancel:hover {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-hover);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 640px) {
+  .routing-strategy-picker {
+    min-width: 280px;
+    max-width: 95vw;
+    padding: var(--space-lg);
+  }
+
+  .routing-strategy-cards {
+    gap: var(--space-sm);
+  }
+
+  .routing-strategy-card {
+    padding: var(--space-md) var(--space-sm);
+  }
+}

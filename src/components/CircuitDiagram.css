@@ -1,0 +1,181 @@
+/* ── Circuit Diagram ──────────────────────────────────────────── */
+
+.circuit-diagram {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-md);
+}
+
+/* Drop zone highlight */
+.circuit-diagram.drop-zone-active {
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.15);
+}
+
+/* Wire connected transition */
+.wire-connected {
+  transition: stroke-dasharray 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Wire flash on successful connection */
+.wire-flash {
+  animation: wire-connect-flash 0.4s ease-out;
+}
+
+@keyframes wire-connect-flash {
+  0% {
+    opacity: 0.5;
+    stroke-width: 6;
+  }
+  50% {
+    opacity: 1;
+    stroke-width: 7;
+  }
+  100% {
+    opacity: 1;
+    stroke-width: 4;
+  }
+}
+
+/* Junction flash */
+.junction-flash {
+  animation: junction-pulse 0.4s ease-out;
+}
+
+@keyframes junction-pulse {
+  0% {
+    r: 5;
+    opacity: 0.5;
+  }
+  50% {
+    r: 10;
+    opacity: 1;
+  }
+  100% {
+    r: 5;
+    opacity: 1;
+  }
+}
+
+/* Connection flash burst */
+.connection-flash {
+  animation: flash-burst 0.4s ease-out forwards;
+}
+
+@keyframes flash-burst {
+  0% {
+    r: 4;
+    opacity: 0.8;
+  }
+  50% {
+    r: 16;
+    opacity: 0.6;
+  }
+  100% {
+    r: 20;
+    opacity: 0;
+  }
+}
+
+/* Warning pulse animation */
+.warning-pulse svg line,
+.warning-pulse svg circle {
+  animation: pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+/* Smoke animation */
+.smoke-particle {
+  animation: smoke-rise 1.5s ease-out infinite;
+}
+.smoke-1 { animation-delay: 0s; }
+.smoke-2 { animation-delay: 0.5s; }
+.smoke-3 { animation-delay: 1s; }
+
+/* Warning smoke (slower, subtler) */
+.warning-smoke-1 { animation: smoke-rise 2s ease-out infinite; animation-delay: 0s; }
+.warning-smoke-2 { animation: smoke-rise 2s ease-out infinite; animation-delay: 0.7s; }
+.warning-smoke-3 { animation: smoke-rise 2s ease-out infinite; animation-delay: 1.3s; }
+
+/* Fire particles */
+.fire-particle {
+  animation: fire-rise 1s ease-out infinite;
+}
+.fire-1 { animation-delay: 0s; }
+.fire-2 { animation-delay: 0.25s; }
+.fire-3 { animation-delay: 0.5s; }
+.fire-4 { animation-delay: 0.75s; }
+
+@keyframes fire-rise {
+  0% {
+    opacity: 0.9;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-12px) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-25px) scale(0.3);
+  }
+}
+
+@keyframes smoke-rise {
+  0% {
+    opacity: 0.6;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* ── Old House Mode ────────────────────────────────────────────── */
+
+.old-house-problem-border {
+  animation: old-house-flash 1.2s ease-in-out infinite;
+}
+
+@keyframes old-house-flash {
+  0%, 100% { opacity: 0.4; stroke-width: 2; }
+  50% { opacity: 1; stroke-width: 3; }
+}
+
+.unwire-btn rect:hover {
+  fill: rgba(239, 68, 68, 0.3);
+}
+
+.unwire-btn {
+  cursor: pointer;
+}
+
+/* ── NFB Switch ───────────────────────────────────────────────── */
+
+.nfb-control h3 {
+  margin-bottom: var(--space-md);
+}
+
+/* ── NFB Lever ───────────────────────────────────────────────── */
+
+.nfb-lever-handle {
+  transition: y 250ms cubic-bezier(0.4, 0, 0.2, 1), fill 250ms ease, stroke 250ms ease;
+}
+
+.nfb-lever-handle:hover:not(.disabled) {
+  filter: brightness(1.3);
+}
+
+.nfb-lever-handle.disabled {
+  opacity: 0.3;
+}
+
+.phase-toggle-btn:hover rect {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: #888;
+}

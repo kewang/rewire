@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Per-component CSS files
 Each React component SHALL have its own CSS file co-located in the same directory, imported via side-effect import. All 20 components SHALL have extracted CSS files, with App.css retaining only cross-component shared styles.

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import './FloorPlanView.css';
 import type { FloorPlan, FloorPlanRoom, FloorPlanOutlet, RoutingNode } from '../types/floorPlan';
 import type { RoutePath, RouteCandidate } from '../engine/routing';
 import type { CircuitId, SimulationStatus, OldHouseProblemType } from '../types/game';

@@ -1,0 +1,214 @@
+/* ── Floor Plan View ─────────────────────────────────────────── */
+
+.floor-plan-view {
+  display: block;
+  margin: 0 auto;
+}
+
+.floor-plan-room rect {
+  transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.fp-room-label {
+  fill: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.fp-distance-label {
+  fill: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.fp-outlet {
+  transition: fill 0.2s ease;
+}
+
+.fp-panel-icon {
+  cursor: pointer;
+}
+
+.fp-connected-paths path {
+  transition: opacity 0.2s ease;
+}
+
+/* Floor Plan Simulation Visual Effects */
+
+/* Warning room: orange pulsing border */
+.fp-room-warning rect {
+  animation: fp-room-warning-pulse 1s ease-in-out infinite;
+}
+
+@keyframes fp-room-warning-pulse {
+  0%, 100% { stroke: #f59e0b; stroke-opacity: 0.6; }
+  50% { stroke: #f97316; stroke-opacity: 1; }
+}
+
+/* Burned/leakage room: red pulsing flash */
+.fp-room-burned rect {
+  animation: fp-room-burned-flash 0.5s ease-in-out infinite;
+}
+
+@keyframes fp-room-burned-flash {
+  0%, 100% { stroke: #ef4444; stroke-opacity: 0.5; fill-opacity: 0.1; }
+  50% { stroke: #dc2626; stroke-opacity: 1; fill-opacity: 0.3; }
+}
+
+/* Problem badge (old house) orange flash */
+.fp-problem-badge {
+  animation: fp-problem-flash 1.2s ease-in-out infinite;
+  pointer-events: auto;
+  cursor: help;
+}
+
+@keyframes fp-problem-flash {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Current flow animation along wiring paths */
+.fp-current-flow {
+  animation: fp-current-flow 1.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes fp-current-flow {
+  to { stroke-dashoffset: -26; }
+}
+
+/* Floor Plan power button */
+.fp-power-button {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--color-accent-green);
+  border-radius: var(--radius-md);
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-accent-green);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.fp-power-button:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.fp-power-button:active:not(:disabled) {
+  animation: power-pulse 0.2s ease;
+}
+
+.fp-power-button:focus-visible {
+  outline: 2px solid var(--color-accent-green);
+  outline-offset: 2px;
+}
+
+.fp-power-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--color-text-secondary);
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+/* ── Floor Plan Layout ─────────────────────────────────── */
+
+.game-board.fp-layout {
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.game-board.fp-layout .game-header {
+  flex-shrink: 0;
+}
+
+.fp-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fp-center {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-sm);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fp-center .floor-plan-view {
+  max-height: 100%;
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+/* Floor Plan Preview (dev verification) */
+.floor-plan-preview {
+  padding: var(--space-xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.floor-plan-preview h3 {
+  font-family: var(--font-display);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-lg);
+  font-size: 1.1rem;
+}
+
+.floor-plan-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-xl);
+}
+
+.floor-plan-preview-item {
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.floor-plan-preview-item h4 {
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-sm);
+}
+
+/* ── Floor Plan Responsive ─────────────────────────────── */
+
+/* Mobile: vertical stack */
+@media (max-width: 640px) {
+  .game-board.fp-layout {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .fp-main {
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .fp-center {
+    padding: var(--space-xs);
+    min-height: 0;
+    flex: 1;
+  }
+}

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import './CircuitCard.css';
 import type { Wire, Breaker, PlannerCircuit } from '../types/game';
 import { DEFAULT_WIRES, BREAKER_15A, BREAKER_20A, BREAKER_30A, DEFAULT_WIRE_LENGTH, NFB_COSTS, ELCB_COST } from '../data/constants';
 import { tApplianceName } from '../i18nHelpers';

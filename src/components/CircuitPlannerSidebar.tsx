@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import './CircuitPlannerSidebar.css';
 import type { Appliance, Wire, Breaker, FreeCircuitLevel, PlannerCircuit } from '../types/game';
 import { DEFAULT_WIRES, BREAKER_15A, BREAKER_20A, BREAKER_30A, NEUTRAL_MAX_CURRENT, NFB_COSTS, ELCB_COST, DEFAULT_WIRE_LENGTH } from '../data/constants';
 import { CIRCUIT_COLORS } from './FloorPlanView';

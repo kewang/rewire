@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import './CrimpMiniGame.css';
 import type { Wire, CrimpResult, CrimpTerminalType, CrimpQuality } from '../types/game';
 import { CRIMP_TERMINALS, CRIMP_QUALITY_MAP } from '../data/constants';
 import { tCrimpQuality, tTerminalName } from '../i18nHelpers';

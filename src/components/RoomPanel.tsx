@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import './RoomPanel.css';
 import type { Appliance, FreeCircuitLevel, PlannerCircuit } from '../types/game';
 import { tRoomName, tApplianceName } from '../i18nHelpers';
 

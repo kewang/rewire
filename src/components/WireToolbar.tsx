@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import './WireToolbar.css';
 import type { Wire, WiringState } from '../types/game';
 
 interface WireToolbarProps {

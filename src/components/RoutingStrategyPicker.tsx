@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import './RoutingStrategyPicker.css';
 import type { RouteCandidate } from '../engine/routing';
 import type { Wire } from '../types/game';
 
